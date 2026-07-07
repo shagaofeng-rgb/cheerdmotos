@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       gatewayStatus: oceanpayment.configured ? 'pending' : 'not_submitted',
       logisticsStatus: oceanpayment.configured
         ? 'Oceanpayment request generated. Waiting for buyer payment result.'
-        : 'Oceanpayment credentials are not configured yet.'
+        : 'Online card payment is not active yet. CHEERDMOTO sales will send payment instructions manually.'
     });
 
     await appendAnalyticsEvent({
@@ -86,7 +86,10 @@ export async function POST(request: Request) {
 
     return Response.json({
       ok: true,
-      status: oceanpayment.configured ? 'ready_to_submit' : 'waiting_for_credentials',
+      status: oceanpayment.configured ? 'ready_to_submit' : 'manual_follow_up',
+      message: oceanpayment.configured
+        ? 'Secure payment request is ready.'
+        : 'Order received. CHEERDMOTO sales will confirm quotation, logistics and payment instructions by email.',
       order: updated || order,
       oceanpayment: {
         configured: oceanpayment.configured,

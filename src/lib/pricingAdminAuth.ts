@@ -5,8 +5,8 @@ import {redirect} from 'next/navigation';
 export const PRICING_ADMIN_COOKIE = 'cheerdmoto_pricing_admin_session';
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 7;
 const pricingSalesUsers = [
-  {account: 'cowin202601', password: process.env.PRICING_SALES_PASSWORD_202601 || 'hello123456', label: '业务员 01'},
-  {account: 'cowin202602', password: process.env.PRICING_SALES_PASSWORD_202602 || 'hello123456', label: '业务员 02'}
+  {account: 'cowin202601', password: process.env.PRICING_SALES_PASSWORD_202601 || '', label: '业务员 01'},
+  {account: 'cowin202602', password: process.env.PRICING_SALES_PASSWORD_202602 || '', label: '业务员 02'}
 ];
 
 function secret() {
@@ -45,7 +45,7 @@ export function verifyPricingAdminCredentials(email: string, password: string) {
   const normalizedEmail = String(email || '').trim().toLowerCase();
   if (!normalizedEmail || !password) return false;
   const salesUser = pricingSalesUsers.find((user) => user.account === normalizedEmail);
-  if (salesUser) return password === salesUser.password;
+  if (salesUser) return Boolean(salesUser.password) && password === salesUser.password;
   if (normalizedEmail !== adminEmail) return false;
   if (process.env.PRICING_ADMIN_PASSWORD_HASH) return verifyHash(password, process.env.PRICING_ADMIN_PASSWORD_HASH);
   if (process.env.PRICING_ADMIN_PASSWORD) return password === process.env.PRICING_ADMIN_PASSWORD;

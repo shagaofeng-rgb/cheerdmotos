@@ -348,7 +348,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       return;
     }
     if (String(paymentMethod).startsWith('oceanpayment')) {
-      setStatus(`Order ${result.order.id} created. Preparing Oceanpayment ${paymentScene.toUpperCase()} request...`);
+      setStatus(`Order ${result.order.id} created. Preparing secure payment or sales follow-up...`);
       const paymentResponse = await fetch('/api/payments/oceanpayment/create', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
@@ -360,9 +360,9 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         setIsSubmitting(false);
         return;
       }
-      if (paymentResult.status === 'waiting_for_credentials') {
-        setStatus(`Order ${result.order.id} saved. Oceanpayment credentials are not configured yet: ${paymentResult.oceanpayment.requiredEnv.join(', ')}.`);
-        setIsSubmitting(false);
+      if (paymentResult.status === 'waiting_for_credentials' || paymentResult.status === 'manual_follow_up') {
+        setStatus(paymentResult.message || `Order ${result.order.id} received. CHEERDMOTO sales will send payment instructions by email.`);
+        window.location.href = localizedUrl(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}&payment=manual_followup`);
         return;
       }
       setStatus('Opening Oceanpayment secure payment window...');
