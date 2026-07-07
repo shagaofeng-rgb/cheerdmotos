@@ -1,0 +1,102 @@
+{
+  "project": "CHEERDMOTO homepage redesign",
+  "style": "cheerdmoto_style_a_rally_terrain",
+  "title": "CHEERDMOTO Style A — Rally Terrain",
+  "canvas_width": 1440,
+  "source": "Current product catalog and product imagery from cheerdmoto.com",
+  "products": {
+    "xtreme": {
+      "display_name": "XTREME",
+      "price": "from $4,499",
+      "asset": "assets/products/xtreme_transparent.png"
+    },
+    "xceed": {
+      "display_name": "XCEED",
+      "price": "$3,099",
+      "asset": "assets/products/xceed_transparent.png"
+    },
+    "xcite": {
+      "display_name": "XCITE",
+      "price": "from $499",
+      "asset": "assets/products/xcite_transparent.png"
+    },
+    "xplore": {
+      "display_name": "XPLORE",
+      "price": "from $499",
+      "asset": "assets/products/xplore_transparent.png"
+    },
+    "xplus": {
+      "display_name": "XPLUS",
+      "price": "from $599",
+      "asset": "assets/products/xplus_transparent.png"
+    },
+    "smart_b02": {
+      "display_name": "SMART B02",
+      "price": "$399",
+      "asset": "assets/products/smart_b02_transparent.png"
+    }
+  },
+  "sections": [
+    {
+      "name": "01_header_hero_xtreme",
+      "png": "slices/01_header_hero_xtreme.png",
+      "webp": "slices/01_header_hero_xtreme.webp",
+      "width": 1440,
+      "height": 880
+    },
+    {
+      "name": "02_performance_metrics",
+      "png": "slices/02_performance_metrics.png",
+      "webp": "slices/02_performance_metrics.webp",
+      "width": 1440,
+      "height": 170
+    },
+    {
+      "name": "03_current_product_lineup",
+      "png": "slices/03_current_product_lineup.png",
+      "webp": "slices/03_current_product_lineup.webp",
+      "width": 1440,
+      "height": 880
+    },
+    {
+      "name": "04_xceed_feature_story",
+      "png": "slices/04_xceed_feature_story.png",
+      "webp": "slices/04_xceed_feature_story.webp",
+      "width": 1440,
+      "height": 720
+    },
+    {
+      "name": "05_grandeux_ebike_collection",
+      "png": "slices/05_grandeux_ebike_collection.png",
+      "webp": "slices/05_grandeux_ebike_collection.webp",
+      "width": 1440,
+      "height": 800
+    },
+    {
+      "name": "06_smart_b02_mobility_banner",
+      "png": "slices/06_smart_b02_mobility_banner.png",
+      "webp": "slices/06_smart_b02_mobility_banner.webp",
+      "width": 1440,
+      "height": 500
+    },
+    {
+      "name": "07_trust_reviews",
+      "png": "slices/07_trust_reviews.png",
+      "webp": "slices/07_trust_reviews.webp",
+      "width": 1440,
+      "height": 650
+    },
+    {
+      "name": "08_footer",
+      "png": "slices/08_footer.png",
+      "webp": "slices/08_footer.webp",
+      "width": 1440,
+      "height": 420
+    }
+  ],
+  "implementation": {
+    "entry": "index.html",
+    "stylesheet": "styles.css",
+    "note": "The included page stacks optimized slices. Codex can progressively replace slices with semantic HTML while retaining the supplied transparent product assets."
+  }
+}

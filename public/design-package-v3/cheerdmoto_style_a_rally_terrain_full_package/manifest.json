@@ -1,0 +1,25 @@
+{
+  "style": "cheerdmoto_style_a_rally_terrain_full_package",
+  "pages": [
+    {
+      "slug": "homepage",
+      "folder": "00_homepage"
+    },
+    {
+      "slug": "dirt_bikes",
+      "folder": "01_category_dirt_bikes"
+    },
+    {
+      "slug": "e_bike",
+      "folder": "02_category_e_bike"
+    },
+    {
+      "slug": "electric_wheelchair",
+      "folder": "03_category_electric_wheelchair"
+    },
+    {
+      "slug": "parts_accessories",
+      "folder": "04_category_parts_accessories"
+    }
+  ]
+}
