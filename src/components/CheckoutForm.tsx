@@ -385,7 +385,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
   }
 
   return (
-    <form className="shopline-checkout" onSubmit={handleSubmit} aria-label="Project order form">
+    <form className="checkout-form" onSubmit={handleSubmit} aria-label="Project order form">
       <Script
         id="oceanpayment-core-sdk"
         src="https://secure.oceanpayment.com/pub/js/op.js"
@@ -471,10 +471,10 @@ export default function CheckoutForm({locale, productSlug, productName, productI
           <p className="checkout-help">All transactions are secure and encrypted.</p>
           <input name="paymentMethod" type="hidden" value={paymentMethod} />
           <input name="paymentScene" type="hidden" value={paymentScene} />
-          <div className="shopline-payment-box" role="group" aria-label="Oceanpayment secure payment">
+          <div className="checkout-payment-box" role="group" aria-label="Oceanpayment secure payment">
             <button
               type="button"
-              className={`shopline-payment-row shopline-payment-card ${paymentMethod === 'oceanpayment_card' ? 'active' : ''}`}
+              className={`checkout-payment-row checkout-payment-card ${paymentMethod === 'oceanpayment_card' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('oceanpayment_card')}
               aria-pressed={paymentMethod === 'oceanpayment_card'}
             >
@@ -487,14 +487,14 @@ export default function CheckoutForm({locale, productSlug, productName, productI
               </span>
             </button>
             {paymentMethod === 'oceanpayment_card' ? (
-              <div className="shopline-card-fields">
+              <div className="checkout-card-fields">
                 <div id="oceanpayment-element" className="oceanpayment-card-element" role="group" aria-label="Oceanpayment secure card form" />
                 <p className="payment-safe-note">Enter card details in the Oceanpayment secure card form. CHEERDMOTO does not store full card numbers or CVV.</p>
               </div>
             ) : null}
             <button
               type="button"
-              className={`shopline-payment-row ${paymentMethod === 'oceanpayment_google_pay' || paymentMethod === 'oceanpayment_apple_pay' ? 'active' : ''}`}
+              className={`checkout-payment-row ${paymentMethod === 'oceanpayment_google_pay' || paymentMethod === 'oceanpayment_apple_pay' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('oceanpayment_google_pay')}
               aria-pressed={paymentMethod === 'oceanpayment_google_pay' || paymentMethod === 'oceanpayment_apple_pay'}
             >
@@ -549,7 +549,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         </section>
       </div>
 
-      <aside className="shopline-summary">
+      <aside className="checkout-summary">
         <div className="summary-product">
           <div className="summary-image-wrap">
             <img src={productImage} alt={`${productName} checkout thumbnail`} />
@@ -557,7 +557,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
           </div>
           <div>
             <h3>{productName}</h3>
-            <p>Commercial water sports equipment project</p>
+            <p>CHEERDMOTO electric mobility order</p>
           </div>
           <strong>USD {(unitPrice * quantity).toLocaleString()}</strong>
         </div>

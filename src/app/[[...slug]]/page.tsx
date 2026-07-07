@@ -119,10 +119,10 @@ const cityProducts = [
   }
 ];
 
-const oldSiteNav = [
+const siteNav = [
   {
     label: "ELECTRIC DIRT BIKE",
-    href: "/collections/electric-dirt-bikes",
+    href: "/electric-dirt-bikes",
     children: [
       { label: "Xceed - 72V", href: "/products/xceed-electric-dirt-bike" },
       { label: "Xtreme - 96V", href: "/products/cheerdmoto-performance-96v-electric-dirtbike-xtreme" },
@@ -131,7 +131,7 @@ const oldSiteNav = [
   },
   {
     label: "E BIKE",
-    href: "/collections/electric-bikes",
+    href: "/e-bikes",
     children: [
       { label: "Xcite (Step-Thru)", href: "/products/grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto" },
       { label: "Xplore (Over-Frame)", href: "/products/grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto" },
@@ -140,34 +140,34 @@ const oldSiteNav = [
   },
   {
     label: "ELECTRIC WHEELCHAIR",
-    href: "/collections/e-wheelchairs",
+    href: "/electric-wheelchairs",
     children: [{ label: "Smart B02", href: "/products/cheerdmoto-electric-wheelchair-smart-b02" }]
   },
-  { label: "ACCESSORIES", href: "/collections/parts-and-accessories" },
-  { label: "REFURBISHED & CLEARANCE", href: "/collections/refurbished-clearance" },
+  { label: "ACCESSORIES", href: "/accessories" },
+  { label: "REFURBISHED & CLEARANCE", href: "/clearance" },
   {
     label: "DISCOVER",
     href: "#",
     children: [
-      { label: "Blog", href: "/blogs/electric-dirt-bike-guides" },
-      { label: "About Us", href: "/pages/about-us" },
-      { label: "Rider Club", href: "/pages/cheerdmoto-riders-club" },
-      { label: "B2B Customer", href: "/pages/business-partner" },
-      { label: "Ride to China", href: "/pages/ride-to-china-lotter" },
-      { label: "Affiliate Marketing", href: "/pages/affiliate-program" }
+      { label: "Blog", href: "/discover" },
+      { label: "About Us", href: "/about" },
+      { label: "Rider Club", href: "/rider-club" },
+      { label: "B2B Customer", href: "/dealer-program" },
+      { label: "Ride to China", href: "/discover" },
+      { label: "Affiliate Marketing", href: "/dealer-program" }
     ]
   },
   {
     label: "SUPPORT",
     href: "#",
     children: [
-      { label: "Contact Us", href: "/pages/contact-us" },
-      { label: "Product Registration", href: "/pages/product-registration" },
-      { label: "Manual & Assembly", href: "/blogs/manual-assembly" },
-      { label: "Warranty Policy", href: "/pages/return-warranty-policy" },
-      { label: "Shipping Policy", href: "/pages/shipping-policy" },
-      { label: "Shipping & Returns", href: "/pages/shipping-returns" },
-      { label: "Order Tracking", href: "https://cheerdmoto.com/apps/parcelpanel" }
+      { label: "Contact Us", href: "/support" },
+      { label: "Product Registration", href: "/product-registration" },
+      { label: "Manual & Assembly", href: "/manuals" },
+      { label: "Warranty Policy", href: "/warranty" },
+      { label: "Shipping Policy", href: "/shipping-returns" },
+      { label: "Shipping & Returns", href: "/shipping-returns" },
+      { label: "Order Tracking", href: "/account/orders" }
     ]
   }
 ];
@@ -196,7 +196,7 @@ type CategoryDesign = {
 };
 
 const categoryDesigns: Record<string, CategoryDesign> = {
-  "/collections/electric-dirt-bikes": {
+  "/electric-dirt-bikes": {
     label: "NEXT-GEN PERFORMANCE",
     headline: "DIRT BIKES BUILT FOR THE WILD",
     intro: "High-output electric dirt bikes with serious torque, long range, and trail-ready control.",
@@ -229,7 +229,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
       }
     ]
   },
-  "/collections/electric-bikes": {
+  "/e-bikes": {
     label: "CITY RANGE",
     headline: "RIDE FREE. RIDE HAPPY.",
     intro: "Fat-tire e-bikes built for daily errands, weekend detours, and confident all-road comfort.",
@@ -262,7 +262,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
       }
     ]
   },
-  "/collections/e-wheelchairs": {
+  "/electric-wheelchairs": {
     label: "SMART MOBILITY",
     headline: "FREEDOM. COMFORT. MOBILITY.",
     intro: "Compact electric wheelchair mobility for everyday independence, travel, and confident indoor-outdoor movement.",
@@ -281,7 +281,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
       }
     ]
   },
-  "/collections/parts-and-accessories": {
+  "/accessories": {
     label: "GEAR & PARTS",
     headline: "ACCESSORIES THAT KEEP YOU MOVING.",
     intro: "Replacement parts, rider gear, and everyday upgrades for CHEERDMOTO electric bikes and dirt bikes.",
@@ -297,7 +297,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
         spec: index < 4 ? "popular upgrade" : index < 8 ? "replacement part" : "rider essential",
         price: "View details",
         image: `${designBase}/04_category_parts_accessories/${usableDir}/01_extracted_from_page/parts_accessories_use_accessory_${number}.png`,
-        href: "/collections/parts-and-accessories"
+        href: "/accessories"
       };
     })
   }
@@ -307,15 +307,10 @@ function RallySiteNav({ dark = false }: { dark?: boolean }) {
   return (
     <header className={dark ? "rally-nav rally-nav-dark" : "rally-nav"}>
       <Link className="rally-logo" href="/" aria-label="CHEERDMOTO home">
-        <img
-          alt="Cheerdmoto"
-          height="34"
-          src="https://cheerdmoto.com/cdn/shop/files/cheerdmoto_logo-transparent_180x.png?v=1747619683"
-          width="180"
-        />
+        CHEERDMOTO
       </Link>
       <nav aria-label="Main navigation">
-        {oldSiteNav.map((item) => (
+        {siteNav.map((item) => (
           <div className="rally-nav-item" key={item.label}>
             <Link href={item.href}>{item.label}</Link>
             {item.children?.length ? (
@@ -331,38 +326,30 @@ function RallySiteNav({ dark = false }: { dark?: boolean }) {
         ))}
       </nav>
       <div className="rally-icons">
-        <Link className="rally-country" href="https://cheerdmoto.com">
-          <img
-            alt=""
-            height="20"
-            src="https://cheerdmoto.com/cdn/shop/files/united-states-of-america-flag-png-large.jpg?crop=center&height=20&v=1755131254&width=20"
-            width="20"
-          />
+        <span className="rally-country">
           <span>USA</span>
-          <span aria-hidden="true">v</span>
-        </Link>
-        <Link className="rally-signin" href="https://cheerdmoto.com/customer_authentication/redirect?locale=en&region_country=US">
+          </span>
+        <Link className="rally-signin" href="/account/login">
           Sign In
         </Link>
-        <Link className="rally-icon-link" href="/search" aria-label="Search">
+        <Link className="rally-icon-link" href="/products" aria-label="Search">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="m16.5 16.5 4 4" />
           </svg>
         </Link>
-        <Link className="rally-icon-link" href="/pages/wishlist" aria-label="Wishlist">
+        <Link className="rally-icon-link" href="/account" aria-label="Wishlist">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M20.8 4.6c-1.8-1.9-4.8-1.8-6.6.1L12 7l-2.2-2.3c-1.8-1.9-4.8-2-6.6-.1-1.9 2-1.8 5.1.1 7L12 20l8.7-8.4c1.9-1.9 2-5 .1-7Z" />
           </svg>
         </Link>
-        <Link className="rally-icon-link rally-cart" href="/cart" aria-label="Cart">
+        <Link className="rally-icon-link rally-cart" href="/checkout" aria-label="Cart">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 3h2l2.1 12.3a2 2 0 0 0 2 1.7h8.8a2 2 0 0 0 2-1.6L21 8H6" />
             <circle cx="9" cy="21" r="1.4" />
             <circle cx="18" cy="21" r="1.4" />
           </svg>
-          <span>1</span>
-        </Link>
+          </Link>
         <button className="rally-menu-button" type="button" aria-label="Menu">
           <span />
           <span />
@@ -378,15 +365,10 @@ function RallyHomepage() {
     <main className="rally-home">
       <header className="rally-nav">
         <Link className="rally-logo" href="/" aria-label="CHEERDMOTO home">
-          <img
-            alt="Cheerdmoto"
-            height="34"
-            src="https://cheerdmoto.com/cdn/shop/files/cheerdmoto_logo-transparent_180x.png?v=1747619683"
-            width="180"
-          />
+          CHEERDMOTO
         </Link>
         <nav aria-label="Main navigation">
-          {oldSiteNav.map((item) => (
+          {siteNav.map((item) => (
             <div className="rally-nav-item" key={item.label}>
               <Link href={item.href}>{item.label}</Link>
               {item.children?.length ? (
@@ -402,38 +384,30 @@ function RallyHomepage() {
           ))}
         </nav>
         <div className="rally-icons">
-          <Link className="rally-country" href="https://cheerdmoto.com">
-            <img
-              alt=""
-              height="20"
-              src="https://cheerdmoto.com/cdn/shop/files/united-states-of-america-flag-png-large.jpg?crop=center&height=20&v=1755131254&width=20"
-              width="20"
-            />
+          <span className="rally-country">
             <span>USA</span>
-            <span aria-hidden="true">⌄</span>
-          </Link>
-          <Link className="rally-signin" href="https://cheerdmoto.com/customer_authentication/redirect?locale=en&region_country=US">
+            </span>
+        <Link className="rally-signin" href="/account/login">
             Sign In
           </Link>
-          <Link className="rally-icon-link" href="/search" aria-label="Search">
+          <Link className="rally-icon-link" href="/products" aria-label="Search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="m16.5 16.5 4 4" />
             </svg>
           </Link>
-          <Link className="rally-icon-link" href="/pages/wishlist" aria-label="Wishlist">
+          <Link className="rally-icon-link" href="/account" aria-label="Wishlist">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M20.8 4.6c-1.8-1.9-4.8-1.8-6.6.1L12 7l-2.2-2.3c-1.8-1.9-4.8-2-6.6-.1-1.9 2-1.8 5.1.1 7L12 20l8.7-8.4c1.9-1.9 2-5 .1-7Z" />
             </svg>
           </Link>
-          <Link className="rally-icon-link rally-cart" href="/cart" aria-label="Cart">
+          <Link className="rally-icon-link rally-cart" href="/checkout" aria-label="Cart">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 3h2l2.1 12.3a2 2 0 0 0 2 1.7h8.8a2 2 0 0 0 2-1.6L21 8H6" />
               <circle cx="9" cy="21" r="1.4" />
               <circle cx="18" cy="21" r="1.4" />
             </svg>
-            <span>1</span>
-          </Link>
+            </Link>
           <button className="rally-menu-button" type="button" aria-label="Menu">
             <span />
             <span />
@@ -463,7 +437,7 @@ function RallyHomepage() {
             <Link className="rally-btn rally-btn-orange" href="/products/cheerdmoto-performance-96v-electric-dirtbike-xtreme">
               PRE-ORDER XTREME
             </Link>
-            <Link className="rally-btn rally-btn-light" href="/collections/electric-dirt-bikes">
+            <Link className="rally-btn rally-btn-light" href="/electric-dirt-bikes">
               SHOP MODELS
             </Link>
           </div>
@@ -509,7 +483,7 @@ function RallyHomepage() {
             </Link>
           ))}
         </div>
-        <Link className="rally-small-link" href="/collections/all-products">
+        <Link className="rally-small-link" href="/products">
           VIEW ALL MODELS +
         </Link>
       </section>
@@ -641,7 +615,7 @@ function RallyHomepage() {
         </div>
         <div>
           <strong>SHOP</strong>
-          <Link href="/collections/all-products">All models</Link>
+          <Link href="/products">All models</Link>
           <Link href="/products/xceed-electric-dirt-bike">Xceed</Link>
           <Link href="/products/cheerdmoto-performance-96v-electric-dirtbike-xtreme">Xtreme</Link>
           <Link href="/products/grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike">Xplus</Link>
@@ -649,17 +623,17 @@ function RallyHomepage() {
         </div>
         <div>
           <strong>SUPPORT</strong>
-          <Link href="/pages/contact-us">Contact us</Link>
-          <Link href="/pages/faq">FAQ</Link>
-          <Link href="/pages/return-warranty-policy">Warranty</Link>
-          <Link href="/pages/shipping-returns">Shipping & returns</Link>
+          <Link href="/support">Contact us</Link>
+          <Link href="/support">FAQ</Link>
+          <Link href="/warranty">Warranty</Link>
+          <Link href="/shipping-returns">Shipping & returns</Link>
         </div>
         <div>
           <strong>COMPANY</strong>
-          <Link href="/pages/about-us">About us</Link>
-          <Link href="/blogs/news">Rider club</Link>
-          <Link href="/pages/business-partner">B2B dealers</Link>
-          <Link href="/pages/affiliate-program">Affiliate program</Link>
+          <Link href="/about">About us</Link>
+          <Link href="/discover">Rider club</Link>
+          <Link href="/dealer-program">B2B dealers</Link>
+          <Link href="/dealer-program">Affiliate program</Link>
         </div>
         <form>
           <strong>STAY UPDATED</strong>
@@ -684,10 +658,10 @@ function HomePage({ item }: { item: SiteItem }) {
           <h1>{item.title || "CHEERDMOTO"}</h1>
           <p>{item.description}</p>
           <div className="action-row">
-            <Link className="button primary" href="/pages/business-partner">
+            <Link className="button primary" href="/dealer-program">
               Become a Dealer
             </Link>
-            <Link className="button secondary" href="/collections/all-products">
+            <Link className="button secondary" href="/products">
               View Products
             </Link>
           </div>
@@ -718,7 +692,7 @@ function HomePage({ item }: { item: SiteItem }) {
       <CardGrid title="Collections" items={collections} />
       <CardGrid title="Latest News" items={articles} />
 
-      <LegacyContent item={item} compact />
+      <GeneratedContent item={item} compact />
     </main>
   );
 }
@@ -746,16 +720,14 @@ function ProductPage({ item }: { item: SiteItem }) {
             </p>
           ) : null}
           <div className="action-row">
-            <Link className="button primary" href="/pages/contact-us">
-              Request Quote
+            <Link className="button primary" href={`/checkout?product=${encodeURIComponent(item.slug)}&qty=1`}>
+              Start Checkout
             </Link>
-            <a className="button secondary" href={item.url}>
-              Original Page
-            </a>
+            <Link className="button secondary" href="/support">Ask Support</Link>
           </div>
         </div>
       </section>
-      <LegacyContent item={item} />
+      <GeneratedContent item={item} />
       <ProductGrid title="Related Products" items={related} />
     </main>
   );
@@ -851,7 +823,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
           <span>{design.label}</span>
           <h2>{design.ctaTitle}</h2>
           <p>{design.ctaCopy}</p>
-          <Link className="rally-btn" href="/pages/contact-us">
+          <Link className="rally-btn" href="/support">
             ASK AN EXPERT
           </Link>
         </div>
@@ -864,21 +836,21 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
         </div>
         <div>
           <h3>SHOP</h3>
-          <Link href="/collections/electric-dirt-bikes">Dirt Bike</Link>
-          <Link href="/collections/electric-bikes">E Bike</Link>
-          <Link href="/collections/e-wheelchairs">Wheelchair</Link>
+          <Link href="/electric-dirt-bikes">Dirt Bike</Link>
+          <Link href="/e-bikes">E Bike</Link>
+          <Link href="/electric-wheelchairs">Wheelchair</Link>
         </div>
         <div>
           <h3>SUPPORT</h3>
-          <Link href="/pages/contact-us">Contact us</Link>
-          <Link href="/pages/shipping-returns">Shipping & returns</Link>
-          <Link href="/pages/return-warranty-policy">Warranty</Link>
+          <Link href="/support">Contact us</Link>
+          <Link href="/shipping-returns">Shipping & returns</Link>
+          <Link href="/warranty">Warranty</Link>
         </div>
         <div>
           <h3>COMPANY</h3>
-          <Link href="/pages/about-us">About us</Link>
-          <Link href="/blogs/electric-dirt-bike-guides">Blog</Link>
-          <Link href="/pages/business-partner">B2B customer</Link>
+          <Link href="/about">About us</Link>
+          <Link href="/discover">Blog</Link>
+          <Link href="/dealer-program">B2B customer</Link>
         </div>
       </footer>
     </main>
@@ -902,7 +874,7 @@ function CollectionPage({ item }: { item: SiteItem }) {
     <main>
       <PageHero item={item} label="Collection" />
       <ProductGrid title={item.title} items={products.length ? products : siteData.products.slice(0, 12)} />
-      <LegacyContent item={item} compact />
+      <GeneratedContent item={item} compact />
     </main>
   );
 }
@@ -911,7 +883,7 @@ function ContentPage({ item }: { item: SiteItem }) {
   return (
     <main>
       <PageHero item={item} label={item.kind === "article" ? "Article" : "Page"} />
-      <LegacyContent item={item} />
+      <GeneratedContent item={item} />
       <CardGrid title="Explore More" items={relatedItems(item)} />
     </main>
   );
@@ -989,12 +961,26 @@ function CardGrid({ title, items }: { title: string; items: SiteItem[] }) {
   );
 }
 
-function LegacyContent({ item, compact = false }: { item: SiteItem; compact?: boolean }) {
-  if (!item.html) return null;
+function GeneratedContent({ item, compact = false }: { item: SiteItem; compact?: boolean }) {
+  const isProduct = item.kind === "product";
 
   return (
-    <section className={compact ? "legacy-content compact" : "legacy-content"}>
-      <div dangerouslySetInnerHTML={{ __html: item.html }} />
+    <section className={compact ? "generated-section compact" : "generated-section"}>
+      <div className="generated-content">
+        <h2>{isProduct ? "Product overview" : item.title}</h2>
+        {item.description ? <p>{item.description}</p> : null}
+        {isProduct ? (
+          <ul>
+            <li>New CHEERDMOTO storefront page generated inside this Next.js site.</li>
+            <li>This page renders only the new CHEERDMOTO Next.js storefront content and checkout flow.</li>
+            <li>Use the new checkout and support flow for current availability, service, and dealer questions.</li>
+          </ul>
+        ) : (
+          <p>
+            This page is part of the new CHEERDMOTO site structure. Legacy storefront markup and third-party shop links have been removed from the rendered page.
+          </p>
+        )}
+      </div>
     </section>
   );
 }

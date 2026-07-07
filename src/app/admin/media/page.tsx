@@ -18,7 +18,7 @@ export default async function AdminMediaPage() {
           <h2>添加已有图片</h2>
         </div>
         <form className="admin-form-grid" action="/api/admin/media" method="post">
-          <input name="url" placeholder="https://cdn.shopify.com/s/files/1/0891/6231/8139/files/2.0-6.jpg?v=1739866508&width=1200" required />
+          <input name="url" placeholder="/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png" required />
           <input name="alt" placeholder="图片 ALT 描述" required />
           <input name="usage" placeholder="使用位置，例如产品/新闻" />
           <button type="submit">加入媒体库</button>

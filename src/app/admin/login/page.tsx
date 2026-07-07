@@ -4,24 +4,22 @@ export default async function AdminLoginPage({searchParams}: {searchParams: Prom
   return (
     <main className="admin-login-page">
       <form className="admin-login-card" action="/api/admin/login" method="post">
-        <p className="eyebrow">在海后台</p>
-        <h1>后台登录</h1>
-        <p>登录后可查看订单、客户线索、访问统计、转化漏斗和支付接口状态。</p>
-        {query.error ? <strong className="admin-login-error">登录失败，请检查邮箱和密码。</strong> : null}
-        {query.reset ? <strong className="admin-login-notice">已收到重置请求。需要配置 SMTP 后才能发送安全重置邮件。</strong> : null}
+        <p className="eyebrow">CHEERDMOTO Admin</p>
+        <h1>Admin Login</h1>
+        <p>Sign in to manage products, orders, customers, leads, analytics, payments, content and site settings.</p>
+        {query.error ? <strong className="admin-login-error">Login failed. Please check your email and password.</strong> : null}
+        {query.reset ? <strong className="admin-login-notice">Password reset request received. SMTP must be configured before reset email delivery works.</strong> : null}
         <label>
-          邮箱
+          Email
           <input name="email" type="email" defaultValue="support@cheerdmotos.com" required />
         </label>
         <label>
-          密码
-          <input name="password" type="password" placeholder="请输入后台密码" required />
+          Password
+          <input name="password" type="password" placeholder="Enter admin password" required />
         </label>
-        <button className="button primary" type="submit">
-          登录后台
-        </button>
-        <small><a href="/admin/forgot-password">忘记密码？</a></small>
-        <small>生产环境密码存放在 Vercel 环境变量中，不会写入前端代码。</small>
+        <button className="button primary" type="submit">Log in</button>
+        <small><a href="/admin/forgot-password">Forgot password?</a></small>
+        <small>Production credentials are stored in Vercel environment variables and are not committed to frontend code.</small>
       </form>
     </main>
   );

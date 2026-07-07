@@ -49,7 +49,7 @@ export default async function AdminProductsPage() {
           <h2>新增产品</h2>
         </div>
         <form className="admin-form-grid admin-form-wide" action="/api/admin/products" method="post">
-          <input name="name" placeholder="产品名称，例如 CHEERDMOTO X1 Pro Electric Surfboard" required />
+          <input name="name" placeholder="Product name, e.g. CHEERDMOTO XCEED Electric Dirt Bike" required />
           <input name="slug" placeholder="产品链接 slug，例如 x1-pro" required />
           <select name="categorySlug" required>
             {categories.map((category) => <option value={category.slug} key={category.id}>{category.name}</option>)}
@@ -61,13 +61,13 @@ export default async function AdminProductsPage() {
             <option value="scheduled">定时发布</option>
             <option value="archived">已归档</option>
           </select>
-          <input name="sku" placeholder="SKU / 型号，例如 CM-X1-PRO" />
+          <input name="sku" placeholder="SKU / model, e.g. CM-XCEED" />
           <input name="stock" type="number" min="0" step="1" placeholder="库存数量" />
           <input name="price" type="number" min="0" step="1" placeholder="售价 USD" />
           <input name="compareAtPrice" type="number" min="0" step="1" placeholder="原价 / 划线价 USD" />
           <input name="moq" type="number" min="1" step="1" placeholder="MOQ，默认 1" />
           <input name="sortOrder" type="number" min="1" step="1" placeholder="排序权重" />
-          <input name="coverImage" placeholder="产品主图路径，例如 https://cdn.shopify.com/s/files/1/0891/6231/8139/files/2.0-6.jpg?v=1739866508&width=1200" />
+          <input name="coverImage" placeholder="Product image path, e.g. /homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png" />
           <input name="weightDimension" placeholder="重量/尺寸/包装，例如 Export wooden crate by model" />
           <textarea name="galleryImages" placeholder="产品相册图片路径，每行一个，或用英文逗号分隔" />
           <textarea name="shortDescription" placeholder="产品短描述，用于产品卡片和详情页摘要" />

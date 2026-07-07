@@ -5,13 +5,11 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start",
-    "scrape:old": "node scripts/scrape-cheerdmoto.mjs"
+    "start": "next start"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.2",
     "@vercel/blob": "^2.5.0",
-    "cheerio": "^1.2.0",
     "next": "^16.2.10",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",

@@ -1,16 +1,3 @@
-const nextConfig = {
-  images: {
-    remotePatterns: [
-      {
-        protocol: "https",
-        hostname: "cdn.shopify.com"
-      },
-      {
-        protocol: "https",
-        hostname: "cheerdmoto.com"
-      }
-    ]
-  }
-};
+const nextConfig = {};
 
 export default nextConfig;

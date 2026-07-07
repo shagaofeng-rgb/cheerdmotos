@@ -3,7 +3,7 @@ import {newsArticles, type NewsArticle} from '@/lib/news';
 import {siteUrl} from '@/lib/site';
 
 function sourceUrlFrom(post: ContentPost) {
-  return post.source.match(/https?:\/\/\S+/)?.[0]?.replace(/[),.;]+$/, '') || `${siteUrl}/en/blog/${post.slug}`;
+  return post.source.match(/https?:\/\/\S+/)?.[0]?.replace(/[),.;]+$/, '') || `${siteUrl}/discover/${post.slug}`;
 }
 
 function postToBlogArticle(post: ContentPost): NewsArticle {
@@ -17,7 +17,7 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
     title: post.title,
     excerpt: post.excerpt,
     hero: post.coverImage,
-    heroAlt: `${post.title} B2B water sports buying guide image`,
+    heroAlt: `${post.title} CHEERDMOTO buying guide image`,
     imageCredit: {
       publisher: sourceName,
       sourceUrl,
@@ -38,7 +38,7 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
     }],
     keyTakeaways: [
       'Commercial buyers should evaluate product fit, operating workflow and support before purchase.',
-      'CHEERDMOTO buying guides connect product details with resort, rental and distributor use cases.',
+      'CHEERDMOTO buying guides connect product details with rider, dealer and mobility use cases.',
       'Each guide links back to real CHEERDMOTO product lines instead of inventing specifications.'
     ],
     body: [
@@ -49,11 +49,11 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
       {
         heading: 'How to use this guide',
         paragraphs: paragraphs.slice(2, 5).length ? paragraphs.slice(2, 5) : [
-          'Use this guide to compare commercial water sports equipment by rider type, daily workflow, service requirements and sales positioning.'
+          'Use this guide to compare CHEERDMOTO products by rider type, daily workflow, service requirements and dealer fit.'
         ]
       }
     ],
-    productFit: 'Relevant to CHEERDMOTO electric surfboards, fuel-powered surfboards and go-kart boats for resorts, rental fleets and distributors.'
+    productFit: 'Relevant to CHEERDMOTO electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.'
   };
 }
 

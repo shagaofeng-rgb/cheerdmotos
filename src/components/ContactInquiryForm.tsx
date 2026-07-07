@@ -156,11 +156,11 @@ export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
           </label>
           <label>
             <span>{copy.fields.market}</span>
-            <input name="targetMarket" placeholder="GCC, USA, Europe, island resort..." />
+            <input name="targetMarket" placeholder="USA, Canada, Europe, dealer region..." />
           </label>
           <label>
             <span>Water area type</span>
-            <input name="waterArea" placeholder="Beach / lake / lagoon / water park..." />
+            <input name="waterArea" placeholder="Trail / city / warehouse / daily mobility use..." />
           </label>
           <label>
             <span>OEM/ODM requirement</span>

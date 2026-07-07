@@ -114,7 +114,7 @@ export default function PricingDashboard({
         <article>
           <span>销售佣金</span>
           <strong>{money(orders.reduce((sum, order) => sum + order.salespersonCommissionUsd, 0))}</strong>
-          <small>X1/X1 PRO/卡丁船基础 1%，P1/P1 PRO 基础 2%</small>
+          <small>Dirt bike models use a 2% base commission; e-bike and mobility models use 1%.</small>
         </article>
       </section>
 

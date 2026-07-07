@@ -1087,61 +1087,61 @@ h3 {
   font-weight: 800;
 }
 
-.legacy-content {
+.generated-section {
   max-width: 1180px;
   margin: 0 auto;
   padding: clamp(42px, 6vw, 82px) clamp(18px, 4vw, 44px);
 }
 
-.legacy-content.compact {
+.generated-section.compact {
   padding-top: 28px;
 }
 
-.legacy-content > div {
+.generated-section > div {
   color: #242823;
   font-size: 17px;
   line-height: 1.72;
 }
 
-.legacy-content h1,
-.legacy-content h2 {
+.generated-section h1,
+.generated-section h2 {
   margin: 34px 0 14px;
   font-size: clamp(28px, 4vw, 44px);
   line-height: 1.1;
 }
 
-.legacy-content h3 {
+.generated-section h3 {
   margin: 24px 0 10px;
 }
 
-.legacy-content p {
+.generated-section p {
   color: #3f473f;
 }
 
-.legacy-content a {
+.generated-section a {
   color: var(--brand);
   font-weight: 700;
 }
 
-.legacy-content ul,
-.legacy-content ol {
+.generated-section ul,
+.generated-section ol {
   padding-left: 24px;
 }
 
-.legacy-content table {
+.generated-section table {
   display: block;
   width: 100%;
   overflow-x: auto;
   border-collapse: collapse;
 }
 
-.legacy-content th,
-.legacy-content td {
+.generated-section th,
+.generated-section td {
   padding: 12px;
   border: 1px solid var(--line);
 }
 
-.legacy-content img {
+.generated-section img {
   border-radius: 8px;
 }
 
@@ -1769,7 +1769,7 @@ h3 {
 }
 
 
-/* Backend admin, account, checkout styles ported from zaihaisurfing */
+/* Backend admin, account, checkout styles */
 .payment-badges {
   display: flex;
   flex-wrap: wrap;
@@ -2132,7 +2132,7 @@ h3 {
   color: var(--white);
   background:
     linear-gradient(90deg, rgba(5, 8, 12, 0.92), rgba(5, 8, 12, 0.48), rgba(5, 8, 12, 0.08)),
-    url("/assets/banners/zaihai-main-banner-desktop-optimized.jpg") center 38% / cover;
+    linear-gradient(135deg, #111, #242424);
 }
 
 .checkout-hero > div,
@@ -2175,7 +2175,7 @@ h3 {
   padding: clamp(48px, 7vw, 86px) 0;
 }
 
-.shopline-checkout {
+.checkout-form {
   display: grid;
   grid-template-columns: minmax(0, 1fr) minmax(360px, 0.52fr);
   gap: clamp(24px, 5vw, 56px);
@@ -2459,14 +2459,14 @@ h3 {
   border-color: #f3c400;
 }
 
-.shopline-payment-box {
+.checkout-payment-box {
   overflow: hidden;
   background: var(--white);
   border: 1px solid rgba(17, 19, 24, 0.16);
   border-radius: 8px;
 }
 
-.shopline-payment-row {
+.checkout-payment-row {
   display: flex;
   width: 100%;
   min-height: 58px;
@@ -2484,16 +2484,16 @@ h3 {
   transition: background 0.18s ease, box-shadow 0.18s ease;
 }
 
-.shopline-payment-row:first-child {
+.checkout-payment-row:first-child {
   border-top: 0;
 }
 
-.shopline-payment-row.active {
+.checkout-payment-row.active {
   background: linear-gradient(180deg, rgba(255, 209, 0, 0.13), rgba(255, 250, 231, 0.64));
   box-shadow: inset 0 0 0 1px rgba(243, 196, 0, 0.55);
 }
 
-.shopline-payment-row:hover {
+.checkout-payment-row:hover {
   background: #fffdf5;
 }
 
@@ -2509,7 +2509,7 @@ h3 {
   font-size: 17px;
 }
 
-.shopline-payment-row .payment-radio-dot {
+.checkout-payment-row .payment-radio-dot {
   position: static;
   display: inline-block;
   width: 16px;
@@ -2519,17 +2519,17 @@ h3 {
   background: var(--white);
 }
 
-.shopline-payment-row.active .payment-radio-dot,
+.checkout-payment-row.active .payment-radio-dot,
 .checkout-method input:checked {
   accent-color: #2f7ec8;
 }
 
-.shopline-payment-row.active .payment-radio-dot {
+.checkout-payment-row.active .payment-radio-dot {
   border: 5px solid #2f7ec8;
   background: var(--white);
 }
 
-.shopline-card-fields {
+.checkout-card-fields {
   display: grid;
   gap: 14px;
   padding: 16px;
@@ -2626,7 +2626,7 @@ h3 {
   background: rgba(47, 126, 200, 0.08);
 }
 
-.shopline-summary {
+.checkout-summary {
   position: sticky;
   top: 96px;
   display: grid;
@@ -4077,7 +4077,7 @@ html[dir="rtl"] .catalog-product-card dd {
   .product-hero,
   .map-section,
   .video-showcase,
-  .shopline-checkout,
+  .checkout-form,
   .news-detail-hero {
     grid-template-columns: 1fr;
   }
@@ -4158,7 +4158,7 @@ html[dir="rtl"] .catalog-product-card dd {
   }
 
   .checkout-summary-card,
-  .shopline-summary,
+  .checkout-summary,
   .admin-sidebar {
     position: static;
   }
@@ -4743,7 +4743,7 @@ html[dir="rtl"] .catalog-product-card dd {
     grid-template-columns: 1fr;
   }
 
-  .shopline-payment-row {
+  .checkout-payment-row {
     align-items: flex-start;
     flex-direction: column;
     gap: 10px;
@@ -4758,7 +4758,7 @@ html[dir="rtl"] .catalog-product-card dd {
     justify-content: flex-start;
   }
 
-  .shopline-card-fields {
+  .checkout-card-fields {
     padding: 14px;
   }
 

@@ -9,24 +9,20 @@ function slugify(value: string) {
 function topicFingerprint(article: Pick<NewsArticle, 'title' | 'excerpt'>) {
   return `${article.title} ${article.excerpt}`
     .toLowerCase()
-    .replace(/\(\d{4}-\d{2}-\d{2}\)/g, '')
-    .replace(/\s+for\s+(water sports destinations|resort and rental operations|electric surfboards)/g, '')
+    .replace(/\(\d{4}-\d{2}-\d{2}\)/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
 
 function sourceUrlFrom(post: ContentPost) {
-  return post.source.match(/https?:\/\/\S+/)?.[0]?.replace(/[),.;]+$/, '') || `${siteUrl}/en/news/${post.slug}`;
+  return post.source.match(/https?:\/\/\S+/)?.[0]?.replace(/[),.;]+$/, '') || `${siteUrl}/discover/${post.slug}`;
 }
 
 const displayImagePool = [
-  {url: '/assets/news/neom-sindalah.webp', publisher: 'NEOM', sourceUrl: 'https://www.neom.com/en-us/newsroom/neom-board-of-directors-showcases-opening-of-sindalah', note: 'Feature image uses a stable CHEERDMOTO-hosted copy of public NEOM Sindalah newsroom material.'},
-  {url: '/assets/news/neom-sindalah-marina-detail.jpg', publisher: 'NEOM', sourceUrl: 'https://www.neom.com/en-us/newsroom/neom-board-of-directors-showcases-opening-of-sindalah', note: 'Feature image uses a cropped CHEERDMOTO-hosted copy of public NEOM Sindalah newsroom material.'},
-  {url: '/assets/news/shoremaster-waterfront-trends.webp', publisher: 'ShoreMaster', sourceUrl: 'https://www.shoremaster.com/blog/articles/state-of-the-waterfront-industry-2026-key-trends-in-docks-lifts-and-marinas/', note: 'Feature image uses a stable CHEERDMOTO-hosted copy of public ShoreMaster waterfront industry material.'},
-  {url: '/assets/news/shoremaster-vertical-lift-sunset.jpg', publisher: 'ShoreMaster', sourceUrl: 'https://www.shoremaster.com/blog/articles/state-of-the-waterfront-industry-2026-key-trends-in-docks-lifts-and-marinas/', note: 'Feature image uses public ShoreMaster waterfront equipment material saved as a stable CHEERDMOTO-hosted copy.'},
-  {url: '/assets/news/shoremaster-dock-bench.jpg', publisher: 'ShoreMaster', sourceUrl: 'https://www.shoremaster.com/blog/articles/state-of-the-waterfront-industry-2026-key-trends-in-docks-lifts-and-marinas/', note: 'Feature image uses public ShoreMaster dock material saved as a stable CHEERDMOTO-hosted copy.'},
-  {url: '/assets/news/shoremaster-dock-ipe.jpg', publisher: 'ShoreMaster', sourceUrl: 'https://www.shoremaster.com/blog/articles/state-of-the-waterfront-industry-2026-key-trends-in-docks-lifts-and-marinas/', note: 'Feature image uses public ShoreMaster dock material saved as a stable CHEERDMOTO-hosted copy.'},
-  {url: '/assets/news/claritas-electric-surfboard-market.webp', publisher: 'Claritas Intelligence', sourceUrl: 'https://claritasintelligence.com/press-release/global-electric-surfboard-market', note: 'Feature image uses a stable CHEERDMOTO-hosted preview image associated with the public Claritas market release.'}
+  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'},
+  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xtreme_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'},
+  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'},
+  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/smart_b02_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'}
 ];
 
 function postToArticle(post: ContentPost): NewsArticle {
@@ -60,8 +56,8 @@ function postToArticle(post: ContentPost): NewsArticle {
       note: 'Used for source attribution and market context.'
     }],
     keyTakeaways: [
-      'Public market signals continue to support commercial water sports planning.',
-      'Buyers should compare equipment by guest use case, operating workflow and after-sales support.',
+      'CHEERDMOTO product signals support rider, dealer and mobility planning.',
+      'Buyers should compare products by rider use case, operating workflow and after-sales support.',
       'CHEERDMOTO keeps image and source attribution visible on every automated news item.'
     ],
     body: [
@@ -72,11 +68,11 @@ function postToArticle(post: ContentPost): NewsArticle {
       {
         heading: 'Why it matters for buyers',
         paragraphs: paragraphs.slice(2, 4).length ? paragraphs.slice(2, 4) : [
-          'Resorts, rental operators and distributors need market information that connects public industry updates with practical equipment planning.'
+          'Riders, dealers and fleet buyers need product information that connects specifications with practical ownership planning.'
         ]
       }
     ],
-    productFit: 'Relevant to CHEERDMOTO electric surfboards and go-kart boats for resorts, rental fleets and distributor programs.'
+    productFit: 'Relevant to CHEERDMOTO electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.'
   };
 }
 

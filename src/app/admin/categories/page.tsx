@@ -21,7 +21,7 @@ export default async function AdminCategoriesPage() {
         <form className="admin-form-grid" action="/api/admin/categories" method="post">
           <input name="name" placeholder="分类名称" required />
           <input name="slug" placeholder="分类链接 slug" required />
-          <input name="coverImage" placeholder="https://cdn.shopify.com/s/files/1/0891/6231/8139/files/2.0-6.jpg?v=1739866508&width=1200" />
+          <input name="coverImage" placeholder="/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png" />
           <input name="seoTitle" placeholder="SEO 标题" />
           <button type="submit">保存分类</button>
         </form>

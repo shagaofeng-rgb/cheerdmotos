@@ -35,7 +35,7 @@ export async function POST(request: Request) {
         slug: text(formData, 'slug', 140),
         title: text(formData, 'title', 220),
         excerpt: text(formData, 'excerpt', 500),
-        coverImage: text(formData, 'coverImage', 260) || '/assets/banners/surfing-rider-01.png',
+        coverImage: text(formData, 'coverImage', 260) || '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
         category: text(formData, 'category', 120) || (type === 'news' ? 'Industry News' : 'Product Knowledge'),
         content: text(formData, 'content', 6000),
         publishDate: text(formData, 'publishDate', 20) || now.slice(0, 10),
