@@ -6,3 +6,6 @@ dist
 public/legacy-html
 .tools
 old-home.html
+
+.vercel
+.env*
