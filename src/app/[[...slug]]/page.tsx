@@ -443,7 +443,13 @@ function RallyHomepage() {
       </header>
 
       <section className="rally-hero">
-        <img className="rally-hero-bg" src={`${assetBase}/assets/source/xtreme_lifestyle.webp`} alt="" />
+        <img
+          className="rally-hero-bg"
+          src={`${assetBase}/assets/source/xtreme_lifestyle.webp`}
+          alt=""
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="rally-hero-shade" />
         <div className="rally-hero-copy">
           <span className="rally-tag">NEW FLAGSHIP</span>
@@ -488,7 +494,13 @@ function RallyHomepage() {
           {garageProducts.map((product) => (
             <Link className={product.highlight ? "rally-product-card is-hot" : "rally-product-card"} href={product.href} key={product.name}>
               <div className="rally-product-image">
-                <img src={product.image} alt={`${product.name} electric mobility product`} />
+                <img
+                  src={product.image}
+                  alt={`${product.name} electric mobility product`}
+                  loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 25vw"
+                />
               </div>
               <h3>{product.name}</h3>
               <p>{product.spec}</p>
@@ -504,7 +516,13 @@ function RallyHomepage() {
 
       <section className="rally-xceed">
         <div className="rally-lines" />
-        <img src={`${assetBase}/assets/products/xceed_transparent.png`} alt="XCEED electric dirt bike" />
+        <img
+          src={`${assetBase}/assets/products/xceed_transparent.png`}
+          alt="XCEED electric dirt bike"
+          loading="lazy"
+          decoding="async"
+          sizes="(max-width: 820px) 96vw, 58vw"
+        />
         <div className="rally-xceed-copy">
           <span className="rally-tag">XCEED V2</span>
           <h2>BUILT TO FLY. TUNED TO WIN.</h2>
@@ -542,7 +560,13 @@ function RallyHomepage() {
           {cityProducts.map((product) => (
             <Link className="rally-city-card" href={product.href} key={product.name}>
               <div>
-                <img src={product.image} alt={`${product.name} electric bike`} />
+                <img
+                  src={product.image}
+                  alt={`${product.name} electric bike`}
+                  loading="lazy"
+                  decoding="async"
+                  sizes="(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 33vw"
+                />
               </div>
               <h3>{product.name}</h3>
               <p>{product.spec}</p>
@@ -566,7 +590,13 @@ function RallyHomepage() {
           </Link>
           <small>FOLDABLE FRAME - 12° CLIMBING - 360° JOYSTICK</small>
         </div>
-        <img src={`${assetBase}/assets/products/smart_b02_transparent.png`} alt="SMART B02 electric wheelchair" />
+        <img
+          src={`${assetBase}/assets/products/smart_b02_transparent.png`}
+          alt="SMART B02 electric wheelchair"
+          loading="lazy"
+          decoding="async"
+          sizes="(max-width: 820px) 92vw, 42vw"
+        />
       </section>
 
       <section className="rally-trust">
@@ -737,7 +767,13 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
       <RallySiteNav dark />
 
       <section className="rally-category-hero">
-        <img className="rally-category-hero-image" src={design.heroImage} alt="" />
+        <img
+          className="rally-category-hero-image"
+          src={design.heroImage}
+          alt=""
+          decoding="async"
+          fetchPriority="high"
+        />
         <div className="rally-category-hero-shade" />
         <div className="rally-category-hero-copy">
           <span>{design.label}</span>
@@ -779,7 +815,17 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
             {design.products.map((product) => (
               <Link className="rally-collection-card" href={product.href} key={`${product.name}-${product.image}`}>
                 <div>
-                  <img src={product.image} alt={product.name} />
+                  <img
+                    src={product.image}
+                    alt={product.name}
+                    loading="lazy"
+                    decoding="async"
+                    sizes={
+                      design.products.length > 4
+                        ? "(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 25vw"
+                        : "(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 33vw"
+                    }
+                  />
                 </div>
                 <h3>{product.name}</h3>
                 <p>{product.spec}</p>
@@ -800,7 +846,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
       </section>
 
       <section className="rally-editorial">
-        <img src={design.ctaImage} alt="" />
+        <img src={design.ctaImage} alt="" loading="lazy" decoding="async" sizes="100vw" />
         <div>
           <span>{design.label}</span>
           <h2>{design.ctaTitle}</h2>

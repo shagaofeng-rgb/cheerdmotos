@@ -15,6 +15,18 @@
   box-sizing: border-box;
 }
 
+img,
+picture,
+video,
+canvas,
+svg {
+  max-width: 100%;
+}
+
+img {
+  height: auto;
+}
+
 html {
   scroll-behavior: smooth;
 }
@@ -446,12 +458,14 @@ body {
 .rally-product-image {
   display: grid;
   place-items: center;
-  height: 300px;
+  aspect-ratio: 4 / 3;
+  width: 100%;
+  min-height: 0;
 }
 
 .rally-product-image img {
   width: 100%;
-  max-height: 260px;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -523,6 +537,7 @@ body {
   position: relative;
   z-index: 2;
   width: min(760px, 58vw);
+  height: auto;
   justify-self: center;
   filter: drop-shadow(0 34px 22px rgba(0, 0, 0, 0.45));
 }
@@ -585,7 +600,8 @@ body {
 .rally-city-card div {
   display: grid;
   place-items: center;
-  min-height: 260px;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
   margin-bottom: 22px;
   background: #f4f1e7;
   overflow: hidden;
@@ -593,7 +609,7 @@ body {
 
 .rally-city-card img {
   width: 100%;
-  max-height: 245px;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -658,6 +674,7 @@ body {
   position: relative;
   z-index: 2;
   width: min(520px, 42vw);
+  height: auto;
   justify-self: center;
   filter: drop-shadow(0 28px 22px rgba(0, 0, 0, 0.36));
 }
@@ -1226,6 +1243,7 @@ h3 {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  object-position: center;
 }
 
 .rally-category-hero-shade {
@@ -1391,15 +1409,17 @@ h3 {
 .rally-collection-card > div {
   display: grid;
   place-items: center;
-  min-height: 260px;
+  aspect-ratio: 4 / 3;
+  min-height: 0;
   margin-bottom: 18px;
   background: #f4f2eb;
   border-radius: 5px;
+  overflow: hidden;
 }
 
 .rally-collection-card img {
   width: 100%;
-  max-height: 250px;
+  height: 100%;
   object-fit: contain;
 }
 
@@ -1557,7 +1577,7 @@ h3 {
   }
 
   .rally-hero-bg {
-    object-position: 58% center;
+    object-position: 62% center;
   }
 
   .rally-hero-copy {
@@ -1610,6 +1630,14 @@ h3 {
     min-height: 620px;
   }
 
+  .rally-category-hero-image {
+    object-position: 62% center;
+  }
+
+  .rally-editorial > img {
+    object-position: 58% center;
+  }
+
   .rally-category-featurebar,
   .rally-value-strip {
     grid-template-columns: 1fr;
@@ -1623,8 +1651,10 @@ h3 {
     min-height: 500px;
   }
 
-  .rally-product-image {
-    height: 260px;
+  .rally-product-image,
+  .rally-city-card div,
+  .rally-collection-card > div {
+    aspect-ratio: 16 / 11;
   }
 
   .rally-spec-grid {
@@ -1684,6 +1714,11 @@ h3 {
 
   .rally-mobility > img {
     margin-top: 18px;
+    width: min(92vw, 520px);
+  }
+
+  .rally-xceed > img {
+    width: min(96vw, 720px);
   }
 
   h1 {
