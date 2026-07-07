@@ -48,7 +48,7 @@ function MetricTable({title, rows, keyLabel}: {title: string; rows: GoogleSeoMet
                 <td>{position(row.position)}</td>
               </tr>
             )) : (
-              <tr><td colSpan={5}>暂无数据。请先完成 Google Search Console 同步，或检查当前日期范围内是否有搜索表现。</td></tr>
+              <tr><td colSpan={5}>暂无数据。请先完成 Google Search Console 绑定并同步，或检查当前日期范围内是否已有搜索表现。</td></tr>
             )}
           </tbody>
         </table>
@@ -71,7 +71,7 @@ export default async function AdminSeoPage({
       <div className="admin-title">
         <p className="eyebrow">Google SEO 数据</p>
         <h1>Search Console 搜索表现</h1>
-        <p>这里同步 Google Search Console 的真实搜索点击、展示、CTR、平均排名、页面、关键词、国家和设备数据。</p>
+        <p>这里同步 Google Search Console 的真实自然搜索点击、展示、CTR、平均排名、页面、关键词、国家和设备数据。</p>
       </div>
 
       <section className="admin-panel">
