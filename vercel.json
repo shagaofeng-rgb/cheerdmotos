@@ -1,0 +1,20 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/publish-news",
+      "schedule": "0 1 * * *"
+    },
+    {
+      "path": "/api/cron/publish-blog",
+      "schedule": "20 1 * * *"
+    },
+    {
+      "path": "/api/cron/sync-google-seo",
+      "schedule": "30 2 * * *"
+    },
+    {
+      "path": "/api/cron/test-contact-form",
+      "schedule": "0 2 1 * *"
+    }
+  ]
+}
