@@ -35,7 +35,7 @@ export default function AdminTimeFilter({action, range, start, end, label, summa
   }
 
   return (
-    <form ref={formRef} className="admin-time-filter" action={action} method="get" aria-label={`${label}时间筛选`}>
+    <form ref={formRef} className="admin-time-filter" action={action} method="get" aria-label={`${label}筛选`}>
       <div>
         <span>{label}</span>
         <small>{summary}</small>

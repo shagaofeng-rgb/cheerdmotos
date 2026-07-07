@@ -73,11 +73,13 @@ export default function AdminRealtimeSync() {
     };
   }, [router]);
 
+  const label = status === 'updated' ? '数据已更新' : status === 'offline' ? '同步中断' : status === 'syncing' ? '正在同步' : '实时同步';
+
   return (
     <div className={`admin-realtime-sync ${status}`} aria-live="polite">
       <span className="admin-sync-dot" />
       <div>
-        <strong>{status === 'updated' ? '数据已同步' : status === 'offline' ? '同步中断' : status === 'syncing' ? '正在同步' : '实时同步中'}</strong>
+        <strong>{label}</strong>
         <small>
           订单 {payload?.state.orders ?? 0} / 线索 {payload?.state.leads ?? 0} / 事件 {payload?.state.events ?? 0}
           {' '} / {payload?.store?.configured ? '稳定存储' : '临时存储'}

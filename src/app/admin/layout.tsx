@@ -5,12 +5,12 @@ export const metadata = {
     index: false,
     follow: false
   },
-  title: 'CHEERDMOTO Admin'
+  title: 'CHEERDMOTO 后台'
 };
 
 export default function AdminLayout({children}: {children: React.ReactNode}) {
   return (
-    <html lang="en">
+    <html lang="zh-CN">
       <body>{children}</body>
     </html>
   );
