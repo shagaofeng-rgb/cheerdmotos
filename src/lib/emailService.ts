@@ -10,7 +10,7 @@ type MailPayload = {
 
 const DEFAULT_SMTP_HOST = 'smtp.exmail.qq.com';
 const DEFAULT_SENDER_EMAIL = 'support@cheerdmotos.com';
-const ADMIN_NOTIFICATION_EMAIL = 'support@cheerdmotos.com';
+const DEFAULT_ADMIN_NOTIFICATION_EMAIL = 'support@cheerdmotos.com';
 
 function smtpConfig() {
   return {
@@ -37,7 +37,7 @@ function escapeHtml(value: unknown) {
 }
 
 function adminNotificationEmail() {
-  return ADMIN_NOTIFICATION_EMAIL;
+  return process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_FROM || process.env.EMAIL_FROM || DEFAULT_ADMIN_NOTIFICATION_EMAIL;
 }
 
 function orderRows(order: StoreOrder) {
