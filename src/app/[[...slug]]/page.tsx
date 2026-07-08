@@ -10,6 +10,8 @@ import {
   segmentsFromRoute,
   siteData
 } from "@/lib/site";
+import {getAllBlogArticles} from "@/lib/blogFeed";
+import {getAllNewsArticles} from "@/lib/newsFeed";
 import type { SiteItem } from "@/types";
 
 type PageProps = {
@@ -149,7 +151,8 @@ const siteNav = [
     label: "DISCOVER",
     href: "#",
     children: [
-      { label: "Blog", href: "/discover" },
+      { label: "News", href: "/news" },
+      { label: "Blog", href: "/blog" },
       { label: "About Us", href: "/about" },
       { label: "Rider Club", href: "/rider-club" },
       { label: "B2B Customer", href: "/dealer-program" },
@@ -332,7 +335,7 @@ function RallySiteNav({ dark = false }: { dark?: boolean }) {
         <Link className="rally-signin" href="/account/login">
           Sign In
         </Link>
-        <Link className="rally-icon-link" href="/products" aria-label="Search">
+        <Link className="rally-icon-link" href="/search" aria-label="Search">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="11" cy="11" r="7" />
             <path d="m16.5 16.5 4 4" />
@@ -390,7 +393,7 @@ function RallyHomepage() {
         <Link className="rally-signin" href="/account/login">
             Sign In
           </Link>
-          <Link className="rally-icon-link" href="/products" aria-label="Search">
+          <Link className="rally-icon-link" href="/search" aria-label="Search">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <circle cx="11" cy="11" r="7" />
               <path d="m16.5 16.5 4 4" />
@@ -420,7 +423,7 @@ function RallyHomepage() {
         <img
           className="rally-hero-bg"
           src={`${assetBase}/assets/source/xtreme_lifestyle.webp`}
-          alt=""
+          alt="CHEERDMOTO XTREME electric dirt bike rider on rally terrain"
           decoding="async"
           fetchPriority="high"
         />
@@ -632,6 +635,7 @@ function RallyHomepage() {
           <strong>COMPANY</strong>
           <Link href="/about">About us</Link>
           <Link href="/discover">Rider club</Link>
+          <Link href="/news">News</Link>
           <Link href="/dealer-program">B2B dealers</Link>
           <Link href="/dealer-program">Affiliate program</Link>
         </div>
@@ -697,11 +701,31 @@ function HomePage({ item }: { item: SiteItem }) {
   );
 }
 
-function ProductPage({ item }: { item: SiteItem }) {
+async function ProductPage({ item }: { item: SiteItem }) {
   const related = relatedItems(item);
+  const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
+  const linkedNews = news.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
+  const linkedBlogs = blogs.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
+  const productJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Product",
+    name: item.title,
+    description: item.description,
+    image: item.image ? [`https://cheerdmotos.com${item.image}`] : [],
+    brand: { "@type": "Brand", name: "CHEERDMOTO" },
+    sku: item.slug,
+    offers: item.price ? {
+      "@type": "Offer",
+      priceCurrency: item.currency || "USD",
+      price: String(item.price).replace(/[^0-9.]/g, ""),
+      availability: item.availability || "https://schema.org/InStock",
+      url: `https://cheerdmotos.com${item.route}`
+    } : undefined
+  };
 
   return (
     <main>
+      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}} />
       <section className="product-hero">
         <div className="product-gallery">
           {item.image ? (
@@ -728,8 +752,32 @@ function ProductPage({ item }: { item: SiteItem }) {
         </div>
       </section>
       <GeneratedContent item={item} />
+      <ArticleLinkGrid title="Related News" basePath="/news" items={linkedNews.length ? linkedNews : news.slice(0, 3)} />
+      <ArticleLinkGrid title="Related Guides" basePath="/blog" items={linkedBlogs.length ? linkedBlogs : blogs.slice(0, 3)} />
       <ProductGrid title="Related Products" items={related} />
     </main>
+  );
+}
+
+function ArticleLinkGrid({title, basePath, items}: {title: string; basePath: "/news" | "/blog"; items: Awaited<ReturnType<typeof getAllNewsArticles>>}) {
+  if (!items.length) return null;
+  return (
+    <section className="section">
+      <div className="section-heading">
+        <h2>{title}</h2>
+      </div>
+      <div className="content-grid">
+        {items.map((article) => (
+          <Link className="content-card" href={`${basePath}/${article.slug}`} key={`${basePath}-${article.slug}`}>
+            <div className="content-image">
+              <Image src={article.hero} alt={article.heroAlt || article.title} fill sizes="(max-width: 700px) 100vw, 30vw" />
+            </div>
+            <h3>{article.title}</h3>
+            <p>{article.excerpt}</p>
+          </Link>
+        ))}
+      </div>
+    </section>
   );
 }
 
@@ -742,7 +790,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
         <img
           className="rally-category-hero-image"
           src={design.heroImage}
-          alt=""
+          alt={`${design.headline} CHEERDMOTO collection`}
           decoding="async"
           fetchPriority="high"
         />
@@ -818,7 +866,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
       </section>
 
       <section className="rally-editorial">
-        <img src={design.ctaImage} alt="" loading="lazy" decoding="async" sizes="100vw" />
+        <img src={design.ctaImage} alt={`${design.ctaTitle} CHEERDMOTO editorial image`} loading="lazy" decoding="async" sizes="100vw" />
         <div>
           <span>{design.label}</span>
           <h2>{design.ctaTitle}</h2>
@@ -849,7 +897,8 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
         <div>
           <h3>COMPANY</h3>
           <Link href="/about">About us</Link>
-          <Link href="/discover">Blog</Link>
+          <Link href="/news">News</Link>
+          <Link href="/blog">Blog</Link>
           <Link href="/dealer-program">B2B customer</Link>
         </div>
       </footer>

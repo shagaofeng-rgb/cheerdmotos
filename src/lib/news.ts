@@ -14,6 +14,11 @@
   keyTakeaways: string[];
   body: {heading: string; paragraphs: string[]}[];
   productFit: string;
+  productSlugs?: string[];
+  geoSummary?: string;
+  sourceName?: string;
+  sourceUrl?: string;
+  sourcePublishedAt?: string;
 };
 
 const siteSource = 'https://cheerdmotos.com';

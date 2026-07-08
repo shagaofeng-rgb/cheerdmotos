@@ -8,7 +8,10 @@ export const metadata: Metadata = {
     template: "%s | CHEERDMOTO"
   },
   description:
-    "Wholesale and fleet solutions for dealers, couriers, and patrol. Dealer pricing, bulk orders, warranty, and worldwide shipping."
+    "Wholesale and fleet solutions for dealers, couriers, and patrol. Dealer pricing, bulk orders, warranty, and worldwide shipping.",
+  icons: {
+    icon: "/favicon.ico"
+  }
 };
 
 export default function RootLayout({

@@ -25,7 +25,8 @@ const navGroups = [
       {key: 'reviews', label: '评价管理', href: '/admin/reviews'},
       {key: 'media', label: '媒体库', href: '/admin/media'},
       {key: 'blog', label: '博客内容', href: '/admin/blog'},
-      {key: 'news', label: '新闻内容', href: '/admin/news'}
+      {key: 'news', label: '新闻内容', href: '/admin/news'},
+      {key: 'news-automation', label: 'News 自动化', href: '/admin/news-automation'}
     ]
   },
   {

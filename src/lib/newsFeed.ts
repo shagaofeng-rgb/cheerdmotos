@@ -72,7 +72,12 @@ function postToArticle(post: ContentPost): NewsArticle {
         ]
       }
     ],
-    productFit: 'Relevant to CHEERDMOTO electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.'
+    productFit: 'Relevant to CHEERDMOTO electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.',
+    productSlugs: post.productSlugs || [],
+    geoSummary: post.geoSummary,
+    sourceName: post.sourceName,
+    sourceUrl: post.sourceUrl,
+    sourcePublishedAt: post.sourcePublishedAt
   };
 }
 
