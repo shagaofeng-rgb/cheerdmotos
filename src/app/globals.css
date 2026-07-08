@@ -5859,6 +5859,72 @@ html[dir="rtl"] .catalog-product-card dd {
   color: #c2410c;
 }
 
+.admin-three-col {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.admin-danger-text {
+  color: #dc2626;
+}
+
+.admin-password-control {
+  display: flex;
+  align-items: center;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.admin-login-card .admin-password-control input {
+  border: 0;
+  box-shadow: none;
+}
+
+.admin-password-toggle {
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 40px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #6b7280;
+  cursor: pointer;
+  padding: 0;
+}
+
+.admin-password-toggle svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: currentColor;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  stroke-width: 1.8;
+}
+
+.admin-checkbox-line {
+  display: flex !important;
+  grid-template-columns: none !important;
+  align-items: center;
+  gap: 8px !important;
+  color: #4b5563;
+  font-size: 13px;
+}
+
+.admin-checkbox-line input {
+  width: 16px !important;
+  min-height: 16px !important;
+  padding: 0 !important;
+}
+
+.admin-login-card button:disabled {
+  cursor: wait;
+  opacity: 0.72;
+}
+
 @media (max-width: 1100px) {
   .admin-dashboard {
     grid-template-columns: 220px minmax(0, 1fr);
@@ -5894,7 +5960,8 @@ html[dir="rtl"] .catalog-product-card dd {
   }
 
   .admin-metrics,
-  .admin-two-col {
+  .admin-two-col,
+  .admin-three-col {
     grid-template-columns: 1fr;
   }
 

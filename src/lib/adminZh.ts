@@ -50,6 +50,17 @@ export function zhPaymentMethod(method: string) {
   return map[method] || method || '未知';
 }
 
+export function zhShipmentStatus(status: string) {
+  const map: Record<string, string> = {
+    unshipped: '未发货',
+    shipped: '已发货',
+    in_transit: '运输中',
+    delivered: '已送达',
+    returned: '已退回'
+  };
+  return map[status] || status || '未知';
+}
+
 export function zhLeadStatus(status: string) {
   const map: Record<string, string> = {
     'New Lead': '新线索',
@@ -65,7 +76,7 @@ export function zhLeadStatus(status: string) {
 export function zhEventType(type: string) {
   const map: Record<string, string> = {
     page_view: '页面访问',
-    product_view: '产品详情访问',
+    product_view: '商品详情访问',
     commerce_click: '商业按钮点击',
     checkout_start: '进入结账',
     checkout_submit: '提交结账',
@@ -80,7 +91,8 @@ export function zhEventType(type: string) {
     refund_created: '退款记录',
     authorization_action: '预授权操作',
     form_submit: '表单提交',
-    contact_click: '联系按钮点击'
+    contact_click: '联系按钮点击',
+    contact_inquiry: '客户询盘'
   };
   return map[type] || type || '未知事件';
 }
