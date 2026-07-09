@@ -147,6 +147,7 @@ const siteNav = [
   },
   { label: "ACCESSORIES", href: "/accessories" },
   { label: "REFURBISHED & CLEARANCE", href: "/clearance" },
+  { label: "NEWS", href: "/news" },
   {
     label: "DISCOVER",
     href: "#",
