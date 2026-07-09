@@ -15,24 +15,25 @@ export async function GET(request: Request) {
 
   const origin = new URL(request.url).origin;
   const checkedAt = new Date().toISOString();
+  const notificationEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_FROM || 'support@cheerdmotos.com';
   const payload = {
-    name: 'CHEERDMOTO Monthly Contact Form Health Check',
-    email: 'monthly-form-check@cheerdmotos.com',
+    name: 'CHEERDMOTO Semi-Monthly Contact Form Health Check',
+    email: 'semi-monthly-form-check@cheerdmotos.com',
     phone: '+86 17621485205',
     country: 'Automated Test',
     company: 'CHEERDMOTO Website Monitor',
     buyerType: 'Website health check',
     product: 'Contact form email delivery test',
-    quantity: '1 monthly test',
+    quantity: '1 semi-monthly test',
     targetMarket: 'Internal operations',
     waterArea: 'N/A',
     oem: 'No',
     destinationPort: 'N/A',
-    message: `Automated monthly contact form test. If this email arrives at support@cheerdmotos.com, the website form email delivery path is working. Checked at ${checkedAt}.`,
+    message: `Automated semi-monthly contact form test. If this email arrives at ${notificationEmail}, the website form email delivery path is working. Checked at ${checkedAt}.`,
     page: '/en/contact?form_health_check=1',
     referrer: 'vercel-cron',
-    visitorId: 'monthly-contact-form-health-check',
-    sessionId: `monthly-contact-form-health-check-${checkedAt.slice(0, 10)}`,
+    visitorId: 'semi-monthly-contact-form-health-check',
+    sessionId: `semi-monthly-contact-form-health-check-${checkedAt.slice(0, 10)}`,
     website: ''
   };
 
@@ -57,7 +58,7 @@ export async function GET(request: Request) {
         endpointStatus: response.status,
         emailStatus,
         inquiryId: result.id || '',
-        message: ok ? 'Monthly contact form email test sent.' : 'Monthly contact form email test did not complete successfully.',
+        message: ok ? 'Semi-monthly contact form email test sent.' : 'Semi-monthly contact form email test did not complete successfully.',
         result
       },
       {status: ok ? 200 : 500}
