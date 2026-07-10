@@ -128,7 +128,7 @@ const siteNav = [
     children: [
       { label: "Xceed - 72V", href: "/products/xceed-electric-dirt-bike" },
       { label: "Xtreme - 96V", href: "/products/cheerdmoto-performance-96v-electric-dirtbike-xtreme" },
-      { label: "Refurbished Xceed", href: "/products/cheerdmoto-xceed-72v-electric-dirt-bike-refurbished" }
+      { label: "Refurbished Xceed", href: "/clearance" }
     ]
   },
   {
@@ -229,7 +229,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
         spec: "72V inspected clearance model",
         price: "From $2,599",
         image: `${designBase}/01_category_dirt_bikes/${usableDir}/01_extracted_from_page/dirt_bikes_use_product_card_03.png`,
-        href: "/products/cheerdmoto-xceed-72v-electric-dirt-bike-refurbished"
+        href: "/clearance"
       }
     ]
   },
