@@ -3,7 +3,8 @@ import {readStoreObject, writeStoreObject} from '@/lib/durableStore';
 
 const STORE_FILE = 'google-seo-snapshot.json';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
-const WEBMASTERS_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+const WEBMASTERS_READONLY_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
+const WEBMASTERS_WRITE_SCOPE = 'https://www.googleapis.com/auth/webmasters';
 
 export type GoogleSeoMetricRow = {
   key: string;
@@ -85,7 +86,7 @@ function getConfiguredSiteUrl() {
     process.env.GSC_SITE_URL ||
     process.env.SITE_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://cheerdmotos.com/'
+    'https://www.cheerdmotos.com/'
   ).trim();
 }
 
@@ -122,12 +123,12 @@ function base64UrlJson(value: unknown) {
   return Buffer.from(JSON.stringify(value)).toString('base64url');
 }
 
-async function getAccessToken(credentials: ServiceAccountCredentials) {
+async function getAccessToken(credentials: ServiceAccountCredentials, scope = WEBMASTERS_READONLY_SCOPE) {
   const now = Math.floor(Date.now() / 1000);
   const header = base64UrlJson({alg: 'RS256', typ: 'JWT'});
   const claim = base64UrlJson({
     iss: credentials.client_email,
-    scope: WEBMASTERS_SCOPE,
+    scope,
     aud: TOKEN_URL,
     exp: now + 3600,
     iat: now
@@ -207,6 +208,47 @@ export function googleSeoConfigStatus() {
         ? 'client_email_private_key'
         : 'missing'
   };
+}
+
+export async function submitSitemapToGoogle(sitemapUrl: string) {
+  const enabled = String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || '').toLowerCase() === 'true';
+  if (!enabled) {
+    return {ok: true, submitted: false, message: 'Google Search Console sitemap submission is disabled.'};
+  }
+
+  const credentials = readCredentials();
+  if (!credentials) {
+    return {ok: false, submitted: false, message: 'Missing Google Search Console service account credentials.'};
+  }
+
+  const siteUrl = getConfiguredSiteUrl();
+  const configuredSitemapUrl = (process.env.GOOGLE_SEARCH_CONSOLE_SITEMAP_URL || sitemapUrl).trim();
+  if (!siteUrl || !configuredSitemapUrl) {
+    return {ok: false, submitted: false, message: 'Missing Google Search Console site URL or sitemap URL.'};
+  }
+
+  try {
+    const sitemapResponse = await fetch(configuredSitemapUrl, {cache: 'no-store', signal: AbortSignal.timeout(12000)});
+    if (!sitemapResponse.ok) {
+      return {ok: false, submitted: false, message: `Sitemap URL is not reachable: ${sitemapResponse.status}`};
+    }
+
+    const token = await getAccessToken(credentials, WEBMASTERS_WRITE_SCOPE);
+    const endpoint = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/sitemaps/${encodeURIComponent(configuredSitemapUrl)}`;
+    const response = await fetch(endpoint, {
+      method: 'PUT',
+      headers: {Authorization: `Bearer ${token}`},
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15000)
+    });
+    const payload = await response.json().catch(() => ({})) as {error?: {message?: string}};
+    if (!response.ok) {
+      return {ok: false, submitted: false, message: payload.error?.message || `Google sitemap submit failed: ${response.status}`};
+    }
+    return {ok: true, submitted: true, message: 'Google Search Console sitemap submit request accepted.'};
+  } catch (error) {
+    return {ok: false, submitted: false, message: error instanceof Error ? error.message : 'Unknown Google sitemap submit error'};
+  }
 }
 
 export async function readGoogleSeoSnapshot() {

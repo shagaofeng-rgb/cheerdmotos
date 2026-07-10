@@ -712,7 +712,7 @@ async function ProductPage({ item }: { item: SiteItem }) {
     "@type": "Product",
     name: item.title,
     description: item.description,
-    image: item.image ? [`https://cheerdmotos.com${item.image}`] : [],
+    image: item.image ? [`https://www.cheerdmotos.com${item.image}`] : [],
     brand: { "@type": "Brand", name: "CHEERDMOTO" },
     sku: item.slug,
     offers: item.price ? {
@@ -720,7 +720,7 @@ async function ProductPage({ item }: { item: SiteItem }) {
       priceCurrency: item.currency || "USD",
       price: String(item.price).replace(/[^0-9.]/g, ""),
       availability: item.availability || "https://schema.org/InStock",
-      url: `https://cheerdmotos.com${item.route}`
+      url: `https://www.cheerdmotos.com${item.route}`
     } : undefined
   };
 

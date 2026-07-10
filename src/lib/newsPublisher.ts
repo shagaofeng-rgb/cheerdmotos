@@ -1,5 +1,6 @@
 import {readAdminStore, writeAdminStore, type ContentPost} from '@/lib/backendStore';
 import {appendNewsAudit, appendNewsJobLog} from '@/lib/newsAutomationStore';
+import {recordSitemapContentChange} from '@/lib/sitemapManager';
 import {productSlugs, products, siteUrl, type ProductSlug} from '@/lib/site';
 
 type Candidate = {
@@ -269,6 +270,7 @@ export async function publishDailyAutomatedNews(target = DAILY_MIN_NEWS) {
 
   if (newPosts.length) {
     await writeAdminStore((current) => ({...current, posts: [...newPosts, ...current.posts]}));
+    await Promise.all(newPosts.map((post) => recordSitemapContentChange({type: 'news', action: 'published', slug: post.slug, title: post.title})));
   }
 
   const totalPublishedToday = alreadyPublishedToday + newPosts.length;

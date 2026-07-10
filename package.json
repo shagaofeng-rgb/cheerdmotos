@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "start": "next start"
+    "start": "next start",
+    "sitemap:generate": "node scripts/sitemap-generate.mjs",
+    "sitemap:test": "node scripts/sitemap-test.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.2",

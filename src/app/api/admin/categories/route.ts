@@ -1,5 +1,6 @@
 import {requireAdminApiSession} from '@/lib/adminAuth';
 import {listAdminCategories, writeAdminStore} from '@/lib/backendStore';
+import {recordSitemapContentChange} from '@/lib/sitemapManager';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -19,14 +20,16 @@ export async function POST(request: Request) {
   if (response) return response;
   const formData = await request.formData();
   const now = new Date().toISOString();
+  const slug = text(formData, 'slug', 120);
+  const name = text(formData, 'name', 160);
   await writeAdminStore((store) => ({
     ...store,
     categories: [
       ...store.categories,
       {
         id: `cat-${Date.now()}`,
-        name: text(formData, 'name', 160),
-        slug: text(formData, 'slug', 120),
+        name,
+        slug,
         description: '',
         coverImage: text(formData, 'coverImage', 260),
         seoTitle: text(formData, 'seoTitle', 180),
@@ -38,5 +41,6 @@ export async function POST(request: Request) {
       }
     ]
   }));
+  await recordSitemapContentChange({type: 'category', action: 'created', slug, title: name});
   return Response.redirect(new URL('/admin/categories', request.url), 303);
 }

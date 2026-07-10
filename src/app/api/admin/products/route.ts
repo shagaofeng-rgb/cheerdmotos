@@ -1,5 +1,6 @@
 import {requireAdminApiSession} from '@/lib/adminAuth';
 import {listAdminProducts, writeAdminStore, type AdminProduct} from '@/lib/backendStore';
+import {recordSitemapContentChange} from '@/lib/sitemapManager';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -33,12 +34,14 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const now = new Date().toISOString();
   const categorySlug = text(formData, 'categorySlug', 120);
+  const slug = text(formData, 'slug', 120);
+  const name = text(formData, 'name', 180);
   await writeAdminStore((store) => {
     const category = store.categories.find((item) => item.slug === categorySlug);
     const product: AdminProduct = {
       id: `prod-${Date.now()}`,
-      slug: text(formData, 'slug', 120),
-      name: text(formData, 'name', 180),
+      slug,
+      name,
       categorySlug,
       categoryName: category?.name || categorySlug,
       coverImage: text(formData, 'coverImage', 260) || '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
@@ -68,5 +71,6 @@ export async function POST(request: Request) {
     };
     return {...store, products: [...store.products, product]};
   });
+  await recordSitemapContentChange({type: 'product', action: 'created', slug, title: name});
   return Response.redirect(new URL('/admin/products', request.url), 303);
 }

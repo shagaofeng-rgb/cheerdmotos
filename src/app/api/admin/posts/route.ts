@@ -1,5 +1,6 @@
 import {requireAdminApiSession} from '@/lib/adminAuth';
 import {listAdminPosts, writeAdminStore, type ContentType, type PublishStatus} from '@/lib/backendStore';
+import {recordSitemapContentChange} from '@/lib/sitemapManager';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -25,6 +26,8 @@ export async function POST(request: Request) {
   const formData = await request.formData();
   const now = new Date().toISOString();
   const type = (text(formData, 'type', 12) === 'news' ? 'news' : 'blog') as ContentType;
+  const slug = text(formData, 'slug', 140);
+  const title = text(formData, 'title', 220);
   await writeAdminStore((store) => ({
     ...store,
     posts: [
@@ -32,8 +35,8 @@ export async function POST(request: Request) {
       {
         id: `post-${Date.now()}`,
         type,
-        slug: text(formData, 'slug', 140),
-        title: text(formData, 'title', 220),
+        slug,
+        title,
         excerpt: text(formData, 'excerpt', 500),
         coverImage: text(formData, 'coverImage', 260) || '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
         category: text(formData, 'category', 120) || (type === 'news' ? 'Industry News' : 'Product Knowledge'),
@@ -50,5 +53,6 @@ export async function POST(request: Request) {
       }
     ]
   }));
+  await recordSitemapContentChange({type, action: 'created', slug, title});
   return Response.redirect(new URL(`/admin/${type}`, request.url), 303);
 }

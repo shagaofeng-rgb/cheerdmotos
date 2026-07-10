@@ -90,7 +90,7 @@ function cleanSiteData(data: SiteData): SiteData {
   });
   return {
     generatedAt: data.generatedAt,
-    origin: "https://cheerdmotos.com",
+    origin: "https://www.cheerdmotos.com",
     navigation: [],
     products,
     collections,
@@ -104,8 +104,8 @@ function cleanSiteData(data: SiteData): SiteData {
 
 export const siteData = cleanSiteData(rawData as SiteData);
 
-const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://cheerdmotos.com";
-export const siteUrl = configuredSiteUrl.replace(/^https:\/\/www\./, "https://").replace(/\/$/, "");
+const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.cheerdmotos.com";
+export const siteUrl = configuredSiteUrl.replace(/^http:\/\//, "https://").replace(/\/$/, "");
 
 export const productSlugs = [
   "xceed-electric-dirt-bike",

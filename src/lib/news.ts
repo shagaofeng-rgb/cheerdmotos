@@ -21,7 +21,7 @@
   sourcePublishedAt?: string;
 };
 
-const siteSource = 'https://cheerdmotos.com';
+const siteSource = 'https://www.cheerdmotos.com';
 
 export const newsArticles: NewsArticle[] = [
   {
