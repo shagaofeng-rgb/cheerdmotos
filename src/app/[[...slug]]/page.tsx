@@ -8,7 +8,8 @@ import {
   relatedItems,
   routeFromSegments,
   segmentsFromRoute,
-  siteData
+  siteData,
+  siteUrl
 } from "@/lib/site";
 import {getAllBlogArticles} from "@/lib/blogFeed";
 import {getAllNewsArticles} from "@/lib/newsFeed";
@@ -34,7 +35,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
     title: item.kind === "home" ? { absolute: item.title } : item.title,
     description: item.description,
     alternates: {
-      canonical: item.route
+      canonical: `${siteUrl}${item.route === "/" ? "/" : item.route}`
     },
     openGraph: {
       title: item.title,

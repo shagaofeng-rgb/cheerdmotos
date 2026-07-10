@@ -2,7 +2,7 @@ import type {Metadata} from 'next';
 import Link from 'next/link';
 import {getAllBlogArticles} from '@/lib/blogFeed';
 import {getAllNewsArticles} from '@/lib/newsFeed';
-import {siteData} from '@/lib/site';
+import {siteData, siteUrl} from '@/lib/site';
 
 type Props = {searchParams: Promise<{q?: string}>};
 
@@ -11,7 +11,8 @@ export const dynamic = 'force-dynamic';
 export const metadata: Metadata = {
   title: 'Search CHEERDMOTO',
   description: 'Search CHEERDMOTO products, news, buying guides and support pages.',
-  alternates: {canonical: '/search'}
+  alternates: {canonical: `${siteUrl}/search`},
+  robots: {index: false, follow: true}
 };
 
 export default async function SearchPage({searchParams}: Props) {

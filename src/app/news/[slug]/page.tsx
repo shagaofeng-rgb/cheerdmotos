@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import {notFound} from 'next/navigation';
 import {ArticleDetailView} from '@/components/ArticleViews';
 import {getAllNewsSlugs, getNewsArticleBySlug} from '@/lib/newsFeed';
+import {siteUrl} from '@/lib/site';
 
 type Props = {params: Promise<{slug: string}>};
 
@@ -18,7 +19,7 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
   return {
     title: article.title,
     description: article.excerpt,
-    alternates: {canonical: `/news/${article.slug}`},
+    alternates: {canonical: `${siteUrl}/news/${article.slug}`},
     openGraph: {
       title: article.title,
       description: article.excerpt,

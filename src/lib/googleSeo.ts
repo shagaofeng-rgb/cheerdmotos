@@ -14,6 +14,17 @@ export type GoogleSeoMetricRow = {
   position: number;
 };
 
+export type GoogleSeoSitemap = {
+  path: string;
+  lastSubmitted: string;
+  lastDownloaded: string;
+  pending: boolean;
+  warnings: number;
+  errors: number;
+  submitted: number;
+  indexed: number;
+};
+
 export type GoogleSeoSnapshot = {
   status: 'ok' | 'not_configured' | 'error';
   siteUrl: string;
@@ -32,6 +43,7 @@ export type GoogleSeoSnapshot = {
   queries: GoogleSeoMetricRow[];
   countries: GoogleSeoMetricRow[];
   devices: GoogleSeoMetricRow[];
+  sitemaps: GoogleSeoSitemap[];
   error: string;
 };
 
@@ -60,6 +72,7 @@ function emptySnapshot(status: GoogleSeoSnapshot['status'], message = ''): Googl
     queries: [],
     countries: [],
     devices: [],
+    sitemaps: [],
     error: message
   };
 }
@@ -210,6 +223,39 @@ export function googleSeoConfigStatus() {
   };
 }
 
+async function querySitemaps(accessToken: string, siteUrl: string): Promise<GoogleSeoSitemap[]> {
+  const endpoint = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/sitemaps`;
+  const response = await fetch(endpoint, {
+    headers: {Authorization: `Bearer ${accessToken}`},
+    cache: 'no-store'
+  });
+  const payload = await response.json().catch(() => ({})) as {
+    sitemap?: Array<{
+      path?: string;
+      lastSubmitted?: string;
+      lastDownloaded?: string;
+      isPending?: boolean;
+      warnings?: string;
+      errors?: string;
+      contents?: Array<{submitted?: string; indexed?: string}>;
+    }>;
+    error?: {message?: string};
+  };
+  if (!response.ok) {
+    throw new Error(payload.error?.message || `Google Search Console sitemap query failed: ${response.status}`);
+  }
+  return (payload.sitemap || []).map((item) => ({
+    path: item.path || '',
+    lastSubmitted: item.lastSubmitted || '',
+    lastDownloaded: item.lastDownloaded || '',
+    pending: Boolean(item.isPending),
+    warnings: Number(item.warnings || 0),
+    errors: Number(item.errors || 0),
+    submitted: (item.contents || []).reduce((total, content) => total + Number(content.submitted || 0), 0),
+    indexed: (item.contents || []).reduce((total, content) => total + Number(content.indexed || 0), 0)
+  }));
+}
+
 export async function submitSitemapToGoogle(sitemapUrl: string) {
   const enabled = String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || '').toLowerCase() === 'true';
   if (!enabled) {
@@ -269,12 +315,13 @@ export async function syncGoogleSeoSnapshot() {
   const range = defaultDateRange();
   try {
     const token = await getAccessToken(credentials);
-    const [totalRows, pageRows, queryRows, countryRows, deviceRows] = await Promise.all([
+    const [totalRows, pageRows, queryRows, countryRows, deviceRows, sitemaps] = await Promise.all([
       querySearchAnalytics(token, siteUrl, range, []),
       querySearchAnalytics(token, siteUrl, range, ['page']),
       querySearchAnalytics(token, siteUrl, range, ['query']),
       querySearchAnalytics(token, siteUrl, range, ['country']),
-      querySearchAnalytics(token, siteUrl, range, ['device'])
+      querySearchAnalytics(token, siteUrl, range, ['device']),
+      querySitemaps(token, siteUrl)
     ]);
     const snapshot: GoogleSeoSnapshot = {
       status: 'ok',
@@ -286,6 +333,7 @@ export async function syncGoogleSeoSnapshot() {
       queries: normalizeRows(queryRows),
       countries: normalizeRows(countryRows),
       devices: normalizeRows(deviceRows),
+      sitemaps,
       error: ''
     };
     await writeStoreObject(STORE_FILE, snapshot);
@@ -298,6 +346,7 @@ export async function syncGoogleSeoSnapshot() {
       siteUrl,
       syncedAt: new Date().toISOString(),
       range,
+      sitemaps: previous?.sitemaps || [],
       error: error instanceof Error ? error.message : 'Unknown Google Search Console sync error'
     };
     await writeStoreObject(STORE_FILE, snapshot);

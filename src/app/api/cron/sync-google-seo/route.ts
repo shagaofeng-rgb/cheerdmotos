@@ -23,6 +23,7 @@ export async function GET(request: Request) {
     siteUrl: snapshot.siteUrl,
     range: snapshot.range,
     totals: snapshot.totals,
+    sitemaps: snapshot.sitemaps,
     error: snapshot.error
   }, {status: acceptable ? 200 : 500});
 }

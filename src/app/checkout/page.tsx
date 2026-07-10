@@ -7,7 +7,8 @@ import { shippingEstimateFor } from "@/lib/shipping";
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Submit buyer, shipping and payment details for CHEERDMOTO orders."
+  description: "Submit buyer, shipping and payment details for CHEERDMOTO orders.",
+  robots: { index: false, follow: false }
 };
 
 export default async function CheckoutPage({

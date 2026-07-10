@@ -1,13 +1,14 @@
 import type {Metadata} from 'next';
 import {ArticleListView} from '@/components/ArticleViews';
 import {getAllNewsArticles} from '@/lib/newsFeed';
+import {siteUrl} from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
   title: 'CHEERDMOTO News',
   description: 'Source-attributed electric mobility news, market updates and CHEERDMOTO product analysis.',
-  alternates: {canonical: '/news'}
+  alternates: {canonical: `${siteUrl}/news`}
 };
 
 export default async function NewsPage() {
