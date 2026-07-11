@@ -13,6 +13,8 @@ import {
 } from "@/lib/site";
 import {getAllBlogArticles} from "@/lib/blogFeed";
 import {getAllNewsArticles} from "@/lib/newsFeed";
+import ProductDetail from '@/components/ProductDetail';
+import {productPresentation} from '@/lib/productPresentation';
 import type { SiteItem } from "@/types";
 
 type PageProps = {
@@ -32,15 +34,21 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   if (!item) return {};
 
   return {
-    title: item.kind === "home" ? { absolute: item.title } : item.title,
-    description: item.description,
+    title: item.kind === "home" ? { absolute: item.title } : item.kind === 'product' ? productPresentation(item).displayName : item.title,
+    description: item.kind === 'product' ? productPresentation(item).shortDescription : item.description,
     alternates: {
       canonical: `${siteUrl}${item.route === "/" ? "/" : item.route}`
     },
     openGraph: {
-      title: item.title,
-      description: item.description,
+      title: item.kind === 'product' ? productPresentation(item).displayName : item.title,
+      description: item.kind === 'product' ? productPresentation(item).shortDescription : item.description,
       images: item.image ? [{ url: item.image }] : []
+    },
+    twitter: {
+      card: 'summary_large_image',
+      title: item.kind === 'product' ? productPresentation(item).displayName : item.title,
+      description: item.kind === 'product' ? productPresentation(item).shortDescription : item.description,
+      images: item.image ? [item.image] : []
     }
   };
 }
@@ -348,7 +356,7 @@ function RallySiteNav({ dark = false }: { dark?: boolean }) {
             <path d="M20.8 4.6c-1.8-1.9-4.8-1.8-6.6.1L12 7l-2.2-2.3c-1.8-1.9-4.8-2-6.6-.1-1.9 2-1.8 5.1.1 7L12 20l8.7-8.4c1.9-1.9 2-5 .1-7Z" />
           </svg>
         </Link>
-        <Link className="rally-icon-link rally-cart" href="/checkout" aria-label="Cart">
+        <Link className="rally-icon-link rally-cart" href="/cart" aria-label="Cart">
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path d="M3 3h2l2.1 12.3a2 2 0 0 0 2 1.7h8.8a2 2 0 0 0 2-1.6L21 8H6" />
             <circle cx="9" cy="21" r="1.4" />
@@ -406,7 +414,7 @@ function RallyHomepage() {
               <path d="M20.8 4.6c-1.8-1.9-4.8-1.8-6.6.1L12 7l-2.2-2.3c-1.8-1.9-4.8-2-6.6-.1-1.9 2-1.8 5.1.1 7L12 20l8.7-8.4c1.9-1.9 2-5 .1-7Z" />
             </svg>
           </Link>
-          <Link className="rally-icon-link rally-cart" href="/checkout" aria-label="Cart">
+          <Link className="rally-icon-link rally-cart" href="/cart" aria-label="Cart">
             <svg viewBox="0 0 24 24" aria-hidden="true">
               <path d="M3 3h2l2.1 12.3a2 2 0 0 0 2 1.7h8.8a2 2 0 0 0 2-1.6L21 8H6" />
               <circle cx="9" cy="21" r="1.4" />
@@ -704,60 +712,61 @@ function HomePage({ item }: { item: SiteItem }) {
 }
 
 async function ProductPage({ item }: { item: SiteItem }) {
+  const presentation = productPresentation(item);
   const related = relatedItems(item);
   const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
   const linkedNews = news.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
   const linkedBlogs = blogs.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
+  const price = Number(String(item.price || '').replace(/[^0-9.]/g, ''));
   const productJsonLd = {
     "@context": "https://schema.org",
     "@type": "Product",
-    name: item.title,
-    description: item.description,
-    image: item.image ? [`https://www.cheerdmotos.com${item.image}`] : [],
+    name: presentation.displayName,
+    description: presentation.shortDescription,
     brand: { "@type": "Brand", name: "CHEERDMOTO" },
-    sku: item.slug,
-    offers: item.price ? {
+    sku: presentation.sku,
+    ...(presentation.gallery.length ? {image: presentation.gallery.map((image) => `https://www.cheerdmotos.com${image}`)} : {}),
+    offers: Number.isFinite(price) && price > 0 ? {
       "@type": "Offer",
       priceCurrency: item.currency || "USD",
-      price: String(item.price).replace(/[^0-9.]/g, ""),
-      availability: item.availability || "https://schema.org/InStock",
+      price: String(price),
+      availability: (item.availability || "https://schema.org/InStock").replace(/^http:\/\//, 'https://'),
       url: `https://www.cheerdmotos.com${item.route}`
     } : undefined
+  };
+  const breadcrumbJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'BreadcrumbList',
+    itemListElement: [
+      { '@type': 'ListItem', position: 1, name: 'Home', item: 'https://www.cheerdmotos.com/' },
+      { '@type': 'ListItem', position: 2, name: 'Products', item: 'https://www.cheerdmotos.com/products' },
+      { '@type': 'ListItem', position: 3, name: presentation.category, item: `https://www.cheerdmotos.com${presentation.categoryRoute}` },
+      { '@type': 'ListItem', position: 4, name: presentation.displayName, item: `https://www.cheerdmotos.com${item.route}` }
+    ]
   };
 
   return (
     <main>
+      <RallySiteNav dark />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}} />
-      <section className="product-hero">
-        <div className="product-gallery">
-          {item.image ? (
-            <Image src={item.image} alt={item.title} fill priority sizes="(max-width: 900px) 100vw, 46vw" />
-          ) : (
-            <div className="image-placeholder">CHEERDMOTO</div>
-          )}
-        </div>
-        <div className="product-summary">
-          <p className="eyebrow">Product</p>
-          <h1>{item.title}</h1>
-          <p>{item.description}</p>
-          {item.price ? (
-            <p className="price">
-              {item.currency} {item.price}
-            </p>
-          ) : null}
-          <div className="action-row">
-            <Link className="button primary" href={`/checkout?product=${encodeURIComponent(item.slug)}&qty=1`}>
-              Start Checkout
-            </Link>
-            <Link className="button secondary" href="/support">Ask Support</Link>
-          </div>
-        </div>
-      </section>
-      <GeneratedContent item={item} />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}} />
+      <ProductDetail item={item} product={presentation} />
       <ArticleLinkGrid title="Related News" basePath="/news" items={linkedNews.length ? linkedNews : news.slice(0, 3)} />
       <ArticleLinkGrid title="Related Guides" basePath="/blog" items={linkedBlogs.length ? linkedBlogs : blogs.slice(0, 3)} />
       <ProductGrid title="Related Products" items={related} />
+      <RallyFooter />
     </main>
+  );
+}
+
+function RallyFooter() {
+  return (
+    <footer className="rally-footer">
+      <div><strong>CHEERDMOTO</strong><p>Electric mobility equipment for performance, utility and everyday independence.</p></div>
+      <div><h3>SHOP</h3><Link href="/electric-dirt-bikes">Dirt bikes</Link><Link href="/e-bikes">E bikes</Link><Link href="/electric-wheelchairs">Wheelchairs</Link></div>
+      <div><h3>SUPPORT</h3><Link href="/support">Contact us</Link><Link href="/shipping-returns">Shipping & returns</Link><Link href="/warranty">Warranty</Link></div>
+      <div><h3>COMPANY</h3><Link href="/about">About us</Link><Link href="/news">News</Link><Link href="/blog">Blog</Link></div>
+    </footer>
   );
 }
 
