@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return process.env.NODE_ENV !== 'production';
   const header = request.headers.get('authorization') || '';
   return header === `Bearer ${secret}`;
 }
@@ -26,8 +26,8 @@ export async function GET(request: Request) {
     }
     const target = url.searchParams.has('target')
       ? Number(url.searchParams.get('target'))
-      : Number(process.env.NEWS_DAILY_TARGET || '');
-    const result = Number.isFinite(target) ? await publishDailyAutomatedNews(target) : await publishDailyAutomatedNews();
+      : 1;
+    const result = Number.isFinite(target) ? await publishDailyAutomatedNews(target) : await publishDailyAutomatedNews(1);
     return Response.json({ok: true, ...result});
   } catch (error) {
     return Response.json({

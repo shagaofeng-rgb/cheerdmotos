@@ -89,8 +89,16 @@ export type ContentPost = {
   canonicalSourceUrl?: string;
   sourcePublishedAt?: string;
   collectedAt?: string;
+  sourceFetchedAt?: string;
+  sourceTimezone?: string;
   originalTitle?: string;
   originalLanguage?: string;
+  normalizedTitle?: string;
+  sourceFingerprint?: string;
+  eventFingerprint?: string;
+  contentHash?: string;
+  credibilityScore?: number;
+  productRelations?: {slug: string; score: number; reason: string}[];
   imageAlt?: string;
   imageSourceUrl?: string;
   imageCredit?: string;

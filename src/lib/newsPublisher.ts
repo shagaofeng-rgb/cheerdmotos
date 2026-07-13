@@ -1,295 +1,231 @@
+import {createHash} from 'node:crypto';
+import {revalidatePath} from 'next/cache';
 import {readAdminStore, writeAdminStore, type ContentPost} from '@/lib/backendStore';
 import {appendNewsAudit, appendNewsJobLog} from '@/lib/newsAutomationStore';
 import {recordSitemapContentChange} from '@/lib/sitemapManager';
-import {productSlugs, products, siteUrl, type ProductSlug} from '@/lib/site';
+import {products, type ProductSlug} from '@/lib/site';
 
 type Candidate = {
   slugBase: string;
   originalTitle: string;
-  title: string;
   excerpt: string;
   sourceName: string;
   sourceUrl: string;
   sourcePublishedAt: string;
+  sourceFetchedAt: string;
   originalLanguage: string;
   category: string;
   tags: string[];
   productSlugs: ProductSlug[];
+  relevanceScore: number;
+  credibilityScore: number;
 };
 
-const DAILY_MIN_NEWS = 4;
 const DAILY_MAX_NEWS = 4;
+const TRACKING_PARAMETERS = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid'];
 
-const fallbackCandidates: Omit<Candidate, 'sourcePublishedAt'>[] = [
-  {
-    slugBase: 'electric-dirt-bike-market-systems',
-    originalTitle: 'CHEERDMOTO product catalog update for electric dirt bike buyers',
-    title: 'Electric Dirt Bike Buyers Are Comparing Complete Riding Systems',
-    excerpt: 'CHEERDMOTO buyers are evaluating motor output, battery range, suspension, brakes and after-sales support together.',
-    sourceName: 'CHEERDMOTO Product Catalog',
-    sourceUrl: `${siteUrl}/electric-dirt-bikes`,
-    originalLanguage: 'en',
-    category: 'Electric Dirt Bikes',
-    tags: ['Electric Dirt Bike', 'Dealer', 'Support'],
-    productSlugs: ['xceed-electric-dirt-bike', 'cheerdmoto-performance-96v-electric-dirtbike-xtreme']
-  },
-  {
-    slugBase: 'fat-tire-ebike-utility-selection',
-    originalTitle: 'CHEERDMOTO e-bike catalog update for city and trail riders',
-    title: 'Fat Tire E-Bike Buyers Want Utility, Comfort and Simple Model Choice',
-    excerpt: 'Xcite, Xplore and Xplus serve different rider workflows across access, utility and comfort.',
-    sourceName: 'CHEERDMOTO E-Bike Catalog',
-    sourceUrl: `${siteUrl}/e-bikes`,
-    originalLanguage: 'en',
-    category: 'E Bikes',
-    tags: ['E Bike', 'Fat Tire', 'Utility'],
-    productSlugs: [
-      'grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto',
-      'grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto',
-      'grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike'
-    ]
-  },
-  {
-    slugBase: 'smart-mobility-support-planning',
-    originalTitle: 'CHEERDMOTO mobility catalog update for folding electric wheelchair buyers',
-    title: 'Smart Mobility Buyers Need Support Planning Before Purchase',
-    excerpt: 'Comfort, control, folding, charging and service support shape long-term Smart B02 satisfaction.',
-    sourceName: 'CHEERDMOTO Mobility Catalog',
-    sourceUrl: `${siteUrl}/electric-wheelchairs`,
-    originalLanguage: 'en',
-    category: 'Electric Wheelchairs',
-    tags: ['Electric Wheelchair', 'Smart B02', 'Mobility'],
-    productSlugs: ['cheerdmoto-electric-wheelchair-smart-b02']
-  },
-  {
-    slugBase: 'parts-service-readiness',
-    originalTitle: 'CHEERDMOTO accessories catalog update for service parts and rider gear',
-    title: 'Service Parts and Accessories Help Buyers Plan Beyond the First Ride',
-    excerpt: 'Accessories, batteries, rider gear and replacement parts are part of a complete electric mobility buying workflow.',
-    sourceName: 'CHEERDMOTO Accessories Catalog',
-    sourceUrl: `${siteUrl}/accessories`,
-    originalLanguage: 'en',
-    category: 'Accessories',
-    tags: ['Accessories', 'Service Parts', 'After Sales'],
-    productSlugs: ['helmet', 'cheerdmoto-xceed-72v-30ah-battery', 'xceed-street-legal-kit']
+function siteDateKey(date = new Date()) {
+  const timezone = process.env.NEWS_TIMEZONE || 'UTC';
+  try {
+    return new Intl.DateTimeFormat('en-CA', {timeZone: timezone, year: 'numeric', month: '2-digit', day: '2-digit'}).format(date);
+  } catch {
+    return date.toISOString().slice(0, 10);
   }
-];
-
-function todayKey(date = new Date()) {
-  return date.toISOString().slice(0, 10);
 }
 
-function canonicalUrl(url: string) {
+function canonicalUrl(value: string) {
   try {
-    const parsed = new URL(url);
-    ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid', 'gclid'].forEach((key) => parsed.searchParams.delete(key));
-    parsed.hash = '';
-    return parsed.toString();
+    const url = new URL(value);
+    TRACKING_PARAMETERS.forEach((key) => url.searchParams.delete(key));
+    url.hash = '';
+    return url.toString();
   } catch {
-    return url;
+    return value.trim();
   }
 }
 
 function slugify(value: string) {
-  return value.toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 96);
+  return decodeText(value).toLowerCase().replace(/&/g, 'and').replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 96);
 }
 
-function isTodayPost(post: ContentPost, date = new Date()) {
-  return post.type === 'news' && post.status === 'published' && post.publishDate === todayKey(date);
+function decodeText(value: string) {
+  return value.replace(/<!\[CDATA\[|\]\]>/g, '').replace(/<[^>]+>/g, ' ').replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>').replace(/\s+/g, ' ').trim();
 }
 
-function sourcePublishedToday() {
-  return new Date().toISOString();
+function field(block: string, names: string[]) {
+  for (const name of names) {
+    const matched = block.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i'));
+    if (matched?.[1]) return decodeText(matched[1]);
+  }
+  return '';
 }
 
-function parseRssItems(xml: string, feedUrl: string): Candidate[] {
-  const items = [...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].slice(0, 20);
-  return items.map((match, index) => {
-    const item = match[0];
-    const pick = (tag: string) => (item.match(new RegExp(`<${tag}[^>]*>([\\s\\S]*?)<\\/${tag}>`, 'i'))?.[1] || '').replace(/<!\[CDATA\[|\]\]>/g, '').trim();
-    const title = pick('title');
-    const link = pick('link') || feedUrl;
-    const pubDate = pick('pubDate') || pick('published') || '';
-    const published = pubDate ? new Date(pubDate) : new Date(0);
-    const text = `${title} ${pick('description')}`.toLowerCase();
-    const matched = productSlugs.filter((slug) => text.includes(products[slug].category.toLowerCase().split(' ')[0]) || text.includes(products[slug].name.toLowerCase().split(' ')[1] || ''));
-    return {
-      slugBase: slugify(title || `rss-news-${index + 1}`),
-      originalTitle: title,
-      title: title ? `${title}: What Electric Mobility Buyers Should Watch` : 'Electric Mobility Market Update',
-      excerpt: pick('description').replace(/<[^>]+>/g, '').slice(0, 220) || 'A public source update related to electric mobility, rider workflow and buyer planning.',
-      sourceName: new URL(feedUrl).hostname.replace(/^www\./, ''),
-      sourceUrl: canonicalUrl(link),
-      sourcePublishedAt: Number.isNaN(published.getTime()) ? '' : published.toISOString(),
-      originalLanguage: 'en',
-      category: 'Industry News',
-      tags: ['Electric Mobility', 'Market Update'],
-      productSlugs: (matched.length ? matched.slice(0, 3) : ['xceed-electric-dirt-bike']) as ProductSlug[]
-    };
+function hash(value: string) {
+  return createHash('sha256').update(value).digest('hex').slice(0, 32);
+}
+
+function normalizedTitle(value: string) {
+  return slugify(value).replace(/-(?:what|buyers|should|watch)$/g, '');
+}
+
+function configuredFeeds() {
+  return (process.env.NEWS_RSS_FEEDS || '').split(',').map((value) => value.trim()).filter(Boolean);
+}
+
+function configuredDomains() {
+  const supplied = (process.env.NEWS_SOURCE_WHITELIST || '').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean);
+  const feeds = configuredFeeds().flatMap((feed) => {
+    try { return [new URL(feed).hostname.replace(/^www\./, '').toLowerCase()]; } catch { return []; }
   });
+  return new Set([...supplied, ...feeds]);
 }
 
-async function fetchRssCandidates() {
-  const feeds = (process.env.NEWS_RSS_FEEDS || '')
-    .split(',')
-    .map((item) => item.trim())
-    .filter(Boolean);
-  const candidates: Candidate[] = [];
-  for (const feed of feeds) {
+function blockedDomains() {
+  return new Set((process.env.NEWS_SOURCE_BLACKLIST || '').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean));
+}
+
+function sourceAllowed(url: string, allowed: Set<string>, blocked: Set<string>) {
+  try {
+    const hostname = new URL(url).hostname.replace(/^www\./, '').toLowerCase();
+    if (blocked.has(hostname)) return false;
+    return allowed.size > 0 && [...allowed].some((domain) => hostname === domain || hostname.endsWith(`.${domain}`));
+  } catch {
+    return false;
+  }
+}
+
+function allowedLanguages() {
+  return new Set((process.env.NEWS_ALLOWED_LANGUAGES || 'en').split(',').map((value) => value.trim().toLowerCase()).filter(Boolean));
+}
+
+function candidateProducts(text: string) {
+  const normalized = text.toLowerCase();
+  const matches = (Object.keys(products) as ProductSlug[]).map((slug) => {
+    const product = products[slug];
+    const tokens = `${product.name} ${product.category} ${slug}`.toLowerCase().split(/[^a-z0-9]+/).filter((token) => token.length >= 4);
+    const hits = tokens.filter((token) => normalized.includes(token)).length;
+    return {slug, score: hits / Math.max(2, Math.min(tokens.length, 8))};
+  }).filter((item) => item.score > 0).sort((a, b) => b.score - a.score);
+  return matches.slice(0, 3);
+}
+
+function categoryFor(slug: ProductSlug) {
+  return products[slug]?.category || 'Industry News';
+}
+
+function buildCandidate(input: {title: string; description: string; link: string; published: string; feedUrl: string; language?: string}): Candidate | null {
+  const sourceUrl = canonicalUrl(input.link);
+  const originalTitle = decodeText(input.title);
+  const excerpt = decodeText(input.description).slice(0, 540);
+  const publishedTime = new Date(input.published).getTime();
+  if (!originalTitle || !excerpt || !input.link || Number.isNaN(publishedTime)) return null;
+  const sourcePublishedAt = new Date(publishedTime).toISOString();
+  const productMatches = candidateProducts(`${originalTitle} ${excerpt}`);
+  const relevanceScore = productMatches[0]?.score || 0;
+  const language = (input.language || 'en').split('-')[0].toLowerCase();
+  let sourceName = '';
+  try { sourceName = new URL(input.feedUrl).hostname.replace(/^www\./, ''); } catch { sourceName = 'Public RSS source'; }
+  return {
+    slugBase: slugify(originalTitle), originalTitle, excerpt, sourceName, sourceUrl, sourcePublishedAt,
+    sourceFetchedAt: new Date().toISOString(), originalLanguage: language, category: categoryFor(productMatches[0]?.slug || 'xceed-electric-dirt-bike'),
+    tags: ['Electric Mobility', categoryFor(productMatches[0]?.slug || 'xceed-electric-dirt-bike')], productSlugs: productMatches.map((item) => item.slug), relevanceScore, credibilityScore: 0.8
+  };
+}
+
+function parseFeed(xml: string, feedUrl: string) {
+  const rssItems = [...xml.matchAll(/<item\b[\s\S]*?<\/item>/gi)].map((match) => match[0]);
+  const atomEntries = [...xml.matchAll(/<entry\b[\s\S]*?<\/entry>/gi)].map((match) => match[0]);
+  return [...rssItems, ...atomEntries].slice(0, 30).map((item) => {
+    const linkMatch = item.match(/<link\b[^>]*href=["']([^"']+)["'][^>]*>/i);
+    return buildCandidate({
+      title: field(item, ['title']), description: field(item, ['description', 'summary', 'content']),
+      link: linkMatch?.[1] || field(item, ['link', 'id']), published: field(item, ['pubDate', 'published', 'updated']), feedUrl,
+      language: field(item, ['language']) || item.match(/xml:lang=["']([^"']+)/i)?.[1] || 'en'
+    });
+  }).filter((candidate): candidate is Candidate => Boolean(candidate));
+}
+
+async function fetchFeed(feed: string) {
+  const retries = Math.max(0, Math.min(3, Number(process.env.NEWS_MAX_RETRIES || 2)));
+  for (let attempt = 0; attempt <= retries; attempt += 1) {
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 10_000);
     try {
-      const response = await fetch(feed, {cache: 'no-store'});
-      if (!response.ok) continue;
-      candidates.push(...parseRssItems(await response.text(), feed));
-    } catch {
-      continue;
+      const response = await fetch(feed, {cache: 'no-store', signal: controller.signal, headers: {'user-agent': 'CHEERDMOTO-NewsBot/1.0 (+https://www.cheerdmotos.com/robots.txt)'}});
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
+      const items = parseFeed(await response.text(), feed);
+      clearTimeout(timeout);
+      return items;
+    } catch (error) {
+      clearTimeout(timeout);
+      if (attempt === retries) {
+        await appendNewsAudit({type: 'news', result: 'skipped', slug: 'feed-fetch', title: 'RSS source fetch failed', sourceUrl: feed, sourceName: 'RSS source', sourcePublishedAt: '', productSlugs: [], reason: error instanceof Error ? error.message : 'RSS fetch failed'});
+      }
+      if (attempt < retries) await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
     }
   }
-  return candidates;
+  return [] as Candidate[];
 }
 
 function withinLookback(candidate: Candidate) {
   const hours = Math.max(1, Number(process.env.NEWS_LOOKBACK_HOURS || 72));
-  const time = new Date(candidate.sourcePublishedAt).getTime();
-  return Number.isFinite(time) && Date.now() - time <= hours * 60 * 60 * 1000;
+  const age = Date.now() - new Date(candidate.sourcePublishedAt).getTime();
+  return Number.isFinite(age) && age >= 0 && age <= hours * 60 * 60 * 1000;
 }
 
-function recentlyUsed(posts: ContentPost[], candidate: Candidate) {
+function isRecentlyUsed(posts: ContentPost[], candidate: Candidate) {
   const days = Math.max(1, Number(process.env.NEWS_DEDUP_DAYS || 7));
-  const since = Date.now() - days * 24 * 60 * 60 * 1000;
-  const url = canonicalUrl(candidate.sourceUrl);
-  return posts.some((post) => {
-    const time = new Date(post.publishDate || post.createdAt).getTime();
-    return time >= since && (canonicalUrl(post.canonicalSourceUrl || post.sourceUrl || '') === url || post.originalTitle === candidate.originalTitle);
-  });
-}
-
-function fallbackPool(): Candidate[] {
-  const sourcePublishedAt = sourcePublishedToday();
-  return fallbackCandidates.map((candidate) => ({...candidate, sourcePublishedAt}));
+  const since = Date.now() - days * 86_400_000;
+  const candidateTitle = normalizedTitle(candidate.originalTitle);
+  const fingerprint = hash(`${canonicalUrl(candidate.sourceUrl)}|${candidateTitle}`);
+  return posts.some((post) => new Date(post.createdAt || post.publishDate).getTime() >= since && (
+    post.sourceFingerprint === fingerprint || canonicalUrl(post.canonicalSourceUrl || post.sourceUrl || '') === candidate.sourceUrl || normalizedTitle(post.originalTitle || post.title) === candidateTitle
+  ));
 }
 
 function postFromCandidate(candidate: Candidate, index: number): ContentPost {
   const now = new Date().toISOString();
-  const date = todayKey();
-  const firstProduct = products[candidate.productSlugs[0]];
-  const productLinks = candidate.productSlugs
-    .map((slug) => `- [${products[slug].name}](/products/${slug})`)
-    .join('\n');
+  const date = siteDateKey();
+  const productRelations = candidate.productSlugs.map((slug, relationIndex) => ({slug, score: Math.max(0.01, candidate.relevanceScore - relationIndex * 0.08), reason: `The source topic matches ${products[slug].category} buyer and product terminology.`}));
+  const productLinks = candidate.productSlugs.map((slug) => `- [${products[slug].name}](/products/${slug})`).join('\n');
+  const displayTitle = `${candidate.originalTitle}: What Electric Mobility Buyers Should Watch`.slice(0, 120);
   return {
-    id: `post-news-${Date.now()}-${index}`,
-    type: 'news',
-    slug: `${candidate.slugBase}-${date.replace(/-/g, '')}-${index + 1}`,
-    title: candidate.title,
-    excerpt: candidate.excerpt,
-    coverImage: firstProduct?.image || '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
-    category: candidate.category,
-    content: [
-      `## Original news fact summary\n\n${candidate.excerpt}`,
-      `## Why this matters\n\nThis update is relevant to buyers comparing electric mobility products, dealer programs, service readiness and ownership workflow.`,
-      `## CHEERDMOTO perspective\n\nCHEERDMOTO connects product selection, support and checkout into a practical path for riders, dealers and mobility buyers.`,
-      `## Related CHEERDMOTO products\n\n${productLinks}`,
-      `## Source note\n\nThis article is based on public source information and independent CHEERDMOTO analysis. Original reporting belongs to the original publisher.`
-    ].join('\n\n'),
-    publishDate: date,
-    author: 'CHEERDMOTO Editorial Team',
-    source: `${candidate.sourceName}: ${candidate.sourceUrl}`,
-    tags: candidate.tags,
-    seoTitle: `${candidate.title.slice(0, 72)} | CHEERDMOTO News`,
-    seoDescription: candidate.excerpt.slice(0, 155),
-    geoSummary: `${candidate.sourceName} published a public update related to ${candidate.category}. CHEERDMOTO analysis connects it with ${candidate.productSlugs.map((slug) => products[slug].name).join(', ')} for buyers and dealers.`,
-    productSlugs: candidate.productSlugs,
-    sourceName: candidate.sourceName,
-    sourceUrl: candidate.sourceUrl,
-    canonicalSourceUrl: canonicalUrl(candidate.sourceUrl),
-    sourcePublishedAt: candidate.sourcePublishedAt,
-    collectedAt: now,
-    originalTitle: candidate.originalTitle,
-    originalLanguage: candidate.originalLanguage,
-    imageAlt: `${firstProduct?.name || 'CHEERDMOTO product'} related to ${candidate.category}`,
-    imageSourceUrl: siteUrl,
-    imageCredit: 'CHEERDMOTO owned product image',
-    relevanceScore: 0.92,
-    retryCount: 0,
-    status: 'published',
-    createdAt: now,
-    updatedAt: now
+    id: `post-news-${Date.now()}-${index}`, type: 'news', slug: `${candidate.slugBase}-${date.replace(/-/g, '')}-${index + 1}`,
+    title: displayTitle, excerpt: candidate.excerpt.slice(0, 300), coverImage: products[candidate.productSlugs[0]].image, category: candidate.category,
+    content: [`## Original news fact summary\n\n${candidate.excerpt}`, `## Why this matters\n\nThis source update is relevant to electric-mobility buyers because it intersects with product selection, ownership planning, dealer support or practical use cases.`, `## CHEERDMOTO perspective\n\nThis is CHEERDMOTO analysis, not a claim made by the source. Buyers should verify the original report and compare current specifications, availability and support needs before deciding.`, `## Related CHEERDMOTO products\n\n${productLinks}`, `## Source note\n\nThis article summarizes publicly available source information and adds independent analysis. Original reporting remains the property of the original publisher.`].join('\n\n'),
+    publishDate: date, author: 'CHEERDMOTO Editorial Team', source: `${candidate.sourceName}: ${candidate.sourceUrl}`, tags: candidate.tags,
+    seoTitle: `${displayTitle.slice(0, 72)} | CHEERDMOTO News`, seoDescription: candidate.excerpt.slice(0, 155), geoSummary: `Source-attributed industry context for ${candidate.productSlugs.map((slug) => products[slug].name).join(', ')}. Product facts must be verified on the linked product pages.`, productSlugs: candidate.productSlugs,
+    sourceName: candidate.sourceName, sourceUrl: candidate.sourceUrl, canonicalSourceUrl: candidate.sourceUrl, sourcePublishedAt: candidate.sourcePublishedAt, collectedAt: now, sourceFetchedAt: candidate.sourceFetchedAt, sourceTimezone: 'UTC', originalTitle: candidate.originalTitle, originalLanguage: candidate.originalLanguage, normalizedTitle: normalizedTitle(candidate.originalTitle), sourceFingerprint: hash(`${candidate.sourceUrl}|${normalizedTitle(candidate.originalTitle)}`), eventFingerprint: hash(`${normalizedTitle(candidate.originalTitle)}|${candidate.category}`), contentHash: hash(candidate.excerpt), imageAlt: `${products[candidate.productSlugs[0]].name} used as a CHEERDMOTO-owned contextual product image`, imageSourceUrl: 'https://www.cheerdmotos.com', imageCredit: 'CHEERDMOTO owned product image', relevanceScore: candidate.relevanceScore, credibilityScore: candidate.credibilityScore, productRelations, retryCount: 0, status: 'published', createdAt: now, updatedAt: now
   };
 }
 
-export async function repairNewsImageDiversity() {
-  return {changed: 0, images: fallbackCandidates.map((item) => products[item.productSlugs[0]].image)};
-}
+export async function repairNewsImageDiversity() { return {changed: 0, message: 'Automated news uses CHEERDMOTO-owned product imagery only.'}; }
 
-export async function publishNextAutomatedNews() {
-  const result = await publishDailyAutomatedNews(1);
-  return result.results[0] || {published: false, reason: 'No candidate was available.'};
-}
+export async function publishNextAutomatedNews() { const result = await publishDailyAutomatedNews(1); return result.results[0] || {published: false, reason: 'No verified candidate was available.'}; }
 
-export async function publishDailyAutomatedNews(target = DAILY_MIN_NEWS) {
-  const requestedTarget = Math.max(0, Math.min(DAILY_MAX_NEWS, Number.isFinite(Number(target)) ? Number(target) : DAILY_MIN_NEWS));
-  const initialStore = await readAdminStore();
-  const alreadyPublishedToday = initialStore.posts.filter((post) => isTodayPost(post)).length;
-  const remainingTarget = Math.max(0, requestedTarget - alreadyPublishedToday);
-  const feedCandidates = await fetchRssCandidates();
-  const pool = [...feedCandidates.filter(withinLookback), ...fallbackPool()];
-  const results = [];
-  const newPosts: ContentPost[] = [];
-
-  for (const candidate of pool) {
+export async function publishDailyAutomatedNews(target = 1) {
+  const requestedTarget = Math.max(0, Math.min(DAILY_MAX_NEWS, Number.isFinite(Number(target)) ? Number(target) : 1));
+  const store = await readAdminStore();
+  const alreadyPublishedToday = store.posts.filter((post) => post.type === 'news' && post.status === 'published' && post.publishDate === siteDateKey()).length;
+  const remainingTarget = Math.min(requestedTarget, Math.max(0, DAILY_MAX_NEWS - alreadyPublishedToday));
+  const feeds = configuredFeeds();
+  const candidates = (await Promise.all(feeds.map(fetchFeed))).flat();
+  const allowed = configuredDomains(); const blocked = blockedDomains(); const languages = allowedLanguages();
+  const threshold = Math.max(0, Math.min(1, Number(process.env.NEWS_RELEVANCE_THRESHOLD || 0.25)));
+  const newPosts: ContentPost[] = []; const results: {published: boolean; slug?: string; title?: string; reason?: string}[] = [];
+  for (const candidate of candidates) {
     if (newPosts.length >= remainingTarget) break;
-    const existing = [...initialStore.posts, ...newPosts];
-    if (recentlyUsed(existing, candidate)) {
-      await appendNewsAudit({
-        type: 'news',
-        result: 'skipped',
-        slug: candidate.slugBase,
-        title: candidate.title,
-        sourceUrl: candidate.sourceUrl,
-        sourceName: candidate.sourceName,
-        sourcePublishedAt: candidate.sourcePublishedAt,
-        productSlugs: candidate.productSlugs,
-        reason: 'Skipped by 7-day source/title deduplication.'
-      });
-      continue;
-    }
-    const post = postFromCandidate(candidate, newPosts.length);
-    newPosts.push(post);
-    results.push({published: true, slug: post.slug, title: post.title, image: {absolute: post.coverImage, type: 'local/public'}});
-    await appendNewsAudit({
-      type: 'news',
-      result: 'success',
-      slug: post.slug,
-      title: post.title,
-      sourceUrl: post.sourceUrl || '',
-      sourceName: post.sourceName || '',
-      sourcePublishedAt: post.sourcePublishedAt || '',
-      productSlugs: post.productSlugs || [],
-      reason: 'Published after relevance, lookback and deduplication checks.'
-    });
+    const reason = !sourceAllowed(candidate.sourceUrl, allowed, blocked) ? 'Source domain is not allowlisted.' : !languages.has(candidate.originalLanguage) ? 'Source language is not allowed.' : !withinLookback(candidate) ? 'Source publication time is outside the configured lookback window.' : !candidate.productSlugs.length || candidate.relevanceScore < threshold ? 'Product relevance score is below the configured threshold.' : isRecentlyUsed([...store.posts, ...newPosts], candidate) ? 'Duplicate source/event within the deduplication window.' : '';
+    if (reason) { await appendNewsAudit({type: 'news', result: 'skipped', slug: candidate.slugBase, title: candidate.originalTitle, sourceUrl: candidate.sourceUrl, sourceName: candidate.sourceName, sourcePublishedAt: candidate.sourcePublishedAt, productSlugs: candidate.productSlugs, reason}); continue; }
+    if (process.env.NEWS_AUTO_PUBLISH === 'false') { await appendNewsAudit({type: 'news', result: 'skipped', slug: candidate.slugBase, title: candidate.originalTitle, sourceUrl: candidate.sourceUrl, sourceName: candidate.sourceName, sourcePublishedAt: candidate.sourcePublishedAt, productSlugs: candidate.productSlugs, reason: 'Auto-publish is disabled; candidate requires editorial review.'}); continue; }
+    const post = postFromCandidate(candidate, newPosts.length); newPosts.push(post); results.push({published: true, slug: post.slug, title: post.title});
+    await appendNewsAudit({type: 'news', result: 'success', slug: post.slug, title: post.title, sourceUrl: candidate.sourceUrl, sourceName: candidate.sourceName, sourcePublishedAt: candidate.sourcePublishedAt, productSlugs: candidate.productSlugs, reason: 'Published after source, 72-hour, language, relevance and deduplication checks.'});
   }
-
   if (newPosts.length) {
     await writeAdminStore((current) => ({...current, posts: [...newPosts, ...current.posts]}));
-    await Promise.all(newPosts.map((post) => recordSitemapContentChange({type: 'news', action: 'published', slug: post.slug, title: post.title})));
+    await Promise.all(newPosts.map(async (post) => { await recordSitemapContentChange({type: 'news', action: 'published', slug: post.slug, title: post.title}); revalidatePath('/news'); revalidatePath(`/news/${post.slug}`); (post.productSlugs || []).forEach((slug) => revalidatePath(`/products/${slug}`)); }));
   }
-
   const totalPublishedToday = alreadyPublishedToday + newPosts.length;
-  await appendNewsJobLog({
-    type: 'news',
-    target: requestedTarget,
-    alreadyPublishedToday,
-    publishedCount: newPosts.length,
-    status: totalPublishedToday >= requestedTarget ? 'completed' : 'partial',
-    message: totalPublishedToday >= requestedTarget ? 'Daily news target satisfied.' : 'Daily news target not satisfied; next cron run will retry.'
-  });
-
-  return {
-    mode: 'daily_news_batch',
-    target: requestedTarget,
-    alreadyPublishedToday,
-    publishedCount: newPosts.length,
-    totalPublishedToday,
-    completed: totalPublishedToday >= requestedTarget,
-    results
-  };
+  await appendNewsJobLog({type: 'news', target: requestedTarget, alreadyPublishedToday, publishedCount: newPosts.length, status: newPosts.length || !feeds.length ? (totalPublishedToday >= DAILY_MAX_NEWS ? 'completed' : 'partial') : 'partial', message: !feeds.length ? 'No approved RSS feeds are configured; no content was published.' : totalPublishedToday >= DAILY_MAX_NEWS ? 'Daily news target satisfied.' : 'A verified item was published when available; later cron slots will retry the remaining daily target.'});
+  return {mode: 'verified_news_batch', target: requestedTarget, alreadyPublishedToday, publishedCount: newPosts.length, totalPublishedToday, completed: totalPublishedToday >= DAILY_MAX_NEWS, results};
 }

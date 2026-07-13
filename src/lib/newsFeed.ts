@@ -49,9 +49,9 @@ function postToArticle(post: ContentPost): NewsArticle {
     readTime: '4 min read',
     sources: [{
       name: sourceName,
-      title: post.title,
+      title: post.originalTitle || post.title,
       url: sourceUrl,
-      publishedDate: post.publishDate,
+      publishedDate: post.sourcePublishedAt || post.publishDate,
       accessedDate: post.updatedAt.slice(0, 10),
       note: 'Used for source attribution and market context.'
     }],
@@ -77,7 +77,9 @@ function postToArticle(post: ContentPost): NewsArticle {
     geoSummary: post.geoSummary,
     sourceName: post.sourceName,
     sourceUrl: post.sourceUrl,
-    sourcePublishedAt: post.sourcePublishedAt
+    sourcePublishedAt: post.sourcePublishedAt,
+    originalTitle: post.originalTitle,
+    sourceFetchedAt: post.sourceFetchedAt || post.collectedAt
   };
 }
 

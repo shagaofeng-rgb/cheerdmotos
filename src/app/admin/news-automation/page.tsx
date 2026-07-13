@@ -5,7 +5,11 @@ import {readNewsAudits, readNewsJobLogs} from '@/lib/newsAutomationStore';
 export const dynamic = 'force-dynamic';
 
 function todayKey() {
-  return new Date().toISOString().slice(0, 10);
+  try {
+    return new Intl.DateTimeFormat('en-CA', {timeZone: process.env.NEWS_TIMEZONE || 'UTC', year: 'numeric', month: '2-digit', day: '2-digit'}).format(new Date());
+  } catch {
+    return new Date().toISOString().slice(0, 10);
+  }
 }
 
 export default async function AdminNewsAutomationPage() {
@@ -24,7 +28,7 @@ export default async function AdminNewsAutomationPage() {
       <div className="admin-title">
         <p className="eyebrow">News 自动化</p>
         <h1>News 自动发布系统</h1>
-        <p>查看每日 4 篇目标、发布任务、来源审计、去重结果和 RSS/API 配置状态。</p>
+        <p>仅发布通过可信来源、72 小时、语言、产品相关性和 7 天去重校验的内容；不合格候选会保留审计记录。</p>
       </div>
 
       <div className="admin-metrics">
@@ -43,7 +47,9 @@ export default async function AdminNewsAutomationPage() {
           <div><dt>NEWS_DAILY_TARGET</dt><dd>{process.env.NEWS_DAILY_TARGET || '默认 4'}</dd></div>
           <div><dt>NEWS_LOOKBACK_HOURS</dt><dd>{process.env.NEWS_LOOKBACK_HOURS || '默认 72'}</dd></div>
           <div><dt>NEWS_DEDUP_DAYS</dt><dd>{process.env.NEWS_DEDUP_DAYS || '默认 7'}</dd></div>
-          <div><dt>NEWS_RSS_FEEDS</dt><dd>{process.env.NEWS_RSS_FEEDS ? '已配置 RSS 来源' : '未配置第三方 RSS，使用站内公开目录作为备用来源。'}</dd></div>
+          <div><dt>NEWS_RSS_FEEDS</dt><dd>{process.env.NEWS_RSS_FEEDS ? '已配置可信 RSS 来源' : '未配置，自动发布会安全暂停。'}</dd></div>
+          <div><dt>NEWS_SOURCE_WHITELIST</dt><dd>{process.env.NEWS_SOURCE_WHITELIST ? '已配置来源白名单' : '沿用 RSS 域名白名单'}</dd></div>
+          <div><dt>NEWS_AUTO_PUBLISH</dt><dd>{process.env.NEWS_AUTO_PUBLISH === 'false' ? '已关闭，候选仅记录待人工审核' : '已启用，符合全部规则后自动发布'}</dd></div>
         </dl>
       </section>
 

@@ -79,8 +79,10 @@ export function ArticleDetailView({article, basePath, type}: {
           <h2>Source and fact summary</h2>
           <p>{article.keyTakeaways.join(' ')}</p>
           <dl>
+            <div><dt>Original title</dt><dd>{article.originalTitle || source?.title || article.title}</dd></div>
             <div><dt>Original source</dt><dd>{article.sourceName || source?.name || 'CHEERDMOTO'}</dd></div>
             <div><dt>Original published time</dt><dd>{article.sourcePublishedAt?.slice(0, 10) || source?.publishedDate || article.date}</dd></div>
+            <div><dt>Source accessed</dt><dd>{article.sourceFetchedAt?.slice(0, 10) || article.updatedAt}</dd></div>
             <div><dt>Source URL</dt><dd><a href={article.sourceUrl || source?.url || '#'} rel="nofollow noopener noreferrer">{article.sourceUrl || source?.url || 'Source retained in CMS'}</a></dd></div>
           </dl>
         </section>

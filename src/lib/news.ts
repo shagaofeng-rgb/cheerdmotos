@@ -19,6 +19,8 @@
   sourceName?: string;
   sourceUrl?: string;
   sourcePublishedAt?: string;
+  originalTitle?: string;
+  sourceFetchedAt?: string;
 };
 
 const siteSource = 'https://www.cheerdmotos.com';
