@@ -7120,3 +7120,864 @@ html[dir="rtl"] .catalog-product-card dd {
     padding: 18px;
   }
 }
+
+/* Interface system consolidation: front office, customer account, checkout, content and Chinese admin. */
+:root {
+  --cm-ink: #111214;
+  --cm-surface: #ffffff;
+  --cm-canvas: #f4f4f1;
+  --cm-line: #d9d9d3;
+  --cm-muted: #6a6a64;
+  --cm-orange: #f15a24;
+  --cm-orange-dark: #c94216;
+  --cm-radius: 8px;
+  --cm-shadow: 0 16px 34px rgba(17, 18, 20, 0.08);
+}
+
+html {
+  background: var(--cm-canvas);
+}
+
+body {
+  min-width: 320px;
+  color: var(--cm-ink);
+  font-family: Arial, Helvetica, sans-serif;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+a,
+button,
+input,
+select,
+textarea {
+  -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+summary:focus-visible {
+  outline: 3px solid rgba(241, 90, 36, 0.42);
+  outline-offset: 3px;
+}
+
+.rally-home,
+.rally-category {
+  --rally-black: #111214;
+  --rally-ink: #161719;
+  --rally-cream: #f4f4f1;
+  --rally-orange: var(--cm-orange);
+  --rally-muted: #676761;
+  letter-spacing: 0;
+}
+
+.rally-nav,
+.rally-nav-dark {
+  min-height: 70px;
+  padding-inline: clamp(20px, 3vw, 56px);
+  border-bottom: 1px solid rgba(17, 18, 20, 0.1);
+  box-shadow: 0 8px 24px rgba(17, 18, 20, 0.04);
+}
+
+.rally-nav nav {
+  gap: clamp(16px, 1.6vw, 28px);
+  font-size: clamp(12px, 0.78vw, 14px);
+  font-weight: 800;
+}
+
+.rally-nav-item,
+.rally-nav-item > a {
+  min-height: 70px;
+}
+
+.rally-nav-item > a,
+.rally-icons,
+.rally-signin {
+  transition: color 160ms ease;
+}
+
+.rally-nav-item > a:hover,
+.rally-icon-link:hover,
+.rally-signin:hover {
+  color: var(--cm-orange);
+}
+
+.rally-submenu {
+  overflow: hidden;
+  border-radius: var(--cm-radius);
+  border-color: rgba(17, 18, 20, 0.12);
+  box-shadow: var(--cm-shadow);
+}
+
+.rally-submenu a:hover {
+  color: var(--cm-orange);
+  background: #f5f5f2;
+}
+
+.rally-btn,
+.button.primary,
+.button.secondary,
+.pdp-actions button,
+.pdp-mobile-purchase button {
+  border-radius: var(--cm-radius);
+  transition: background 160ms ease, border-color 160ms ease, color 160ms ease, transform 160ms ease;
+}
+
+.rally-btn:active,
+.button:active,
+.pdp-actions button:active,
+.pdp-mobile-purchase button:active {
+  transform: translateY(1px);
+}
+
+.rally-btn-orange,
+.button.primary,
+.pdp-buy-now,
+.pdp-mobile-purchase button:last-child {
+  background: var(--cm-orange);
+}
+
+.rally-btn-orange:hover,
+.button.primary:hover,
+.pdp-buy-now:hover,
+.pdp-mobile-purchase button:last-child:hover {
+  background: var(--cm-orange-dark);
+}
+
+.rally-hero {
+  min-height: min(760px, calc(100dvh - 70px));
+}
+
+.rally-hero-copy {
+  max-width: 650px;
+}
+
+.rally-hero h1,
+.rally-section-head h2,
+.rally-xceed h2,
+.rally-mobility h2,
+.rally-trust h2,
+.rally-category-hero-copy h1,
+.rally-editorial h2 {
+  letter-spacing: -0.035em;
+}
+
+.rally-tag,
+.rally-category-hero-copy span,
+.rally-editorial span {
+  border-radius: 4px;
+  background: var(--cm-orange);
+}
+
+.rally-metrics,
+.rally-category-featurebar {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.rally-product-card,
+.rally-city-card,
+.rally-collection-card {
+  border: 1px solid transparent;
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+  transition: border-color 180ms ease, transform 180ms ease, box-shadow 180ms ease;
+}
+
+.rally-product-card:hover,
+.rally-city-card:hover,
+.rally-collection-card:hover {
+  border-color: rgba(17, 18, 20, 0.2);
+  box-shadow: var(--cm-shadow);
+  transform: translateY(-3px);
+}
+
+.rally-product-image,
+.rally-city-card div,
+.rally-collection-card > div {
+  background: #f7f7f4;
+}
+
+.pdp-trust-strip,
+.pdp-breadcrumbs,
+.pdp-hero,
+.pdp-quick-specs,
+.pdp-details,
+.cart-page {
+  width: min(100% - 48px, 1360px);
+}
+
+.pdp-hero {
+  gap: clamp(28px, 4vw, 64px);
+  padding-block: clamp(26px, 4vw, 54px);
+}
+
+.pdp-main-image,
+.pdp-image-missing {
+  border-radius: var(--cm-radius);
+  background: #f7f7f4;
+}
+
+.pdp-thumbnails button,
+.pdp-detail-tabs button {
+  border-radius: 6px;
+}
+
+.pdp-summary h1 {
+  letter-spacing: -0.035em;
+}
+
+.pdp-price {
+  color: var(--cm-orange);
+}
+
+.pdp-add-cart,
+.pdp-mobile-purchase button:first-of-type {
+  border-color: var(--cm-ink);
+  color: var(--cm-ink);
+  background: transparent;
+}
+
+.pdp-add-cart:hover,
+.pdp-mobile-purchase button:first-of-type:hover {
+  color: #fff;
+  background: var(--cm-ink);
+}
+
+.pdp-quick-specs article,
+.pdp-detail-panel,
+.pdp-copy,
+.pdp-faq details {
+  border-radius: var(--cm-radius);
+}
+
+.article-index,
+.article-detail,
+.search-page {
+  background: var(--cm-canvas);
+}
+
+.article-hero,
+.article-detail-hero {
+  gap: 18px;
+  padding: clamp(62px, 9vw, 112px) clamp(22px, 6vw, 92px) clamp(42px, 5vw, 72px);
+  background: var(--cm-ink);
+}
+
+.article-hero h1,
+.article-detail-hero h1 {
+  max-width: 860px;
+  font-family: Arial, Helvetica, sans-serif;
+  font-weight: 900;
+  letter-spacing: -0.045em;
+}
+
+.article-toolbar a,
+.article-toolbar span,
+.article-back {
+  border: 1px solid var(--cm-line);
+  border-radius: 999px;
+  box-shadow: none;
+}
+
+.article-toolbar a:hover,
+.article-back:hover {
+  color: #fff;
+  border-color: var(--cm-ink);
+  background: var(--cm-ink);
+}
+
+.article-grid {
+  gap: 18px;
+}
+
+.article-card,
+.article-product-card,
+.search-results a {
+  border: 1px solid var(--cm-line);
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+}
+
+.article-card:hover,
+.article-product-card:hover,
+.search-results a:hover {
+  border-color: rgba(17, 18, 20, 0.28);
+  box-shadow: var(--cm-shadow);
+  transform: translateY(-3px);
+}
+
+.article-card img,
+.article-detail-hero img {
+  background: #f7f7f4;
+}
+
+.article-card span,
+.article-product-card span,
+.search-results span {
+  color: var(--cm-orange);
+}
+
+.article-body {
+  width: min(100% - 40px, 820px);
+}
+
+.article-body p,
+.article-body dd {
+  max-width: 70ch;
+  color: #3f403f;
+}
+
+.article-factbox,
+.article-source-note {
+  border-color: var(--cm-line);
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+}
+
+.checkout-hero {
+  padding-block: clamp(62px, 8vw, 104px) clamp(38px, 5vw, 64px);
+  background: var(--cm-ink);
+}
+
+.checkout-hero h1 {
+  max-width: 720px;
+  letter-spacing: -0.04em;
+}
+
+.checkout-section {
+  background: var(--cm-canvas);
+}
+
+.checkout-form,
+.checkout-summary-card,
+.checkout-block {
+  border-color: var(--cm-line);
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+}
+
+.checkout-block input:focus,
+.checkout-block select:focus,
+.checkout-block textarea:focus,
+.search-form input:focus {
+  border-color: var(--cm-orange);
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.16);
+  outline: 0;
+}
+
+.account-page {
+  min-height: 100dvh;
+  padding: clamp(84px, 10vw, 130px) clamp(18px, 5vw, 72px) clamp(52px, 8vw, 96px);
+  background: var(--cm-canvas);
+}
+
+.account-page::before {
+  display: none;
+}
+
+.account-card,
+.account-header,
+.account-order-card {
+  border-color: var(--cm-line);
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+}
+
+.account-header,
+.account-email-card {
+  background: var(--cm-surface);
+  backdrop-filter: none;
+}
+
+.account-card h1,
+.account-header h1 {
+  letter-spacing: -0.04em;
+}
+
+.account-email-field input {
+  border-radius: var(--cm-radius);
+  background: #f8f8f6;
+}
+
+.account-email-submit {
+  border-radius: var(--cm-radius);
+  background: var(--cm-orange);
+  box-shadow: none;
+}
+
+.account-email-submit:hover {
+  background: var(--cm-orange-dark);
+}
+
+.account-form input:focus {
+  border-color: var(--cm-orange);
+  box-shadow: 0 0 0 3px rgba(241, 90, 36, 0.16);
+}
+
+.admin-dashboard {
+  background: #f5f6f8;
+  color: #18202b;
+}
+
+.admin-sidebar {
+  width: 264px;
+  padding: 20px 14px;
+  border-right-color: #dde1e6;
+}
+
+.admin-logo {
+  padding-bottom: 22px;
+}
+
+.admin-logo span,
+.admin-sidebar nav a.is-active {
+  background: #18202b;
+}
+
+.admin-nav-group {
+  gap: 3px;
+}
+
+.admin-nav-group p {
+  margin-top: 14px;
+  color: #8a929d;
+  font-size: 11px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.admin-sidebar nav a {
+  min-height: 38px;
+  padding: 9px 11px;
+}
+
+.admin-sidebar nav a:hover {
+  color: #18202b;
+  background: #eceff2;
+}
+
+.admin-main {
+  max-width: 1560px;
+  padding: 32px clamp(20px, 3vw, 48px) 56px;
+}
+
+.admin-title {
+  padding: 0 0 22px;
+  border: 0;
+  border-bottom: 1px solid #dde1e6;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.admin-title h1 {
+  margin-top: 0;
+  font-size: clamp(28px, 2.8vw, 42px);
+  letter-spacing: -0.03em;
+}
+
+.admin-metrics {
+  gap: 12px;
+}
+
+.admin-metrics article,
+.admin-panel,
+.admin-grid-list article {
+  border-color: #dde1e6;
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+}
+
+.admin-metrics article {
+  min-height: 132px;
+  padding: 18px;
+}
+
+.admin-metrics strong,
+.admin-grid-list span {
+  color: var(--cm-orange);
+}
+
+.admin-panel {
+  gap: 16px;
+  padding: clamp(18px, 2vw, 26px);
+}
+
+.admin-panel h2 {
+  font-size: 20px;
+}
+
+.admin-config-list div,
+.admin-bar-list p {
+  border-color: #e7eaed;
+  border-radius: 6px;
+  background: #fafbfc;
+}
+
+.admin-table-wrap {
+  border-color: #dde1e6;
+  border-radius: 6px;
+}
+
+.admin-table-wrap th,
+.admin-panel th {
+  background: #f3f5f7;
+}
+
+.admin-table-wrap tr:hover td {
+  background: #fafbfc;
+}
+
+.admin-sidebar-foot button,
+.admin-time-filter button,
+.admin-pagination button,
+.admin-login-card button,
+.admin-form-grid button,
+.admin-panel button {
+  background: var(--cm-orange);
+}
+
+.admin-sidebar-foot button {
+  background: #18202b;
+}
+
+.admin-login-page {
+  min-height: 100dvh;
+  background: #f5f6f8;
+}
+
+.admin-login-card {
+  border-color: #dde1e6;
+  border-radius: var(--cm-radius);
+  box-shadow: var(--cm-shadow);
+}
+
+.pricing-admin-page {
+  min-height: 100dvh;
+  background: #f5f6f8;
+}
+
+.pricing-admin-hero,
+.pricing-card {
+  border-color: #dde1e6;
+  border-radius: var(--cm-radius);
+  box-shadow: none;
+}
+
+.pricing-primary-button,
+.pricing-secondary-button {
+  border-radius: 6px;
+  background: var(--cm-orange);
+}
+
+@media (max-width: 980px) {
+  .rally-nav {
+    grid-template-columns: 1fr auto;
+  }
+
+  .rally-nav nav,
+  .rally-country,
+  .rally-signin {
+    display: none;
+  }
+
+  .rally-icons {
+    gap: 12px;
+  }
+
+  .rally-menu-button {
+    display: inline-grid;
+  }
+
+  .pdp-trust-strip,
+  .pdp-breadcrumbs,
+  .pdp-hero,
+  .pdp-quick-specs,
+  .pdp-details,
+  .cart-page {
+    width: min(100% - 32px, 1360px);
+  }
+
+  .admin-dashboard {
+    grid-template-columns: 230px minmax(0, 1fr);
+  }
+
+  .admin-sidebar {
+    width: auto;
+  }
+}
+
+@media (max-width: 820px) {
+  .rally-nav,
+  .rally-nav-dark {
+    min-height: 62px;
+    padding-inline: 16px;
+  }
+
+  .rally-logo,
+  .rally-logo img {
+    width: 142px;
+  }
+
+  .rally-icons {
+    gap: 6px;
+  }
+
+  .rally-icon-link,
+  .rally-menu-button {
+    width: 40px;
+    min-height: 40px;
+  }
+
+  .rally-hero {
+    min-height: 660px;
+  }
+
+  .rally-hero-copy {
+    padding-inline: 20px;
+  }
+
+  .rally-hero h1 {
+    font-size: clamp(42px, 13vw, 60px);
+  }
+
+  .rally-actions,
+  .pdp-actions,
+  .account-actions {
+    grid-template-columns: 1fr;
+  }
+
+  .rally-actions .rally-btn,
+  .account-actions .button {
+    justify-content: center;
+    min-height: 48px;
+  }
+
+  .article-hero,
+  .article-detail-hero {
+    padding: 48px 20px 34px;
+  }
+
+  .article-hero h1,
+  .article-detail-hero h1 {
+    font-size: clamp(40px, 13vw, 56px);
+  }
+
+  .article-toolbar {
+    padding: 16px 20px 0;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+  }
+
+  .article-toolbar a,
+  .article-toolbar span {
+    flex: 0 0 auto;
+  }
+
+  .article-grid {
+    padding: 20px 20px 56px;
+  }
+
+  .checkout-hero {
+    padding: 52px 20px 34px;
+  }
+
+  .checkout-hero h1 {
+    font-size: clamp(36px, 11vw, 52px);
+  }
+
+  .account-page {
+    padding: 82px 16px 48px;
+  }
+
+  .account-header {
+    align-items: flex-start;
+  }
+
+  .admin-dashboard {
+    display: block;
+  }
+
+  .admin-sidebar {
+    position: static;
+    width: 100%;
+    height: auto;
+    padding: 14px;
+    border-right: 0;
+    border-bottom: 1px solid #dde1e6;
+  }
+
+  .admin-sidebar nav {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+  }
+
+  .admin-nav-group {
+    gap: 2px;
+  }
+
+  .admin-nav-group p {
+    grid-column: 1 / -1;
+    margin: 10px 4px 2px;
+  }
+
+  .admin-sidebar-foot {
+    display: none;
+  }
+
+  .admin-main {
+    padding: 22px 14px 40px;
+  }
+
+  .admin-title {
+    padding-bottom: 18px;
+  }
+
+  .admin-title h1 {
+    font-size: 30px;
+  }
+
+  .admin-realtime-sync {
+    width: 100%;
+    margin-bottom: 14px;
+    border-radius: 6px;
+  }
+
+  .admin-metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .admin-metrics article {
+    min-height: 110px;
+    padding: 14px;
+  }
+}
+
+@media (max-width: 480px) {
+  .rally-icon-link:not(.rally-cart) {
+    display: none;
+  }
+
+  .rally-hero {
+    min-height: 620px;
+  }
+
+  .pdp-trust-strip,
+  .pdp-breadcrumbs,
+  .pdp-hero,
+  .pdp-quick-specs,
+  .pdp-details,
+  .cart-page {
+    width: min(100% - 24px, 1360px);
+  }
+
+  .admin-sidebar nav {
+    grid-template-columns: 1fr;
+  }
+
+  .admin-metrics {
+    grid-template-columns: 1fr;
+  }
+}
+
+.rally-mobile-nav {
+  position: relative;
+  display: none;
+}
+
+.rally-mobile-nav summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.rally-mobile-nav summary::-webkit-details-marker {
+  display: none;
+}
+
+.rally-mobile-nav[open] .rally-menu-button span:nth-child(1) {
+  transform: translateY(8px) rotate(45deg);
+}
+
+.rally-mobile-nav[open] .rally-menu-button span:nth-child(2) {
+  opacity: 0;
+}
+
+.rally-mobile-nav[open] .rally-menu-button span:nth-child(3) {
+  transform: translateY(-8px) rotate(-45deg);
+}
+
+.rally-menu-button span {
+  transition: transform 160ms ease, opacity 160ms ease;
+}
+
+.rally-mobile-nav-panel {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 14px);
+  right: 0;
+  display: grid !important;
+  width: min(330px, calc(100vw - 28px));
+  max-height: min(72dvh, 620px);
+  overflow: auto;
+  padding: 10px;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--cm-radius);
+  background: #17181a;
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+}
+
+.rally-mobile-nav-panel > div {
+  display: grid;
+  gap: 1px;
+  padding: 6px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.rally-mobile-nav-panel > div:last-child {
+  border-bottom: 0;
+}
+
+.rally-mobile-nav-panel a {
+  display: block;
+  padding: 10px 12px;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  line-height: 1.25;
+}
+
+.rally-mobile-nav-panel a:not(:first-child) {
+  padding-top: 7px;
+  padding-bottom: 7px;
+  color: rgba(255, 255, 255, 0.68);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.rally-mobile-nav-panel a:hover {
+  color: #fff;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+@media (max-width: 980px) {
+  .rally-mobile-nav {
+    display: block;
+  }
+
+  .rally-menu-button {
+    display: inline-grid;
+    place-content: center;
+  }
+}

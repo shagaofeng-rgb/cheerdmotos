@@ -363,11 +363,25 @@ function RallySiteNav({ dark = false }: { dark?: boolean }) {
             <circle cx="18" cy="21" r="1.4" />
           </svg>
           </Link>
-        <button className="rally-menu-button" type="button" aria-label="Menu">
-          <span />
-          <span />
-          <span />
-        </button>
+        <details className="rally-mobile-nav">
+          <summary className="rally-menu-button" aria-label="Open navigation">
+            <span />
+            <span />
+            <span />
+          </summary>
+          <nav className="rally-mobile-nav-panel" aria-label="Mobile navigation">
+            {siteNav.map((item) => (
+              <div key={item.label}>
+                <Link href={item.href}>{item.label}</Link>
+                {item.children?.map((child) => (
+                  <Link href={child.href} key={child.label}>
+                    {child.label}
+                  </Link>
+                ))}
+              </div>
+            ))}
+          </nav>
+        </details>
       </div>
     </header>
   );
@@ -421,11 +435,25 @@ function RallyHomepage() {
               <circle cx="18" cy="21" r="1.4" />
             </svg>
             </Link>
-          <button className="rally-menu-button" type="button" aria-label="Menu">
-            <span />
-            <span />
-            <span />
-          </button>
+          <details className="rally-mobile-nav">
+            <summary className="rally-menu-button" aria-label="Open navigation">
+              <span />
+              <span />
+              <span />
+            </summary>
+            <nav className="rally-mobile-nav-panel" aria-label="Mobile navigation">
+              {siteNav.map((item) => (
+                <div key={item.label}>
+                  <Link href={item.href}>{item.label}</Link>
+                  {item.children?.map((child) => (
+                    <Link href={child.href} key={child.label}>
+                      {child.label}
+                    </Link>
+                  ))}
+                </div>
+              ))}
+            </nav>
+          </details>
         </div>
       </header>
 
