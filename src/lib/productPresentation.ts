@@ -23,6 +23,21 @@ export type ProductPresentation = {
 
 const assetBase = '/homepage-assets/cheerdmoto_style_a_rally_terrain';
 
+const skuBySlug: Record<string, string> = {
+  'xceed-electric-dirt-bike': 'CM-XCEED-72V',
+  'cheerdmoto-performance-96v-electric-dirtbike-xtreme': 'CM-XTREME-96V',
+  'cheerdmoto-electric-wheelchair-smart-b02': 'CM-SMART-B02',
+  'grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto': 'CM-XPLORE-1350',
+  'grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto': 'CM-XCITE-1350',
+  'grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike': 'CM-XPLUS-1350',
+  helmet: 'CM-HELMET-01',
+  'cheerdmoto-xceed-upgraded-high-temperature-performance-brake-upgrade-kit': 'CM-XCEED-BRAKE-KIT',
+  'xceed-street-legal-kit': 'CM-XCEED-STREET-KIT',
+  'cheerdmoto-xceed-lcd-display-with-mount-bracket': 'CM-XCEED-LCD-KIT',
+  'cheerdmoto-xceed-72v-30ah-battery': 'CM-XCEED-72V-30AH',
+  'cheerdmoto-xceed-dirtbike-wheel-upgrade-kit': 'CM-XCEED-WHEEL-KIT'
+};
+
 const commonFaq: ProductFaq[] = [
   {question: 'How do I choose the right option?', answer: 'Compare the published specifications with your intended use, then contact our support team if you need help confirming compatibility.'},
   {question: 'Is this item in stock?', answer: 'The product page shows the current availability status. Availability can change before an order is submitted.'},
@@ -145,7 +160,7 @@ export function productPresentation(item: SiteItem): ProductPresentation {
   const image = item.image || '';
   const gallery = [...new Set([...(override.gallery || []), image].filter(Boolean))];
   const description = cleanText(override.description || item.description || 'Product details will be confirmed by the CHEERDMOTO support team.');
-  const sku = item.slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-');
+  const sku = skuBySlug[item.slug] || `CM-${item.slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 48)}`;
   const availability = item.availability || '';
   const inStock = !/outofstock|out of stock|sold out/i.test(availability);
   const model = override.model || item.title.split('|')[0]?.trim() || item.slug;

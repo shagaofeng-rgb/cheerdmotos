@@ -71,10 +71,54 @@ export default async function MigratedPage({ params }: PageProps) {
     return <CollectionPage item={item} />;
   }
 
+  if (item.route === "/shipping-returns") {
+    return <ShippingReturnsPage />;
+  }
+
   return <ContentPage item={item} />;
 }
 
 const assetBase = "/homepage-assets/cheerdmoto_style_a_rally_terrain";
+const merchantPolicyUrl = `${siteUrl}/shipping-returns`;
+const contiguousUsStates = [
+  "AL", "AZ", "AR", "CA", "CO", "CT", "DE", "FL", "GA", "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN", "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH", "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA", "WV", "WI", "WY"
+];
+
+const merchantPolicyJsonLd = {
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "@id": `${siteUrl}/#organization`,
+  name: "CHEERDMOTO",
+  url: siteUrl,
+  hasMerchantReturnPolicy: {
+    "@id": `${merchantPolicyUrl}#return-policy`,
+    "@type": "MerchantReturnPolicy",
+    applicableCountry: "US",
+    returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+    merchantReturnDays: 14,
+    merchantReturnLink: merchantPolicyUrl
+  },
+  hasShippingService: {
+    "@id": `${merchantPolicyUrl}#shipping-policy`,
+    "@type": "ShippingService",
+    name: "CHEERDMOTO Contiguous U.S. Shipping",
+    description: "Free shipping for orders delivered to the contiguous United States.",
+    fulfillmentType: "https://schema.org/FulfillmentTypeDelivery",
+    shippingConditions: {
+      "@type": "ShippingConditions",
+      shippingDestination: {
+        "@type": "DefinedRegion",
+        addressCountry: "US",
+        addressRegion: contiguousUsStates
+      },
+      shippingRate: {
+        "@type": "MonetaryAmount",
+        value: 0,
+        currency: "USD"
+      }
+    }
+  }
+};
 
 const garageProducts = [
   {
@@ -759,7 +803,13 @@ async function ProductPage({ item }: { item: SiteItem }) {
       priceCurrency: item.currency || "USD",
       price: String(price),
       availability: (item.availability || "https://schema.org/InStock").replace(/^http:\/\//, 'https://'),
-      url: `https://www.cheerdmotos.com${item.route}`
+      itemCondition: "https://schema.org/NewCondition",
+      hasMerchantReturnPolicy: { "@id": `${merchantPolicyUrl}#return-policy` },
+      shippingDetails: {
+        "@type": "OfferShippingDetails",
+        hasShippingService: { "@id": `${merchantPolicyUrl}#shipping-policy` }
+      },
+      url: `${siteUrl}${item.route}`
     } : undefined
   };
   const breadcrumbJsonLd = {
@@ -795,6 +845,34 @@ function RallyFooter() {
       <div><h3>SUPPORT</h3><Link href="/support">Contact us</Link><Link href="/shipping-returns">Shipping & returns</Link><Link href="/warranty">Warranty</Link></div>
       <div><h3>COMPANY</h3><Link href="/about">About us</Link><Link href="/news">News</Link><Link href="/blog">Blog</Link></div>
     </footer>
+  );
+}
+
+function ShippingReturnsPage() {
+  return (
+    <main className="policy-page">
+      <RallySiteNav dark />
+      <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(merchantPolicyJsonLd)}} />
+      <section className="policy-hero">
+        <p className="eyebrow">Customer policy</p>
+        <h1>Shipping &amp; returns</h1>
+        <p>Clear delivery and return information for orders placed through CHEERDMOTO.</p>
+      </section>
+      <section className="policy-content">
+        <article id="shipping-policy">
+          <p className="eyebrow">Shipping</p>
+          <h2>Free shipping in the contiguous United States</h2>
+          <p>CHEERDMOTO offers free shipping for orders delivered to the 48 contiguous U.S. states. Delivery availability and any product-specific handling requirements are confirmed during checkout.</p>
+        </article>
+        <article id="return-policy">
+          <p className="eyebrow">Returns</p>
+          <h2>14-day return window</h2>
+          <p>You may contact CHEERDMOTO support to request a return within 14 days of delivery. Please wait for return instructions and authorization before sending an item back, so that product condition, order details, and the applicable return process can be confirmed.</p>
+          <Link className="button" href="/support">Contact support</Link>
+        </article>
+      </section>
+      <RallyFooter />
+    </main>
   );
 }
 
