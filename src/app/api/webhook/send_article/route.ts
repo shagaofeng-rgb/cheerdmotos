@@ -71,14 +71,23 @@ function failure(message: string, status = 400) {
   return Response.json({code: 0, msg: message}, {status});
 }
 
+function requestApiKey(request: Request, fallback = '') {
+  const authorization = request.headers.get('authorization') || '';
+  const bearer = authorization.startsWith('Bearer ') ? authorization.slice(7).trim() : '';
+  return fallback || request.headers.get('x-api-key') || bearer;
+}
+
 export async function POST(request: Request) {
   const payload = await readPayload(request);
   const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || request.headers.get('x-real-ip') || 'unknown';
   const userAgent = request.headers.get('user-agent') || '';
 
-  if (!(await verifyBlogWebhookApiKey(payload.sign))) {
+  if (!(await verifyBlogWebhookApiKey(requestApiKey(request, payload.sign)))) {
     await appendAuditLog({actor: 'external-blog-plugin', action: 'Webhook blog publish', module: 'Blog', result: 'failed', ip, userAgent, detail: 'Invalid webhook API key.'});
     return failure('秘钥错误', 401);
+  }
+  if (!payload.title && !payload.content) {
+    return Response.json({code: 1, msg: '验证成功'});
   }
   if (!payload.title || !payload.content) return failure('文章标题和文章内容不能为空');
   if (!validImageUrl(payload.imageUrl)) return failure('封面图地址必须是有效的 http 或 https URL');
@@ -143,6 +152,10 @@ export async function POST(request: Request) {
   return Response.json({code: 1, msg: duplicate ? '文章已存在' : '发布成功', slug: publishedSlug});
 }
 
-export async function GET() {
-  return failure('Method not allowed', 405);
+export async function GET(request: Request) {
+  const sign = new URL(request.url).searchParams.get('sign') || '';
+  if (!(await verifyBlogWebhookApiKey(requestApiKey(request, sign)))) {
+    return failure('秘钥错误', 401);
+  }
+  return Response.json({code: 1, msg: '验证成功'});
 }
