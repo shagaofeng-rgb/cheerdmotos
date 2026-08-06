@@ -5,7 +5,7 @@ export const dynamic = 'force-dynamic';
 
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return process.env.NODE_ENV !== 'production';
   const header = request.headers.get('authorization') || '';
   return header === `Bearer ${secret}`;
 }
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
   }
 
   const url = new URL(request.url);
-  const submit = url.searchParams.get('submit') === '1' || String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || '').toLowerCase() === 'true';
+  const submit = url.searchParams.get('submit') === '1';
   const dryRun = url.searchParams.get('dryRun') === '1';
   const force = url.searchParams.get('force') === '1';
   const log = await runSitemapMaintenance({

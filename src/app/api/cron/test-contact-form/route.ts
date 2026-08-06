@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 
 function authorized(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return true;
+  if (!secret) return process.env.NODE_ENV !== 'production';
   const header = request.headers.get('authorization') || '';
   return header === `Bearer ${secret}`;
 }

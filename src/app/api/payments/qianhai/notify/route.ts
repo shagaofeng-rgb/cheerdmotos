@@ -1,14 +1,10 @@
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: Request) {
-  const rawBody = await request.text();
-  const signature = request.headers.get('x-qianhai-signature') || request.headers.get('signature') || '';
-
+export async function POST() {
   return Response.json({
-    ok: true,
-    status: 'callback_received',
-    received: Boolean(rawBody || signature),
-    message: 'Verify Qianhai signature and update order status here after gateway documentation is available.'
-  });
+    ok: false,
+    status: 'not_configured',
+    message: 'Qianhai payment callbacks are not configured. No payment status was accepted or changed.'
+  }, {status: 501});
 }

@@ -4,11 +4,12 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function POST(request: Request) {
-  if (process.env.OCEANPAYMENT_ALLOW_NOTICE_SIMULATION !== 'true') {
+  const simulationToken = process.env.OCEANPAYMENT_SIMULATION_TOKEN || '';
+  if (process.env.OCEANPAYMENT_ALLOW_NOTICE_SIMULATION !== 'true' || !simulationToken) {
     return Response.json({message: 'Simulation endpoint is disabled'}, {status: 403});
   }
   const auth = request.headers.get('x-simulation-token') || '';
-  if (process.env.OCEANPAYMENT_SIMULATION_TOKEN && auth !== process.env.OCEANPAYMENT_SIMULATION_TOKEN) {
+  if (auth !== simulationToken) {
     return Response.json({message: 'Invalid simulation token'}, {status: 401});
   }
   const payload = await request.json();

@@ -38,7 +38,7 @@ export default async function AdminSyncPage() {
           <div><dt>持久化存储</dt><dd>{storage.configured ? `${storage.provider} 已启用，订单、表单、后台内容和日志可跨部署保存。` : '未检测到稳定存储配置，上线经营前必须配置 Vercel Blob/KV/数据库。'}</dd></div>
           <div><dt>Google Search Console</dt><dd>{seoConfig.configured ? `站点 ${seoConfig.siteUrl} 已配置，凭据来源：${seoConfig.credentialSource}。` : '缺少 Google Search Console 服务账号凭据或站点配置。'}</dd></div>
           <div><dt>Sitemap 地址</dt><dd>https://www.cheerdmotos.com/sitemap.xml</dd></div>
-          <div><dt>定时任务</dt><dd>/api/cron/publish-news、/api/cron/publish-blog、/api/cron/sync-google-seo、/api/cron/sitemap、/api/cron/test-contact-form 已写入 vercel.json。</dd></div>
+          <div><dt>定时任务</dt><dd>News 自动发布、网站地图维护、每 3 天一次的 Google SEO 同步与提交、半月表单邮件检测均已写入 vercel.json；Blog 仅支持人工发布。</dd></div>
           <div><dt>最近 SEO 同步</dt><dd>{seoSnapshot?.syncedAt ? seoSnapshot.syncedAt : '暂无同步时间'}</dd></div>
         </dl>
       </section>

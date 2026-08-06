@@ -17,12 +17,8 @@
       "schedule": "0 4 * * *"
     },
     {
-      "path": "/api/cron/publish-blog",
-      "schedule": "20 1 * * *"
-    },
-    {
       "path": "/api/cron/sync-google-seo",
-      "schedule": "30 2 * * *"
+      "schedule": "30 2 */3 * *"
     },
     {
       "path": "/api/cron/sitemap",
