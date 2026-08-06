@@ -1,5 +1,5 @@
 import {listAdminPosts, type ContentPost} from '@/lib/backendStore';
-import {newsArticles, type NewsArticle} from '@/lib/news';
+import {type NewsArticle} from '@/lib/news';
 import {siteUrl} from '@/lib/site';
 
 function sourceUrlFrom(post: ContentPost) {
@@ -64,19 +64,9 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
 
 export async function getAllBlogArticles() {
   const adminPosts = await listAdminPosts('blog');
-  const published = adminPosts.filter((post) => post.status === 'published').map(postToBlogArticle);
-  const staticBlogArticles = newsArticles.slice(1).map((article) => ({
-    ...article,
-    slug: `guide-${article.slug}`,
-    category: article.category || 'Buying Guide'
-  }));
-  const seen = new Set<string>();
-  return [...published, ...staticBlogArticles]
-    .filter((article) => {
-      if (seen.has(article.slug)) return false;
-      seen.add(article.slug);
-      return true;
-    })
+  return adminPosts
+    .filter((post) => post.status === 'published')
+    .map(postToBlogArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -85,5 +75,7 @@ export async function getAllBlogSlugs() {
 }
 
 export async function getBlogArticleBySlug(slug: string) {
-  return (await getAllBlogArticles()).find((article) => article.slug === slug);
+  const articles = await getAllBlogArticles();
+  const normalizedSlug = slug.startsWith('guide-') ? slug.slice('guide-'.length) : slug;
+  return articles.find((article) => article.slug === normalizedSlug);
 }

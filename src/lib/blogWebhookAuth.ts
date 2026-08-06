@@ -19,7 +19,8 @@ function matchesHash(actualHash: string, expectedHash: string) {
 }
 
 export async function verifyBlogWebhookApiKey(apiKey: string) {
-  const configuredHash = process.env.BLOG_WEBHOOK_API_KEY_HASH ||
+  const configuredSign = process.env.WEBHOOK_ARTICLE_SIGN || '';
+  const configuredHash = configuredSign ? hashApiKey(configuredSign) : process.env.BLOG_WEBHOOK_API_KEY_HASH ||
     (await readStoreObject<WebhookCredentials>(CREDENTIAL_FILE))?.blogWebhookKeyHash || '';
   if (!apiKey || !configuredHash) return false;
   return matchesHash(hashApiKey(apiKey), configuredHash);
@@ -27,5 +28,5 @@ export async function verifyBlogWebhookApiKey(apiKey: string) {
 
 export async function blogWebhookConfigured() {
   const stored = await readStoreObject<WebhookCredentials>(CREDENTIAL_FILE);
-  return Boolean(process.env.BLOG_WEBHOOK_API_KEY_HASH || stored?.blogWebhookKeyHash);
+  return Boolean(process.env.WEBHOOK_ARTICLE_SIGN || process.env.BLOG_WEBHOOK_API_KEY_HASH || stored?.blogWebhookKeyHash);
 }
