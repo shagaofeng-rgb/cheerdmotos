@@ -57,4 +57,5 @@ No Blog cron, queue consumer, workflow, script, or route remains. The four News 
 - Production Blob snapshot was taken before edits; manifest timestamp is 2026-08-06T01:41:42Z.
 - Build command: `npm run build` completed successfully after the backup exclusion.
 - Public endpoint checks used read-only `curl` requests. No order, payment, post, Blog, or content record was created or deleted during validation.
-- Deployment verification must be repeated against the new Vercel production deployment after this commit is deployed; record the deployment ID and the same endpoint status checks below this report.
+- **Deployment verification completed:** commit `f1c12b4` deployed as Vercel production deployment `dpl_6dUHLmC8XkYoab6MsAfmagRSwMcw`, state `READY`, with both `cheerdmotos.com` and `www.cheerdmotos.com` aliases attached.
+- **Post-deployment production regression:** `/`, `/news`, `/blog`, `/sitemap.xml`, `/robots.txt`, and `/api/analytics/health` all returned 200. `/api/cron/publish-blog` returned 404. Unauthenticated `/api/cron/publish-news`, `/api/cron/sitemap`, and `/api/cron/sync-google-seo` each returned 401. `POST /api/payments/qianhai/notify` returned 501 and `POST /api/payments/oceanpayment/simulate-notice` returned 403.
