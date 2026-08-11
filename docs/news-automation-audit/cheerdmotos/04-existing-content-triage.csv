@@ -1,0 +1,3 @@
+site_id,url,content_type,published_at,title,source_url,source_date,word_count,duplicate_cluster,similarity_score,index_status,decision,reason,redirect_target,rollback_method,reviewer
+cheerdmotos,/news/*,news,existing,Existing News records,not-audited,not-audited,not-audited,not-audited,not-audited,unknown,keep-pending-review,No automated deletion permitted before source and rights review,,Restore from Vercel Blob audit backup,system
+cheerdmotos,/blog/*,blog,existing,Existing Blog records,site-owned-or-plugin,not-audited,not-audited,not-audited,not-audited,unknown,keep,Explicitly protected from News automation changes,,Restore from Vercel Blob audit backup,system
