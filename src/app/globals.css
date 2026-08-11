@@ -8031,6 +8031,58 @@ summary:focus-visible {
   line-height: 1.65;
 }
 
+.admin-form-error {
+  margin: 0 0 18px;
+  padding: 12px 14px;
+  border: 1px solid #f2b9aa;
+  border-radius: 6px;
+  background: #fff4ef;
+  color: #8d2b12;
+}
+
+.admin-content-list {
+  display: grid;
+  gap: 12px;
+}
+
+.admin-content-item {
+  border: 1px solid var(--cm-line);
+  border-radius: 6px;
+  background: #fff;
+}
+
+.admin-content-item summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  cursor: pointer;
+}
+
+.admin-content-item summary span:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-content-item summary small {
+  color: var(--cm-muted);
+}
+
+.admin-content-item .admin-form-grid {
+  margin: 0 16px 16px;
+}
+
+.admin-inline-form {
+  margin: 0 16px 16px;
+}
+
+.admin-danger-button {
+  border: 1px solid #c0442c;
+  background: #fff;
+  color: #a4311d;
+}
+
 @media (max-width: 760px) {
   .policy-content {
     grid-template-columns: 1fr;

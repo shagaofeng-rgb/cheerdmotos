@@ -11,6 +11,7 @@ import {
   siteData,
   siteUrl
 } from "@/lib/site";
+import {getPublicProductBySlug, listPublicProducts} from '@/lib/publicCatalog';
 import {getAllBlogArticles} from "@/lib/blogFeed";
 import {getAllNewsArticles} from "@/lib/newsFeed";
 import ProductDetail from '@/components/ProductDetail';
@@ -27,9 +28,16 @@ export function generateStaticParams() {
   }));
 }
 
+async function resolvedItem(route: string) {
+  if (route.startsWith('/products/')) {
+    return getPublicProductBySlug(route.slice('/products/'.length));
+  }
+  return itemByRoute(route);
+}
+
 export async function generateMetadata({ params }: PageProps): Promise<Metadata> {
   const { slug } = await params;
-  const item = itemByRoute(routeFromSegments(slug));
+  const item = await resolvedItem(routeFromSegments(slug));
 
   if (!item) return {};
 
@@ -55,7 +63,7 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
 
 export default async function MigratedPage({ params }: PageProps) {
   const { slug } = await params;
-  const item = itemByRoute(routeFromSegments(slug));
+  const item = await resolvedItem(routeFromSegments(slug));
 
   if (!item) notFound();
 
@@ -785,8 +793,8 @@ function HomePage({ item }: { item: SiteItem }) {
 
 async function ProductPage({ item }: { item: SiteItem }) {
   const presentation = productPresentation(item);
-  const related = relatedItems(item);
-  const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
+  const [catalog, news, blogs] = await Promise.all([listPublicProducts(), getAllNewsArticles(), getAllBlogArticles()]);
+  const related = catalog.filter((product) => product.slug !== item.slug).slice(0, 4);
   const linkedNews = news.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
   const linkedBlogs = blogs.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
   const price = Number(String(item.price || '').replace(/[^0-9.]/g, ''));
@@ -1023,14 +1031,15 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
   );
 }
 
-function CollectionPage({ item }: { item: SiteItem }) {
+async function CollectionPage({ item }: { item: SiteItem }) {
   const design = categoryDesigns[item.route];
 
   if (design) {
     return <RallyCategoryPage item={item} design={design} />;
   }
 
-  const products = siteData.products.filter((product) => {
+  const catalog = await listPublicProducts();
+  const products = catalog.filter((product) => {
     const text = `${product.title} ${product.description}`.toLowerCase();
     const slug = item.slug.replace(/-/g, " ");
     return text.includes(slug.split(" ")[0]) || item.slug === "all-products";
@@ -1039,7 +1048,7 @@ function CollectionPage({ item }: { item: SiteItem }) {
   return (
     <main>
       <PageHero item={item} label="Collection" />
-      <ProductGrid title={item.title} items={products.length ? products : siteData.products.slice(0, 12)} />
+      <ProductGrid title={item.title} items={products.length ? products : catalog.slice(0, 12)} />
       <GeneratedContent item={item} compact />
     </main>
   );

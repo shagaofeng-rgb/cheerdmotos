@@ -1,4 +1,4 @@
-import {listAdminPosts, type ContentPost} from '@/lib/backendStore';
+import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
 import {type NewsArticle} from '@/lib/news';
 import {siteUrl} from '@/lib/site';
 
@@ -65,7 +65,7 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
 export async function getAllBlogArticles() {
   const adminPosts = await listAdminPosts('blog');
   return adminPosts
-    .filter((post) => post.status === 'published')
+    .filter((post) => isPostPublic(post))
     .map(postToBlogArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
 }

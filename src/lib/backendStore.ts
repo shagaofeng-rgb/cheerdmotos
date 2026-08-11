@@ -160,37 +160,10 @@ function cents(amount: number) {
 
 export async function readAdminStore() {
   const stored = await readStoreObject<AdminStore>(STORE_FILE);
-  if (stored) {
-    const synced = syncCatalogPrices(stored);
-    if (synced.changed) {
-      await writeStoreObject(STORE_FILE, synced.store);
-      return synced.store;
-    }
-    return stored;
-  }
+  if (stored) return stored;
   const seeded = createSeedStore();
   await writeStoreObject(STORE_FILE, seeded);
   return seeded;
-}
-
-function syncCatalogPrices(store: AdminStore) {
-  let changed = false;
-  const timestamp = now();
-  const updatedProducts = store.products.map((product) => {
-    if (!productSlugs.includes(product.slug as ProductSlug)) return product;
-    const slug = product.slug as ProductSlug;
-    const siteProduct = products[slug];
-    const nextPriceCents = cents(siteProduct.priceAmount);
-    if (product.priceCents === nextPriceCents && product.salePriceCents === 0) return product;
-    changed = true;
-    return {
-      ...product,
-      priceCents: nextPriceCents,
-      salePriceCents: 0,
-      updatedAt: timestamp
-    };
-  });
-  return {changed, store: changed ? {...store, products: updatedProducts} : store};
 }
 
 export async function writeAdminStore(updater: (store: AdminStore) => AdminStore) {
@@ -215,6 +188,17 @@ export async function listAdminMedia() {
 export async function listAdminPosts(type?: ContentType) {
   const posts = (await readAdminStore()).posts;
   return posts.filter((post) => !type || post.type === type).sort((a, b) => b.publishDate.localeCompare(a.publishDate));
+}
+
+export function isPostPublic(post: ContentPost, at = new Date()) {
+  if (post.status === 'published') return true;
+  if (post.status !== 'scheduled') return false;
+  const publishAt = new Date(`${post.publishDate}T00:00:00.000Z`);
+  return !Number.isNaN(publishAt.getTime()) && publishAt.getTime() <= at.getTime();
+}
+
+export async function getAdminPostById(id: string) {
+  return (await readAdminStore()).posts.find((post) => post.id === id) || null;
 }
 
 function isInsideRange(timestamp: string, filter?: AdminDashboardFilter) {

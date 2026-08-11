@@ -1,4 +1,4 @@
-import {listAdminPosts, type ContentPost} from '@/lib/backendStore';
+import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
 import {type NewsArticle} from '@/lib/news';
 import {siteUrl} from '@/lib/site';
 
@@ -111,7 +111,7 @@ function diversifyArticleImages(articles: NewsArticle[]) {
 export async function getAllNewsArticles() {
   const adminPosts = await listAdminPosts('news');
   return adminPosts
-    .filter((post) => post.status === 'published')
+    .filter((post) => isPostPublic(post))
     .map(postToArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
 }

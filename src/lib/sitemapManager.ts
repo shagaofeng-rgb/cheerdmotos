@@ -1,5 +1,6 @@
 import {getAllBlogArticles} from '@/lib/blogFeed';
-import {readAdminStore} from '@/lib/backendStore';
+import {listAdminCategories, listAdminProducts, readAdminStore} from '@/lib/backendStore';
+import {listPublicProducts} from '@/lib/publicCatalog';
 import {readStoreLines, readStoreObject, writeStoreObject, appendStoreLine} from '@/lib/durableStore';
 import {getAllNewsArticles} from '@/lib/newsFeed';
 import {siteData, siteUrl} from '@/lib/site';
@@ -48,6 +49,17 @@ const SITEMAP_FILES: Record<SitemapKind, string> = {
   pages: 'sitemap-pages.xml'
 };
 
+const categoryRoutes: Record<string, string> = {
+  'electric-dirt-bike': '/electric-dirt-bikes',
+  'electric-dirt-bikes': '/electric-dirt-bikes',
+  'e-bike': '/e-bikes',
+  'e-bikes': '/e-bikes',
+  'electric-wheelchair': '/electric-wheelchairs',
+  'electric-wheelchairs': '/electric-wheelchairs',
+  accessories: '/accessories',
+  clearance: '/clearance'
+};
+
 function dateOnly(value: string | Date | undefined) {
   if (!value) return siteData.generatedAt?.slice(0, 10) || '2026-07-07';
   const date = typeof value === 'string' ? new Date(value) : value;
@@ -82,15 +94,15 @@ function maxLastmod(entries: SitemapEntry[]) {
 }
 
 export async function getSitemapGroups() {
-  const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
+  const [news, blogs, products, categories] = await Promise.all([getAllNewsArticles(), getAllBlogArticles(), listPublicProducts(), listAdminCategories()]);
   const listPagesLastmod = maxLastmod([...news, ...blogs].map((article) => ({loc: article.slug, lastmod: dateOnly(article.updatedAt || article.date)})));
-  const products = dedupe(siteData.products.map((item) => ({
+  const productEntries = dedupe(products.map((item) => ({
     loc: absolute(item.route),
-    lastmod: dateOnly(item.publishedAt || siteData.generatedAt)
+    lastmod: dateOnly(item.publishedAt)
   })));
-  const categories = dedupe(siteData.collections.map((item) => ({
-    loc: absolute(item.route),
-    lastmod: dateOnly(item.publishedAt || siteData.generatedAt)
+  const categoryEntries = dedupe(categories.filter((item) => item.status === 'published' && categoryRoutes[item.slug]).map((item) => ({
+    loc: absolute(categoryRoutes[item.slug]),
+    lastmod: dateOnly(item.updatedAt)
   })));
   const pages = dedupe([
     {
@@ -115,7 +127,7 @@ export async function getSitemapGroups() {
     }))
   ]);
 
-  return {products, posts, categories, pages} satisfies Record<SitemapKind, SitemapEntry[]>;
+  return {products: productEntries, posts, categories: categoryEntries, pages} satisfies Record<SitemapKind, SitemapEntry[]>;
 }
 
 export async function getSitemapIndexEntries() {

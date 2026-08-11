@@ -117,6 +117,32 @@ export default async function AdminProductsPage() {
           </table>
         </div>
       </section>
+
+      <section className="admin-panel">
+        <div><p className="eyebrow">编辑已存商品</p><h2>商品发布与核心信息</h2></div>
+        <div className="admin-content-list">
+          {products.map((product) => (
+            <details key={product.id} className="admin-content-item">
+              <summary><span><strong>{product.name}</strong><small>{product.slug} · SKU {product.sku}</small></span><span className={`admin-status ${product.status}`}>{zhPublishStatus(product.status)}</span></summary>
+              <form className="admin-form-grid admin-form-wide" action="/api/admin/products" method="post">
+                <input type="hidden" name="intent" value="update" /><input type="hidden" name="id" value={product.id} />
+                <input name="name" defaultValue={product.name} required /><input name="slug" defaultValue={product.slug} required />
+                <select name="categorySlug" defaultValue={product.categorySlug}>{categories.map((category) => <option value={category.slug} key={category.id}>{category.name}</option>)}</select>
+                <select name="status" defaultValue={product.status}><option value="draft">草稿</option><option value="published">已发布</option><option value="unpublished">已下线</option><option value="scheduled">定时发布</option><option value="archived">已归档</option></select>
+                <input name="sku" defaultValue={product.sku} /><input name="stock" type="number" min="0" defaultValue={product.stock} />
+                <input name="price" type="number" min="0" step="0.01" defaultValue={(product.salePriceCents || product.priceCents) / 100} /><input name="compareAtPrice" type="number" min="0" step="0.01" defaultValue={product.priceCents / 100} />
+                <input name="coverImage" defaultValue={product.coverImage} /><textarea name="galleryImages" defaultValue={product.galleryImages.join('\n')} />
+                <textarea name="shortDescription" defaultValue={product.shortDescription} /><textarea name="fullDescription" defaultValue={product.fullDescription} />
+                <input name="seoTitle" defaultValue={product.seoTitle} /><textarea name="seoDescription" defaultValue={product.seoDescription} />
+                <label className="admin-check"><input type="checkbox" name="showOnHome" defaultChecked={product.showOnHome} />首页推荐</label>
+                <label className="admin-check"><input type="checkbox" name="allowCart" defaultChecked={product.allowCart} />允许加入购物车</label>
+                <label className="admin-check"><input type="checkbox" name="allowDirectOrder" defaultChecked={product.allowDirectOrder} />允许直接下单</label>
+                <button type="submit">保存商品</button>
+              </form>
+            </details>
+          ))}
+        </div>
+      </section>
     </AdminShell>
   );
 }
