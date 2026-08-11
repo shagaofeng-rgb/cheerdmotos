@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type {NewsArticle} from '@/lib/news';
-import {products, type ProductSlug} from '@/lib/site';
+import {productDetailedSpecs, products, type ProductSlug} from '@/lib/site';
 
 export function ArticleListView({title, eyebrow, description, articles, basePath}: {
   title: string;
@@ -43,7 +43,8 @@ export function ArticleDetailView({article, basePath, type}: {
   basePath: '/news' | '/blog';
   type: 'news' | 'blog';
 }) {
-  const productSlugs = ((article.productSlugs?.length ? article.productSlugs : inferProductSlugs(article)) as ProductSlug[]).filter((slug) => products[slug]);
+  const productSlugs = ((article.productSlugs?.length ? article.productSlugs : inferProductSlugs(article)) as ProductSlug[])
+    .filter((slug) => Object.prototype.hasOwnProperty.call(productDetailedSpecs, slug));
   const source = article.sources[0];
   const jsonLd = {
     '@context': 'https://schema.org',

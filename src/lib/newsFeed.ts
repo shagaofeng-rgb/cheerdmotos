@@ -1,5 +1,5 @@
 import {listAdminPosts, type ContentPost} from '@/lib/backendStore';
-import {newsArticles, type NewsArticle} from '@/lib/news';
+import {type NewsArticle} from '@/lib/news';
 import {siteUrl} from '@/lib/site';
 
 function slugify(value: string) {
@@ -110,22 +110,10 @@ function diversifyArticleImages(articles: NewsArticle[]) {
 
 export async function getAllNewsArticles() {
   const adminPosts = await listAdminPosts('news');
-  const published = adminPosts
+  return adminPosts
     .filter((post) => post.status === 'published')
-    .map(postToArticle);
-  const seen = new Set<string>();
-  const seenTopics = new Set<string>();
-  const articles = [...published, ...newsArticles]
-    .filter((article) => {
-      if (seen.has(article.slug)) return false;
-      const topic = topicFingerprint(article);
-      if (seenTopics.has(topic)) return false;
-      seen.add(article.slug);
-      seenTopics.add(topic);
-      return true;
-    })
+    .map(postToArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
-  return diversifyArticleImages(articles);
 }
 
 export async function getAllNewsSlugs() {
