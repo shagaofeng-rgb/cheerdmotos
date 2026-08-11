@@ -1033,12 +1033,17 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
 
 async function CollectionPage({ item }: { item: SiteItem }) {
   const design = categoryDesigns[item.route];
+  const catalog = await listPublicProducts();
 
   if (design) {
-    return <RallyCategoryPage item={item} design={design} />;
+    const categoryKey = item.route === '/electric-dirt-bikes' ? 'dirt bike' : item.route === '/e-bikes' ? 'e bike' : item.route === '/electric-wheelchairs' ? 'wheelchair' : item.route === '/accessories' ? 'accessories' : '';
+    const liveProducts = catalog
+      .filter((product) => categoryKey && `${product.title} ${product.description}`.toLowerCase().includes(categoryKey))
+      .map((product) => ({name: product.title, spec: product.description || product.availability, price: product.price || 'Contact us', image: product.image, href: product.route}))
+      .filter((product) => product.image);
+    return <RallyCategoryPage item={item} design={{...design, products: liveProducts.length ? liveProducts : design.products}} />;
   }
 
-  const catalog = await listPublicProducts();
   const products = catalog.filter((product) => {
     const text = `${product.title} ${product.description}`.toLowerCase();
     const slug = item.slug.replace(/-/g, " ");
