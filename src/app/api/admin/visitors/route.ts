@@ -19,6 +19,8 @@ export async function GET(request: Request) {
     q: url.searchParams.get('q') || '',
     country: url.searchParams.get('country') || '',
     source: url.searchParams.get('source') || '',
+    device: url.searchParams.get('device') || '',
+    tag: url.searchParams.get('tag') || '',
     page: Number(url.searchParams.get('page') || 1),
     perPage: format === 'csv' ? 10000 : Number(url.searchParams.get('perPage') || 10)
   });

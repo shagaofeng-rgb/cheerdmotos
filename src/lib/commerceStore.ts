@@ -2,6 +2,7 @@ import {appendStoreLine, readStoreLines, writeStoreLines} from '@/lib/durableSto
 import {shippingEstimateFor} from '@/lib/shipping';
 import {oneTimePaymentSlug, products, type CheckoutProductSlug} from '@/lib/site';
 import type {AttributionSnapshot} from '@/lib/trafficAttribution';
+import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
 
 const ORDERS_FILE = 'orders.jsonl';
 const EVENTS_FILE = 'analytics-events.jsonl';
@@ -108,6 +109,9 @@ export type AnalyticsEvent = {
   browser: string;
   os: string;
   ip?: string;
+  ipHash?: string;
+  trafficQuality?: 'real' | 'test' | 'bot' | 'internal' | 'system';
+  exclusionReason?: string;
   timestamp: string;
   payload: Record<string, unknown>;
   attribution?: AttributionSnapshot | null;
@@ -550,7 +554,7 @@ function isInsideRange(value: string, filter?: CommerceSnapshotFilter) {
 export async function getCommerceSnapshot(filter?: CommerceSnapshotFilter) {
   const [orders, events] = await Promise.all([readStoreOrders(), readAnalyticsEvents()]);
   const filteredOrders = orders.filter((order) => isInsideRange(order.createdAt, filter));
-  const filteredEvents = events.filter((event) => isInsideRange(event.timestamp, filter));
+  const filteredEvents = events.filter((event) => isInsideRange(event.timestamp, filter) && classifyTrafficQuality(event).include);
   const paidOrders = filteredOrders.filter((order) => ['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(order.status));
   const pendingOrders = filteredOrders.filter((order) => order.status === 'pending_payment');
   const shippedOrders = filteredOrders.filter((order) => order.status === 'shipped' || order.status === 'delivered');

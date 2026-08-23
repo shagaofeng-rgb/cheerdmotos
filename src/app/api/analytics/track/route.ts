@@ -1,5 +1,7 @@
 import {appendAnalyticsEvent, type AnalyticsEvent} from '@/lib/commerceStore';
+import {appendStoreLine} from '@/lib/durableStore';
 import {classifyTraffic, compactAttribution} from '@/lib/trafficAttribution';
+import {fingerprintIp, maskIp} from '@/lib/analyticsGovernance';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -34,6 +36,12 @@ function clean(value: unknown, limit = 240) {
 
 function isBot(userAgent = '') {
   return /bot|crawler|spider|crawling|lighthouse|pagespeed|headless|vercel|uptime|monitor|preview|facebookexternalhit|slurp|bingpreview/i.test(userAgent);
+}
+
+function isTestRequest(request: Request, payload: Record<string, unknown>) {
+  const host = request.headers.get('host') || '';
+  const page = clean(payload.page || '/', 240);
+  return host.includes('localhost') || host.endsWith('.vercel.app') || /(?:[?&])(?:__test|_test|test|test_mode|form_health_check|collect|collects|preview)(?:=|&|$)/i.test(page) || payload.analyticsTest === true;
 }
 
 function safeEventType(value: unknown) {
@@ -113,7 +121,12 @@ export async function POST(request: Request) {
     const payload = await request.json();
     const userAgent = request.headers.get('user-agent') || '';
     if (isBot(userAgent)) {
+      await appendStoreLine('analytics-exclusions.jsonl', {id: `excluded-${Date.now()}`, at: new Date().toISOString(), reason: 'bot', page: clean(payload.page || '/', 240)});
       return Response.json({ok: true, skipped: 'bot'});
+    }
+    if (isTestRequest(request, payload)) {
+      await appendStoreLine('analytics-exclusions.jsonl', {id: `excluded-${Date.now()}`, at: new Date().toISOString(), reason: 'test', page: clean(payload.page || '/', 240)});
+      return Response.json({ok: true, skipped: 'test'});
     }
     const safePayload = sanitizePayload(payload);
     const attribution = compactAttribution(payload.attribution) || {
@@ -136,7 +149,9 @@ export async function POST(request: Request) {
       device: detectDevice(userAgent),
       browser: detectBrowser(userAgent),
       os: detectOs(userAgent),
-      ip: clientIp(request),
+      ip: maskIp(clientIp(request)),
+      ipHash: fingerprintIp(clientIp(request)),
+      trafficQuality: 'real',
       timestamp: clean(payload.timestamp || new Date().toISOString(), 40),
       payload: safePayload,
       attribution

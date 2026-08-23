@@ -1,6 +1,7 @@
 import {readAnalyticsEvents, readStoreOrders, type AnalyticsEvent} from '@/lib/commerceStore';
 import {durableStoreStatus} from '@/lib/durableStore';
 import {classifyTraffic, type AttributionSnapshot, type TrafficTouch} from '@/lib/trafficAttribution';
+import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
 
 type Filter = {from?: Date; to?: Date; model?: 'first' | 'last' | 'session'};
 
@@ -111,7 +112,7 @@ export async function getAcquisitionReport(filter: Filter = {}) {
       payload: {orderId: order.id, total: order.total, value: order.total, productSlug: order.productSlug},
       attribution: order.attribution || null
     }));
-  const filteredEvents = [...events.filter((event) => inRange(event.timestamp, filter)), ...purchaseEvents];
+  const filteredEvents = [...events.filter((event) => inRange(event.timestamp, filter) && classifyTrafficQuality(event).include), ...purchaseEvents];
   const visitors = new Set(filteredEvents.map((event) => event.visitorId));
   const sessions = new Set(filteredEvents.map((event) => event.sessionId));
   const pageViews = filteredEvents.filter((event) => event.type === 'page_view').length;

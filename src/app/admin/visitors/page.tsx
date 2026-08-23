@@ -34,12 +34,16 @@ export default async function AdminVisitorsPage({
   const q = typeof params.q === 'string' ? params.q : '';
   const country = typeof params.country === 'string' ? params.country : '';
   const source = typeof params.source === 'string' ? params.source : '';
+  const device = typeof params.device === 'string' ? params.device : '';
+  const tag = typeof params.tag === 'string' ? params.tag : '';
   const report = await getVisitorRecords({
     from: timeFilter.from,
     to: timeFilter.to,
     q,
     country,
     source,
+    device,
+    tag,
     page,
     perPage
   });
@@ -49,7 +53,7 @@ export default async function AdminVisitorsPage({
       <div className="admin-title">
         <p className="eyebrow">访客记录</p>
         <h1>访客记录</h1>
-        <p>按真实前台访客事件记录客户编号、国家、设备、浏览器、来源、访问页面、客户标签、访问日和 IP。支付网关回调与后台操作不会混入访客记录。</p>
+        <p>按真实前台访客事件记录客户编号、国家、设备、浏览器、来源、访问页面、客户标签、访问次数和脱敏 IP。测试、采集器、支付回调与后台操作不会混入记录。</p>
         <AdminTimeFilter action="/admin/visitors" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="访客记录时间" summary={timeFilter.summary} />
       </div>
 
@@ -84,6 +88,26 @@ export default async function AdminVisitorsPage({
             <span>来源</span>
             <input name="source" placeholder="付费社媒 / Meta / Google" defaultValue={source} />
           </label>
+          <label>
+            <span>设备</span>
+            <select name="device" defaultValue={device}>
+              <option value="">全部设备</option>
+              <option value="Desktop">桌面端</option>
+              <option value="Mobile">手机端</option>
+              <option value="Tablet">平板</option>
+            </select>
+          </label>
+          <label>
+            <span>客户分层</span>
+            <select name="tag" defaultValue={tag}>
+              <option value="">全部客户</option>
+              <option value="新访客">新访客</option>
+              <option value="回访">回访访客</option>
+              <option value="结账">结账意向客户</option>
+              <option value="留资">已留资客户</option>
+              <option value="下单">已下单客户</option>
+            </select>
+          </label>
           <button type="submit">筛选</button>
           <a className="button secondary small" href={exportHref(params)}>导出 CSV</a>
         </form>
@@ -101,6 +125,7 @@ export default async function AdminVisitorsPage({
                 <th>来源详情</th>
                 <th>页面</th>
                 <th>客户标签</th>
+                <th>第几次访问</th>
                 <th>访问日</th>
                 <th>IP</th>
               </tr>
@@ -118,10 +143,11 @@ export default async function AdminVisitorsPage({
                   <td>{zhSourceDetail(record.sourceDetail)}</td>
                   <td>{record.page}</td>
                   <td>{record.customerTag}</td>
+                  <td>第 {record.visitNumber} 次</td>
                   <td>{record.visitDay}</td>
                   <td>{record.ip || '-'}</td>
                 </tr>
-              )) : <tr><td colSpan={12}>暂无访客记录。前台产生真实访问后会自动进入这里。</td></tr>}
+              )) : <tr><td colSpan={13}>暂无访客记录。前台产生真实访问后会自动进入这里。</td></tr>}
             </tbody>
           </table>
         </div>

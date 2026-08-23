@@ -7,6 +7,7 @@ import {getAdminDashboardData} from '@/lib/backendStore';
 import {getCommerceSnapshot, readStoreOrders} from '@/lib/commerceStore';
 import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {durableStoreConfigured} from '@/lib/durableStore';
+import {getAnalyticsOperationsReport} from '@/lib/analyticsOperations';
 
 export const dynamic = 'force-dynamic';
 
@@ -22,10 +23,11 @@ export default async function AdminDashboardPage({
   const params = await searchParams;
   const timeFilter = parseAdminTimeFilter(params);
   const {page, perPage} = parseAdminPagination(params);
-  const [snapshot, backend, allOrders] = await Promise.all([
+  const [snapshot, backend, allOrders, traffic] = await Promise.all([
     getCommerceSnapshot({from: timeFilter.from, to: timeFilter.to}),
     getAdminDashboardData({from: timeFilter.from, to: timeFilter.to}),
-    readStoreOrders()
+    readStoreOrders(),
+    getAnalyticsOperationsReport({from: timeFilter.from, to: timeFilter.to})
   ]);
   const filteredOrders = allOrders
     .filter((order) => {
@@ -59,6 +61,23 @@ export default async function AdminDashboardPage({
         <article><span>客户线索</span><strong>{backend.metrics.leads}</strong><small>订单和结账行为</small></article>
         <article><span>转化率</span><strong>{backend.metrics.conversionRate}%</strong><small>订单 / 独立访客</small></article>
       </div>
+
+      <section className="admin-operations-strip" aria-label="流量运营快照">
+        <div><span>实时在线</span><strong>{traffic.metrics.activeNow}</strong><small>最近 30 分钟</small></div>
+        <div><span>高意向访客</span><strong>{traffic.metrics.highIntentVisitors}</strong><small>结账或已留资</small></div>
+        <div><span>回访访客</span><strong>{traffic.metrics.returningVisitors}</strong><small>跨访问日回访</small></div>
+        <div><span>已过滤流量</span><strong>{traffic.metrics.excluded}</strong><small>测试、采集器与机器人</small></div>
+        <a href="/admin/visitors">查看访客流</a>
+      </section>
+
+      <section className="admin-panel admin-traffic-workspace">
+        <div className="admin-panel-heading"><div><p className="eyebrow">今日流量画像</p><h2>真实访客与来源概览</h2></div><a className="button secondary small" href="/admin/analytics/acquisition">查看来源归因</a></div>
+        <div className="admin-three-col">
+          <div className="admin-bar-list"><h3>国家/地区</h3>{traffic.countries.length ? traffic.countries.map((row) => <p key={row.label}><span>{row.label}</span><strong>{row.value}</strong></p>) : <p><span>暂无有效流量</span><strong>0</strong></p>}</div>
+          <div className="admin-bar-list"><h3>渠道</h3>{traffic.channels.length ? traffic.channels.map((row) => <p key={row.label}><span>{row.label}</span><strong>{row.value}</strong></p>) : <p><span>暂无有效流量</span><strong>0</strong></p>}</div>
+          <div className="admin-bar-list"><h3>热门页面</h3>{traffic.pages.length ? traffic.pages.map((row) => <p key={row.label}><span>{row.label}</span><strong>{row.value}</strong></p>) : <p><span>暂无有效流量</span><strong>0</strong></p>}</div>
+        </div>
+      </section>
 
       <section className="admin-panel">
         <div>

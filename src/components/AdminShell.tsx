@@ -38,6 +38,7 @@ const navGroups = [
       {key: 'analytics', label: '访问分析', href: '/admin/analytics'},
       {key: 'visitors', label: '访客记录', href: '/admin/visitors'},
       {key: 'acquisition', label: '来源归因', href: '/admin/analytics/acquisition'},
+      {key: 'traffic-quality', label: '流量质量', href: '/admin/analytics/quality'},
       {key: 'funnel', label: '转化漏斗', href: '/admin/funnel'},
       {key: 'seo', label: 'SEO 数据', href: '/admin/seo'}
     ]

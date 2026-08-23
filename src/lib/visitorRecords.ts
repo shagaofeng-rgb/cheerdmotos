@@ -2,6 +2,7 @@ import {readAnalyticsEvents, readStoreOrders, type AnalyticsEvent} from '@/lib/c
 import {durableStoreStatus} from '@/lib/durableStore';
 import {zhCountry, zhTrafficPlatform, zhTrafficSource} from '@/lib/adminLabels';
 import {classifyTraffic, type AttributionSnapshot, type TrafficTouch} from '@/lib/trafficAttribution';
+import {classifyTrafficQuality, maskIp} from '@/lib/analyticsGovernance';
 
 export type VisitorRecord = {
   time: string;
@@ -15,6 +16,7 @@ export type VisitorRecord = {
   sourceDetail: string;
   page: string;
   customerTag: string;
+  visitNumber: number;
   visitDay: string;
   ip: string;
 };
@@ -25,6 +27,8 @@ type Filter = {
   q?: string;
   country?: string;
   source?: string;
+  device?: string;
+  tag?: string;
   limit?: number;
   page?: number;
   perPage?: number;
@@ -60,6 +64,7 @@ function touchFor(event: AnalyticsEvent): TrafficTouch {
 }
 
 function isRealVisitorEvent(event: AnalyticsEvent) {
+  if (!classifyTrafficQuality(event).include) return false;
   if (GATEWAY_EVENTS.has(event.type)) return false;
   if (event.type.startsWith('admin_')) return false;
   const visitorId = stableVisitorId(event);
@@ -124,6 +129,7 @@ export async function getVisitorRecords(filter: Filter = {}) {
   const customerNumbers = new Map<string, string>();
   const firstSeen = new Map<string, string>();
   const visitDaysByVisitor = new Map<string, Map<string, number>>();
+  const visitNumbersByVisitor = new Map<string, Map<string, number>>();
   const leadVisitors = new Set(realEvents.filter((event) => /contact_inquiry|form_submit|submit/i.test(event.type)).map(stableVisitorId));
   const orderVisitors = new Set(orders.map((order) => order.attribution?.visitorId || order.userId || '').filter(Boolean));
 
@@ -135,12 +141,17 @@ export async function getVisitorRecords(filter: Filter = {}) {
     const days = visitDaysByVisitor.get(visitorId) || new Map<string, number>();
     if (!days.has(date)) days.set(date, days.size + 1);
     visitDaysByVisitor.set(visitorId, days);
+    const sessionId = event.sessionId || `${date}:${event.id}`;
+    const sessions = visitNumbersByVisitor.get(visitorId) || new Map<string, number>();
+    if (!sessions.has(sessionId)) sessions.set(sessionId, sessions.size + 1);
+    visitNumbersByVisitor.set(visitorId, sessions);
   });
 
   const records: VisitorRecord[] = realEvents.map((event) => {
     const visitorId = stableVisitorId(event);
     const touch = touchFor(event);
     const visitIndex = visitDaysByVisitor.get(visitorId)?.get(dayKey(event.timestamp)) || 1;
+    const visitNumber = visitNumbersByVisitor.get(visitorId)?.get(event.sessionId || `${dayKey(event.timestamp)}:${event.id}`) || 1;
     return {
       time: event.timestamp,
       customerNo: customerNumbers.get(visitorId) || shortCustomerNo(0),
@@ -153,17 +164,22 @@ export async function getVisitorRecords(filter: Filter = {}) {
       sourceDetail: sourceDetail(touch),
       page: event.page || touch.currentUrl || touch.landingPage || '/',
       customerTag: customerTag(visitorId, event, leadVisitors, orderVisitors, firstSeen),
+      visitNumber,
       visitDay: `第 ${visitIndex} 个访问日`,
-      ip: event.ip || ''
+      ip: maskIp(event.ip || '')
     };
   }).reverse();
 
   const q = (filter.q || '').trim().toLowerCase();
   const country = (filter.country || '').trim().toLowerCase();
   const source = (filter.source || '').trim().toLowerCase();
+  const device = (filter.device || '').trim().toLowerCase();
+  const tag = (filter.tag || '').trim().toLowerCase();
   const filtered = records.filter((record) => {
     if (country && !`${record.country} ${zhCountry(record.country)}`.toLowerCase().includes(country)) return false;
     if (source && !`${record.source} ${zhTrafficSource(record.source)} ${record.sourcePlatform} ${zhTrafficPlatform(record.sourcePlatform)}`.toLowerCase().includes(source)) return false;
+    if (device && !record.device.toLowerCase().includes(device)) return false;
+    if (tag && !record.customerTag.toLowerCase().includes(tag)) return false;
     if (!q) return true;
     return Object.values(record).some((value) => String(value).toLowerCase().includes(q));
   });
@@ -185,7 +201,7 @@ export async function getVisitorRecords(filter: Filter = {}) {
 }
 
 export function visitorRecordsCsv(records: VisitorRecord[]) {
-  const headers = ['时间', '客户编号', '国家', '设备', '浏览器', '来源', '来源平台', '来源详情', '页面', '客户标签', '访问日', 'IP'];
+  const headers = ['时间', '客户编号', '国家', '设备', '浏览器', '来源', '来源平台', '来源详情', '页面', '客户标签', '第几次访问', '访问日', 'IP'];
   const rows = records.map((record) => [
     record.time,
     record.customerNo,
@@ -197,6 +213,7 @@ export function visitorRecordsCsv(records: VisitorRecord[]) {
     record.sourceDetail,
     record.page,
     record.customerTag,
+    record.visitNumber,
     record.visitDay,
     record.ip
   ]);

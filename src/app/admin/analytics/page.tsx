@@ -9,6 +9,7 @@ import {getAdminDashboardData} from '@/lib/backendStore';
 import {readAnalyticsEvents, type AnalyticsEvent} from '@/lib/commerceStore';
 import {durableStoreStatus} from '@/lib/durableStore';
 import {classifyTraffic, type AttributionSnapshot} from '@/lib/trafficAttribution';
+import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
 
 export const dynamic = 'force-dynamic';
 
@@ -39,6 +40,7 @@ export default async function AdminAnalyticsPage({
   ]);
   const events = allEvents
     .filter((event) => inRange(event.timestamp, timeFilter.from, timeFilter.to))
+    .filter((event) => classifyTrafficQuality(event).include)
     .slice()
     .reverse();
   const pagedEvents = paginate(events, page, perPage);
