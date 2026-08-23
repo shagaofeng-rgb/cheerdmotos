@@ -116,9 +116,25 @@ function clientIp(request: Request) {
   ).slice(0, 80);
 }
 
+function normalizePayload(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) return value as Record<string, unknown>;
+  if (typeof value === 'string') {
+    try {
+      const parsed = JSON.parse(value);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) return parsed as Record<string, unknown>;
+    } catch {
+      // Invalid analytics payloads fall through to the normal validation response.
+    }
+  }
+  return {};
+}
+
 export async function POST(request: Request) {
   try {
-    const payload = await request.json();
+    const payload = normalizePayload(await request.json());
+    if (!payload.type || !payload.visitorId || !payload.sessionId) {
+      return Response.json({ok: false, message: 'Invalid analytics payload'}, {status: 400});
+    }
     const userAgent = request.headers.get('user-agent') || '';
     if (isBot(userAgent)) {
       await appendStoreLine('analytics-exclusions.jsonl', {id: `excluded-${Date.now()}`, at: new Date().toISOString(), reason: 'bot', page: clean(payload.page || '/', 240)});
