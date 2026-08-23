@@ -89,17 +89,8 @@ export default async function AdminShell({active, children}: {active: string; ch
         </div>
       </aside>
       <section className="admin-main">
-        <header className="admin-topbar">
-          <div className="admin-topbar-context">
-            <span>CHEERDMOTO</span>
-            <strong>运营控制台</strong>
-          </div>
-          <div className="admin-topbar-actions">
-            <span className="admin-operator">{session.email}</span>
-            <AdminRealtimeSync />
-          </div>
-        </header>
-        <div className="admin-content">{children}</div>
+        <AdminRealtimeSync />
+        {children}
       </section>
     </main>
   );
