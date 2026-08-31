@@ -4972,6 +4972,91 @@ html[dir="rtl"] .catalog-product-card dd {
   text-align: left;
 }
 
+.inquiry-section {
+  width: min(1100px, calc(100% - 40px));
+  margin: 0 auto;
+  padding: 72px 0;
+}
+
+.inquiry-section .section-heading {
+  display: block;
+  max-width: 720px;
+}
+
+.inquiry-section .section-heading h2 {
+  margin: 8px 0 10px;
+}
+
+.inquiry-section .section-heading p {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+
+.inquiry-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 24px;
+  padding: 28px;
+  border: 1px solid #d9d9d2;
+  border-radius: 12px;
+  background: #ffffff;
+}
+
+.inquiry-form label {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+  font-weight: 700;
+}
+
+.inquiry-form input,
+.inquiry-form select,
+.inquiry-form textarea {
+  width: 100%;
+  min-width: 0;
+  padding: 12px 14px;
+  border: 1px solid #c9cbc6;
+  border-radius: 7px;
+  background: #ffffff;
+  color: #111315;
+  font: inherit;
+}
+
+.inquiry-form textarea {
+  resize: vertical;
+}
+
+.inquiry-form .full,
+.inquiry-form .button {
+  grid-column: 1 / -1;
+}
+
+.form-more summary {
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.advanced-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+  margin-top: 16px;
+}
+
+.form-trap {
+  position: absolute !important;
+  width: 1px !important;
+  height: 1px !important;
+  overflow: hidden;
+  clip-path: inset(50%);
+}
+
+.form-status {
+  margin: 0;
+  font-weight: 700;
+}
+
 @media (max-width: 1100px) {
   .home-recommend-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));

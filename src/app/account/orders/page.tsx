@@ -52,7 +52,7 @@ export default async function AccountOrdersPage() {
             <span className="account-empty-mark">0</span>
             <h2>No orders yet</h2>
             <p>Orders placed with this email will appear here after checkout.</p>
-            <Link className="button primary" href="/en/products">Browse products</Link>
+            <Link className="button primary" href="/products">Browse products</Link>
           </article>
         )}
       </section>

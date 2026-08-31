@@ -1,13 +1,14 @@
 import {appendAnalyticsEvent, findStoreOrder, updateStoreOrderPayment} from '@/lib/commerceStore';
 import {sendAdminPaymentNotice} from '@/lib/emailService';
 import {oceanpaymentStatusToOrder, parseGatewayPayload, verifyOceanpaymentReturn} from '@/lib/oceanpayment';
+import {localizedPublicPath} from '@/lib/publicRoutes';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function handleBack(request: Request) {
   const url = new URL(request.url);
-  const locale = url.searchParams.get('locale') || 'en';
+  const locale = url.searchParams.get('locale') || '';
   const fields = request.method === 'GET' ? Object.fromEntries(url.searchParams.entries()) : await parseGatewayPayload(request);
   const orderId = fields.order_number || fields.orderNo || fields.order_id || '';
   const verified = verifyOceanpaymentReturn(fields);
@@ -78,11 +79,11 @@ async function handleBack(request: Request) {
     });
   }
 
-  const destination = !orderId
-    ? `/${locale}/checkout/failed?payment=unmatched`
+  const destination = localizedPublicPath(locale, !orderId
+    ? '/checkout/failed?payment=unmatched'
     : !verified || paymentPatch.status === 'failed'
-      ? `/${locale}/checkout/failed?order=${encodeURIComponent(orderId)}&payment=${verified ? 'failed' : 'unverified'}`
-      : `/${locale}/checkout/success?order=${encodeURIComponent(orderId)}&payment=${paymentPatch.status === 'paid' ? 'verified' : 'processing'}`;
+      ? `/checkout/failed?order=${encodeURIComponent(orderId)}&payment=${verified ? 'failed' : 'unverified'}`
+      : `/checkout/success?order=${encodeURIComponent(orderId)}&payment=${paymentPatch.status === 'paid' ? 'verified' : 'processing'}`);
   return Response.redirect(new URL(destination, request.url), 303);
 }
 

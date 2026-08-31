@@ -44,6 +44,10 @@ function localFile(fileName: string) {
   return path.join(LOCAL_DATA_DIR, fileName);
 }
 
+async function ensureLocalParent(fileName: string) {
+  await fs.mkdir(path.dirname(localFile(fileName)), {recursive: true});
+}
+
 function blobPath(fileName: string) {
   return `${STORE_PREFIX}/${fileName.replace(/[^a-zA-Z0-9._/-]/g, '-')}`;
 }
@@ -111,7 +115,7 @@ async function writeBlobText(fileName: string, text: string, contentType = 'text
 }
 
 async function writeLocalLines(fileName: string, values: unknown[]) {
-  await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
+  await ensureLocalParent(fileName);
   await fs.writeFile(localFile(fileName), `${values.map((value) => JSON.stringify(value)).join('\n')}${values.length ? '\n' : ''}`, 'utf8');
 }
 
@@ -125,7 +129,7 @@ export async function appendStoreLine(fileName: string, value: unknown) {
     await writeBlobText(fileName, `${current}${JSON.stringify(value)}\n`);
     return;
   }
-  await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
+  await ensureLocalParent(fileName);
   await fs.appendFile(localFile(fileName), `${JSON.stringify(value)}\n`, 'utf8');
 }
 
@@ -140,7 +144,7 @@ export async function appendStoreLines(fileName: string, values: unknown[]) {
     await writeBlobText(fileName, `${current}${values.map((value) => JSON.stringify(value)).join('\n')}\n`);
     return;
   }
-  await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
+  await ensureLocalParent(fileName);
   await fs.appendFile(localFile(fileName), `${values.map((value) => JSON.stringify(value)).join('\n')}\n`, 'utf8');
 }
 
@@ -195,7 +199,7 @@ export async function writeStoreObject(fileName: string, value: unknown) {
     await writeBlobText(fileName, JSON.stringify(value, null, 2), 'application/json; charset=utf-8');
     return;
   }
-  await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
+  await ensureLocalParent(fileName);
   await fs.writeFile(localFile(fileName), JSON.stringify(value, null, 2), 'utf8');
 }
 

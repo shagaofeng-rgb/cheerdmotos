@@ -2,6 +2,7 @@
 
 import {useEffect, useMemo, useState} from 'react';
 import Script from 'next/script';
+import {localizedPublicPath} from '@/lib/publicRoutes';
 import {shippingEstimateFor} from '@/lib/shipping';
 import type {CheckoutProductSlug} from '@/lib/site';
 import {classifyTraffic, isMeaningfulMarketingTouch, type TrafficTouch} from '@/lib/trafficAttribution';
@@ -59,12 +60,6 @@ function readJson<T>(storage: Storage, key: string): T | null {
   } catch {
     return null;
   }
-}
-
-function localizedUrl(locale: string, path: string) {
-  const normalizedPath = path.startsWith('/') ? path : `/${path}`;
-  const normalizedLocale = locale.trim().replace(/^\/|\/$/g, '');
-  return normalizedLocale ? `/${normalizedLocale}${normalizedPath}` : normalizedPath;
 }
 
 function attributionSnapshot() {
@@ -164,11 +159,11 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         return;
       }
       if (/^(1|success|paid|approved)$/i.test(paymentStatus) && orderNumber) {
-        window.location.href = localizedUrl(locale, `/checkout/success?order=${encodeURIComponent(orderNumber)}&payment=oceanpayment`);
+        window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(orderNumber)}&payment=oceanpayment`);
         return;
       }
       if (/^(2|3|-1|failed|fail|declined|cancelled|canceled|error|rejected)$/i.test(paymentStatus) && orderNumber) {
-        window.location.href = localizedUrl(locale, `/checkout/failed?order=${encodeURIComponent(orderNumber)}&payment=failed`);
+        window.location.href = localizedPublicPath(locale, `/checkout/failed?order=${encodeURIComponent(orderNumber)}&payment=failed`);
         return;
       }
       setStatus(message || 'Oceanpayment returned a payment response. If payment did not continue, please try again or contact CHEERDMOTO sales.');
@@ -190,11 +185,11 @@ export default function CheckoutForm({locale, productSlug, productName, productI
     };
     if (method === 'oceanpayment_google_pay' && gatewayWindow.onePageGooglePay?.checkout) {
       gatewayWindow.onePageGooglePay.checkout(oceanpayment.fields);
-      return;
+      return true;
     }
     if (method === 'oceanpayment_apple_pay' && gatewayWindow.onePageApplePay?.checkout) {
       gatewayWindow.onePageApplePay.checkout(oceanpayment.fields);
-      return;
+      return true;
     }
     if (method === 'oceanpayment_card' && gatewayWindow.Oceanpayment?.init && gatewayWindow.Oceanpayment.checkout) {
       const shouldUseSandbox = Boolean(oceanpayment.testMode);
@@ -222,13 +217,14 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       } else {
         window.setTimeout(submitToIframe, 600);
       }
-      return;
+      return true;
     }
     if (method === 'oceanpayment_card') {
-      setStatus('Oceanpayment secure card script is still loading. Please wait a few seconds and click Pay now again.');
-      return;
+      setStatus('The embedded Oceanpayment form is unavailable. Opening the secure hosted payment page instead...');
+      return false;
     }
     setStatus('This wallet payment script is still loading or not available on this device. Please try Credit Card or Bank transfer.');
+    return false;
   }
 
   function submitHostedOceanpayment(oceanpayment: OceanpaymentPayload) {
@@ -266,11 +262,11 @@ export default function CheckoutForm({locale, productSlug, productName, productI
           const orderStatus = String(result.order?.orderStatus || result.order?.status || '');
           const paymentStatus = String(result.order?.paymentStatus || result.order?.gatewayStatus || '');
           if (/^(paid|processing|shipped|delivered|completed)$/i.test(orderStatus) || /^(success|processing)$/i.test(paymentStatus)) {
-            window.location.href = localizedUrl(locale, `/checkout/success?order=${encodeURIComponent(orderId)}&payment=oceanpayment`);
+            window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(orderId)}&payment=oceanpayment`);
             return;
           }
           if (/^(failed|cancelled|canceled)$/i.test(orderStatus) || /^failed$/i.test(paymentStatus)) {
-            window.location.href = localizedUrl(locale, `/checkout/failed?order=${encodeURIComponent(orderId)}&payment=failed`);
+            window.location.href = localizedPublicPath(locale, `/checkout/failed?order=${encodeURIComponent(orderId)}&payment=failed`);
             return;
           }
         }
@@ -362,11 +358,19 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       }
       if (paymentResult.status === 'waiting_for_credentials' || paymentResult.status === 'manual_follow_up') {
         setStatus(paymentResult.message || `Order ${result.order.id} received. CHEERDMOTO sales will send payment instructions by email.`);
-        window.location.href = localizedUrl(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}&payment=manual_followup`);
+        window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}&payment=manual_followup`);
         return;
       }
       setStatus('Opening Oceanpayment secure payment window...');
-      submitOceanpayment(paymentMethod as OceanpaymentTab, paymentResult.oceanpayment);
+      const embeddedPaymentOpened = submitOceanpayment(paymentMethod as OceanpaymentTab, paymentResult.oceanpayment);
+      if (!embeddedPaymentOpened) {
+        if (paymentMethod === 'oceanpayment_card') {
+          submitHostedOceanpayment(paymentResult.oceanpayment);
+          return;
+        }
+        setIsSubmitting(false);
+        return;
+      }
       watchOrderPayment(result.order.id);
       if (isOneTimePayment && paymentMethod === 'oceanpayment_card') {
         window.setTimeout(() => {
@@ -381,7 +385,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       return;
     }
     setStatus(`Project order received: ${result.order.id}. CHEERDMOTO sales will confirm quotation, logistics and payment next.`);
-    window.location.href = localizedUrl(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}`);
+    window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}`);
   }
 
   return (
@@ -405,7 +409,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         <section className="checkout-block">
           <div className="checkout-block-title">
             <h2>Contact</h2>
-            <a href={localizedUrl(locale, '/support')}>Need help?</a>
+            <a href={localizedPublicPath(locale, '/support')}>Need help?</a>
           </div>
           <input name="contact" type="email" required placeholder="Email or mobile phone number" />
           <label className="checkout-checkbox">

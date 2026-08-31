@@ -15,6 +15,7 @@ import {getPublicProductBySlug, listPublicProducts} from '@/lib/publicCatalog';
 import {getAllBlogArticles} from "@/lib/blogFeed";
 import {getAllNewsArticles} from "@/lib/newsFeed";
 import ProductDetail from '@/components/ProductDetail';
+import ContactInquiryForm from '@/components/ContactInquiryForm';
 import {productPresentation} from '@/lib/productPresentation';
 import type { SiteItem } from "@/types";
 
@@ -1060,10 +1061,38 @@ async function CollectionPage({ item }: { item: SiteItem }) {
 }
 
 function ContentPage({ item }: { item: SiteItem }) {
+  const showInquiryForm = ['support', 'dealer-program', 'product-registration'].includes(item.slug);
+  const inquiryCopy = {
+    fields: {
+      name: 'Name',
+      email: 'Email',
+      phone: 'Phone / WhatsApp',
+      company: 'Company',
+      country: 'Country / region',
+      buyerType: 'Request type',
+      product: 'Product',
+      quantity: 'Quantity',
+      market: 'Target market',
+      message: 'How can we help?',
+      submit: 'Send request'
+    },
+    buyerTypes: ['Product support', 'Retail purchase', 'Dealer / distributor', 'Fleet / project', 'Warranty / service'],
+    productOptions: siteData.products.map((product) => product.title)
+  };
   return (
     <main>
       <PageHero item={item} label={item.kind === "article" ? "Article" : "Page"} />
       <GeneratedContent item={item} />
+      {showInquiryForm ? (
+        <section className="inquiry-section">
+          <div className="section-heading">
+            <p className="eyebrow">Contact CHEERDMOTO</p>
+            <h2>Send your request</h2>
+            <p>Required details help our sales and support team route your request correctly.</p>
+          </div>
+          <ContactInquiryForm copy={inquiryCopy} />
+        </section>
+      ) : null}
       <CardGrid title="Explore More" items={relatedItems(item)} />
     </main>
   );
@@ -1143,12 +1172,23 @@ function CardGrid({ title, items }: { title: string; items: SiteItem[] }) {
 
 function GeneratedContent({ item, compact = false }: { item: SiteItem; compact?: boolean }) {
   const isProduct = item.kind === "product";
+  const pageGuidance: Record<string, string> = {
+    support: "Include your product model, order number, destination country, and a clear description of the question so the support team can respond efficiently.",
+    about: "Learn how CHEERDMOTO approaches electric mobility across performance riding, daily utility, and accessible transportation.",
+    "dealer-program": "Share your market, expected order quantity, target products, and delivery destination to discuss dealer or fleet purchasing.",
+    "rider-club": "Explore product updates, ownership resources, and stories for the CHEERDMOTO rider community.",
+    "product-registration": "Keep your product model, serial information, purchase date, and proof of purchase available when requesting registration support.",
+    manuals: "Choose the matching product model before using setup, assembly, charging, or maintenance instructions.",
+    warranty: "Review coverage before service and keep your order details, serial information, and supporting photos available for a warranty request.",
+    "shipping-returns": "Delivery timing, freight cost, return eligibility, and handling requirements depend on the product, destination, and order status.",
+    discover: "Browse product guides, comparisons, rider resources, and current CHEERDMOTO updates."
+  };
 
   return (
     <section className={compact ? "generated-section compact" : "generated-section"}>
       <div className="generated-content">
-        <h2>{isProduct ? "Product overview" : item.title}</h2>
-        {item.description ? <p>{item.description}</p> : null}
+        <h2>{isProduct ? "Product overview" : "What to know"}</h2>
+        {isProduct && item.description ? <p>{item.description}</p> : null}
         {isProduct ? (
           <ul>
             <li>New CHEERDMOTO storefront page generated inside this Next.js site.</li>
@@ -1156,9 +1196,7 @@ function GeneratedContent({ item, compact = false }: { item: SiteItem; compact?:
             <li>Use the new checkout and support flow for current availability, service, and dealer questions.</li>
           </ul>
         ) : (
-          <p>
-            This page is part of the new CHEERDMOTO site structure. Legacy storefront markup and third-party shop links have been removed from the rendered page.
-          </p>
+          <p>{pageGuidance[item.slug] || "Use the related resources on this page, or contact CHEERDMOTO support when you need help with a product, order, delivery, or service question."}</p>
         )}
       </div>
     </section>

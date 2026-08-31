@@ -161,9 +161,49 @@ function cents(amount: number) {
   return Math.round(amount * 100);
 }
 
+function usableCatalogImage(value: string) {
+  return Boolean(value && !/\/favicon\.ico(?:$|[?#])/i.test(value));
+}
+
+function normalizeStoredCatalogImages(store: AdminStore) {
+  const normalizedProducts = store.products.map((product) => {
+    const fallback = productSlugs.includes(product.slug as ProductSlug)
+      ? products[product.slug as ProductSlug].image
+      : '';
+    const galleryImages = product.galleryImages.filter(usableCatalogImage);
+    const coverImage = usableCatalogImage(product.coverImage)
+      ? product.coverImage
+      : galleryImages[0] || fallback;
+    const normalizedGallery = galleryImages.length ? galleryImages : coverImage ? [coverImage] : [];
+    return {...product, coverImage, galleryImages: normalizedGallery};
+  });
+  const imageByProductName = new Map(normalizedProducts.map((product) => [product.name, product.coverImage]));
+  const normalizedMedia = store.media.map((asset) => {
+    if (usableCatalogImage(asset.url)) return asset;
+    const replacement = asset.usage.map((name) => imageByProductName.get(name) || '').find(Boolean) || '';
+    return replacement
+      ? {...asset, fileName: path.basename(replacement), url: replacement, mimeType: 'image/png'}
+      : asset;
+  });
+  const normalizedCategories = store.categories.map((category) => {
+    if (usableCatalogImage(category.coverImage)) return category;
+    const replacement = normalizedProducts.find((product) => product.categoryName === category.name)?.coverImage || '';
+    return replacement ? {...category, coverImage: replacement} : category;
+  });
+  return {...store, products: normalizedProducts, media: normalizedMedia, categories: normalizedCategories};
+}
+
 export async function readAdminStore() {
   const stored = await readStoreObject<AdminStore>(STORE_FILE);
-  if (stored) return stored;
+  if (stored) {
+    const normalized = normalizeStoredCatalogImages(stored);
+    if (JSON.stringify(normalized) !== JSON.stringify(stored)) {
+      await writeStoreObject(STORE_FILE, normalized).catch((error) => {
+        console.error('[backend-store] catalog image migration could not be persisted', error instanceof Error ? error.message : String(error));
+      });
+    }
+    return normalized;
+  }
   const seeded = createSeedStore();
   await writeStoreObject(STORE_FILE, seeded);
   return seeded;

@@ -39,7 +39,7 @@ export async function POST(request: Request) {
       order,
       method,
       scene,
-      locale: String(payload.locale || 'en'),
+      locale: String(payload.locale || ''),
       checkoutUrl,
       forceTestMode,
       billingIp:

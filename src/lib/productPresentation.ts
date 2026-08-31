@@ -138,13 +138,19 @@ const productOverrides: Record<string, ProductOverrides> = {
 };
 
 function cleanText(value: string) {
-  return value
-    .replace(/&amp;/g, '&')
-    .replace(/&quot;/g, '"')
-    .replace(/&#39;/g, "'")
-    .replaceAll('鈥?', '-')
-    .replace(/\s+/g, ' ')
-    .trim();
+  let text = value;
+  for (let pass = 0; pass < 3; pass += 1) {
+    const decoded = text
+      .replace(/&amp;/gi, '&')
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0*39;|&apos;/gi, "'")
+      .replace(/&nbsp;/gi, ' ')
+      .replace(/&lt;/gi, '<')
+      .replace(/&gt;/gi, '>');
+    if (decoded === text) break;
+    text = decoded;
+  }
+  return text.replaceAll('鈥?', '-').replace(/\s+/g, ' ').trim();
 }
 
 function genericCategory(item: SiteItem) {

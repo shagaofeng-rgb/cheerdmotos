@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import {siteUrl} from '@/lib/site';
+import {normalizePublicLocale} from '@/lib/publicRoutes';
 import type {PaymentMethod, StoreOrder} from '@/lib/commerceStore';
 
 export type OceanpaymentMethod = 'credit-card' | 'google-pay' | 'apple-pay';
@@ -503,7 +504,8 @@ export function buildOceanpaymentPayload({
   const signSource = `${config.account}${config.terminal}${orderNumber}${orderCurrency}${orderAmount}${firstName}${lastName}${billingEmail}${config.secureCode}`;
   const signValue = sha256(signSource);
   const noticeUrl = `${config.baseUrl}/api/payments/oceanpayment/notice`;
-  const backUrl = `${config.baseUrl}/api/payments/oceanpayment/back?locale=${encodeURIComponent(locale)}`;
+  const returnLocale = normalizePublicLocale(locale);
+  const backUrl = `${config.baseUrl}/api/payments/oceanpayment/back${returnLocale ? `?locale=${encodeURIComponent(returnLocale)}` : ''}`;
   const methodName = method === 'credit-card' ? 'Credit Card' : method === 'google-pay' ? 'Google Pay' : 'Apple Pay';
   const testMode = forceTestMode || !/^prod(uction)?$/i.test(config.environment);
   const billing = normalizeBillingState({

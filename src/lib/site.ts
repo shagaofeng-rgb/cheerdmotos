@@ -7,12 +7,36 @@ const localProductImages: Record<string, string> = {
   "cheerdmoto-electric-wheelchair-smart-b02": "/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/smart_b02_transparent.png",
   "grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto": "/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplore_transparent.png",
   "grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto": "/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xcite_transparent.png",
-  "grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike": "/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png"
+  "grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike": "/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png",
+  "helmet": "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package/04_category_parts_accessories/03_使用图_usable/01_extracted_from_page/parts_accessories_use_accessory_07.png",
+  "cheerdmoto-xceed-upgraded-high-temperature-performance-brake-upgrade-kit": "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package/04_category_parts_accessories/03_使用图_usable/01_extracted_from_page/parts_accessories_use_accessory_02.png",
+  "xceed-street-legal-kit": "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package/04_category_parts_accessories/03_使用图_usable/01_extracted_from_page/parts_accessories_use_accessory_09.png",
+  "cheerdmoto-xceed-lcd-display-with-mount-bracket": "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package/04_category_parts_accessories/03_使用图_usable/01_extracted_from_page/parts_accessories_use_accessory_03.png",
+  "cheerdmoto-xceed-72v-30ah-battery": "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package/04_category_parts_accessories/03_使用图_usable/01_extracted_from_page/parts_accessories_use_accessory_01.png",
+  "cheerdmoto-xceed-dirtbike-wheel-upgrade-kit": "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package/04_category_parts_accessories/03_使用图_usable/01_extracted_from_page/parts_accessories_use_accessory_16.png"
 };
+
+function cleanText(value: string) {
+  let text = value;
+  for (let pass = 0; pass < 3; pass += 1) {
+    const decoded = text
+      .replace(/&amp;/gi, "&")
+      .replace(/&quot;/gi, '"')
+      .replace(/&#0*39;|&apos;/gi, "'")
+      .replace(/&nbsp;/gi, " ")
+      .replace(/&lt;/gi, "<")
+      .replace(/&gt;/gi, ">");
+    if (decoded === text) break;
+    text = decoded;
+  }
+  return text.replace(/\s+/g, " ").trim();
+}
 
 function cleanItem(item: SiteItem): SiteItem {
   return {
     ...item,
+    title: cleanText(item.title || ""),
+    description: cleanText(item.description || ""),
     url: item.route,
     image: item.kind === "product" ? localProductImages[item.slug] || "" : "",
     html: ""
@@ -160,8 +184,8 @@ function catalogProduct(slug: string): CatalogProduct {
   if (!item) {
     return {
       name: "CHEERDMOTO Payment Item",
-      image: "/favicon.ico",
-      thumbnail: "/favicon.ico",
+      image: "/assets/logo-small.jpg",
+      thumbnail: "/assets/logo-small.jpg",
       category: "Payment",
       price: "USD 0",
       priceAmount: 0,
@@ -171,8 +195,8 @@ function catalogProduct(slug: string): CatalogProduct {
   const amount = priceAmount(item.price);
   return {
     name: item.title.replace(/\s*\|\s*CheerdMoto.*$/i, ""),
-    image: item.image || "/favicon.ico",
-    thumbnail: item.image || "/favicon.ico",
+    image: item.image || "/assets/logo-small.jpg",
+    thumbnail: item.image || "/assets/logo-small.jpg",
     category: productCategory(item),
     price: `USD ${amount.toLocaleString()}`,
     priceAmount: amount,
@@ -184,8 +208,8 @@ export const products = {
   ...Object.fromEntries(productSlugs.map((slug) => [slug, catalogProduct(slug)])),
   "payment-test": {
     name: "CHEERDMOTO Payment Gateway Test Product",
-    image: siteData.products[0]?.image || "/favicon.ico",
-    thumbnail: siteData.products[0]?.image || "/favicon.ico",
+    image: siteData.products[0]?.image || "/assets/logo-small.jpg",
+    thumbnail: siteData.products[0]?.image || "/assets/logo-small.jpg",
     category: "Payment Test",
     price: "USD 10",
     priceAmount: 10,
@@ -193,8 +217,8 @@ export const products = {
   },
   "one-time-35": {
     name: "CHEERDMOTO One-Time Payment Link",
-    image: siteData.products[0]?.image || "/favicon.ico",
-    thumbnail: siteData.products[0]?.image || "/favicon.ico",
+    image: siteData.products[0]?.image || "/assets/logo-small.jpg",
+    thumbnail: siteData.products[0]?.image || "/assets/logo-small.jpg",
     category: "One-Time Payment",
     price: "USD 35",
     priceAmount: 35,
