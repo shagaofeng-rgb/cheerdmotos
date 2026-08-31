@@ -501,3 +501,14 @@ export async function sendContactInquiryEmail(input: {
     throw error;
   }
 }
+
+export async function sendSystemAlertEmail(input: {subject: string; text: string; to?: string}) {
+  const to = input.to || process.env.NEWS_ALERT_EMAIL || adminNotificationEmail();
+  const html = `
+    <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6">
+      <h2>${escapeHtml(input.subject)}</h2>
+      <pre style="white-space:pre-wrap;font:14px/1.6 Arial,sans-serif">${escapeHtml(input.text)}</pre>
+    </div>
+  `;
+  return sendSmtpMail({to, subject: input.subject, text: input.text, html});
+}

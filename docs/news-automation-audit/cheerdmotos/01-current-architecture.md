@@ -8,7 +8,7 @@
 - News routes: `/news`, `/news/[slug]`, `/news-sitemap.xml`.
 - Blog routes: `/blog`, `/blog/[slug]`.
 - The current `/rss.xml` mixes News and Blog and therefore does not satisfy the required News/Blog RSS isolation.
-- No News ingest, candidate store, source registry, publication state machine, distributed lock, delivery check, or alert subsystem currently exists.
-- Prior News automation was deliberately removed; `/api/cron/publish-news` is absent.
+- News ingest, candidate/run/publication/delivery records, provider-aware distributed locks, delivery checks and failure alerts are implemented in the dedicated News automation modules.
+- `/api/cron/publish-news` is the authenticated News-only worker. It never calls the Blog webhook.
 
-This audit is configuration-neutral. No production setting has been changed.
+The production implementation is governed by `docs/news-automation.md` and the environment variables documented in `.env.example`.

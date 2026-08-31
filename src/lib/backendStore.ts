@@ -2,7 +2,7 @@ import path from 'node:path';
 import {newsArticles} from '@/lib/news';
 import {products, productSlugs, type ProductSlug} from '@/lib/site';
 import {readAnalyticsEvents, readStoreOrders, type AnalyticsEvent, type StoreOrder} from '@/lib/commerceStore';
-import {readStoreObject, writeStoreObject} from '@/lib/durableStore';
+import {readStoreObject, withStoreLock, writeStoreObject} from '@/lib/durableStore';
 import {classifyTraffic, type AttributionSnapshot} from '@/lib/trafficAttribution';
 import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
 
@@ -105,6 +105,8 @@ export type ContentPost = {
   imageCredit?: string;
   relevanceScore?: number;
   retryCount?: number;
+  automationRunId?: string;
+  automationTest?: boolean;
   status: PublishStatus | 'scheduled';
   createdAt: string;
   updatedAt: string;
@@ -168,10 +170,12 @@ export async function readAdminStore() {
 }
 
 export async function writeAdminStore(updater: (store: AdminStore) => AdminStore) {
-  const current = await readAdminStore();
-  const next = updater(current);
-  await writeStoreObject(STORE_FILE, next);
-  return next;
+  return withStoreLock('admin-store-write', async () => {
+    const current = await readAdminStore();
+    const next = updater(current);
+    await writeStoreObject(STORE_FILE, next);
+    return next;
+  }, {ttlSeconds: 30, attempts: 20, retryDelayMs: 100});
 }
 
 export async function listAdminProducts() {

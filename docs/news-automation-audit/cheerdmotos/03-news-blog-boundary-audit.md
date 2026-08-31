@@ -8,7 +8,7 @@
 | Webhook | Blog-only webhook writes `type: blog` | Keep; News worker must not call it |
 | Sitemap | General post sitemap includes both; News sitemap only News | Preserve separate News sitemap and add Blog-only sitemap |
 | RSS | Combined News + Blog RSS | Split into isolated feeds |
-| Automation | No active News automation | Add dedicated News-only ingest/publish routes |
+| Automation | Dedicated News-only Cron route and stores | Keep isolated from the Blog webhook |
 | Related content | Shared article component can infer product links | Ensure News never queries Blog candidates or cross-publishes |
 
 No historical Blog content is scheduled for deletion or migration in this work.

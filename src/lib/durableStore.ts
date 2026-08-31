@@ -1,6 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {BlobNotFoundError, get, put} from '@vercel/blob';
+import {randomUUID} from 'node:crypto';
+import {BlobNotFoundError, del, get, put} from '@vercel/blob';
 
 type RedisResult<T> = {
   result?: T;
@@ -12,6 +13,16 @@ const KV_URL = (process.env.KV_REST_API_URL || process.env.UPSTASH_REDIS_REST_UR
 const KV_TOKEN = process.env.KV_REST_API_TOKEN || process.env.UPSTASH_REDIS_REST_TOKEN || '';
 const BLOB_TOKEN = process.env.BLOB_READ_WRITE_TOKEN || '';
 const STORE_PREFIX = process.env.COMMERCE_STORE_PREFIX || 'cheerdmoto-commerce';
+
+type StoreLockValue = {
+  token: string;
+  expiresAt: string;
+};
+
+export type StoreLock = StoreLockValue & {
+  name: string;
+  provider: 'kv_rest' | 'vercel_blob' | 'local_file';
+};
 
 export function durableStoreConfigured() {
   return Boolean((KV_URL && KV_TOKEN) || BLOB_TOKEN);
@@ -118,6 +129,21 @@ export async function appendStoreLine(fileName: string, value: unknown) {
   await fs.appendFile(localFile(fileName), `${JSON.stringify(value)}\n`, 'utf8');
 }
 
+export async function appendStoreLines(fileName: string, values: unknown[]) {
+  if (!values.length) return;
+  if (durableStoreConfigured()) {
+    if (KV_URL && KV_TOKEN) {
+      await kvPipeline([['RPUSH', storeKey(fileName), ...values.map((value) => JSON.stringify(value))]]);
+      return;
+    }
+    const current = await readBlobText(fileName);
+    await writeBlobText(fileName, `${current}${values.map((value) => JSON.stringify(value)).join('\n')}\n`);
+    return;
+  }
+  await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
+  await fs.appendFile(localFile(fileName), `${values.map((value) => JSON.stringify(value)).join('\n')}\n`, 'utf8');
+}
+
 export async function readStoreLines<T>(fileName: string) {
   if (durableStoreConfigured()) {
     if (KV_URL && KV_TOKEN) {
@@ -171,4 +197,113 @@ export async function writeStoreObject(fileName: string, value: unknown) {
   }
   await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
   await fs.writeFile(localFile(fileName), JSON.stringify(value, null, 2), 'utf8');
+}
+
+function lockFileName(name: string) {
+  return `locks/${name.replace(/[^a-zA-Z0-9._-]/g, '-')}.json`;
+}
+
+function lockValue(ttlSeconds: number): StoreLockValue {
+  return {
+    token: randomUUID(),
+    expiresAt: new Date(Date.now() + Math.max(5, ttlSeconds) * 1000).toISOString()
+  };
+}
+
+function lockActive(value: StoreLockValue | null) {
+  return Boolean(value?.token && new Date(value.expiresAt).getTime() > Date.now());
+}
+
+export async function acquireStoreLock(name: string, ttlSeconds = 60): Promise<StoreLock | null> {
+  const fileName = lockFileName(name);
+  const value = lockValue(ttlSeconds);
+  const serialized = JSON.stringify(value);
+
+  if (KV_URL && KV_TOKEN) {
+    const [result] = await kvPipeline<string | null>([
+      ['SET', storeKey(fileName), serialized, 'NX', 'EX', String(Math.max(5, ttlSeconds))]
+    ]);
+    return result === 'OK' ? {...value, name, provider: 'kv_rest'} : null;
+  }
+
+  if (BLOB_TOKEN) {
+    const current = safeJson<StoreLockValue>(await readBlobText(fileName));
+    if (lockActive(current)) return null;
+    if (current) await del(blobPath(fileName), {token: BLOB_TOKEN}).catch(() => undefined);
+    try {
+      await put(blobPath(fileName), serialized, {
+        access: 'private',
+        addRandomSuffix: false,
+        allowOverwrite: false,
+        contentType: 'application/json; charset=utf-8',
+        cacheControlMaxAge: 60,
+        token: BLOB_TOKEN
+      });
+      return {...value, name, provider: 'vercel_blob'};
+    } catch {
+      return null;
+    }
+  }
+
+  const filePath = localFile(fileName.replaceAll('/', '-'));
+  await fs.mkdir(LOCAL_DATA_DIR, {recursive: true});
+  try {
+    const handle = await fs.open(filePath, 'wx');
+    await handle.writeFile(serialized, 'utf8');
+    await handle.close();
+    return {...value, name, provider: 'local_file'};
+  } catch (error) {
+    const current = safeJson<StoreLockValue>(await fs.readFile(filePath, 'utf8').catch(() => ''));
+    if (lockActive(current)) return null;
+    await fs.unlink(filePath).catch(() => undefined);
+    try {
+      const handle = await fs.open(filePath, 'wx');
+      await handle.writeFile(serialized, 'utf8');
+      await handle.close();
+      return {...value, name, provider: 'local_file'};
+    } catch {
+      return null;
+    }
+  }
+}
+
+export async function releaseStoreLock(lock: StoreLock) {
+  const fileName = lockFileName(lock.name);
+  if (lock.provider === 'kv_rest') {
+    const script = "if redis.call('get', KEYS[1]) == ARGV[1] then return redis.call('del', KEYS[1]) else return 0 end";
+    await kvPipeline([['EVAL', script, '1', storeKey(fileName), JSON.stringify({token: lock.token, expiresAt: lock.expiresAt})]]);
+    return;
+  }
+  if (lock.provider === 'vercel_blob') {
+    const current = safeJson<StoreLockValue>(await readBlobText(fileName));
+    if (current?.token === lock.token) await del(blobPath(fileName), {token: BLOB_TOKEN});
+    return;
+  }
+  const filePath = localFile(fileName.replaceAll('/', '-'));
+  const current = safeJson<StoreLockValue>(await fs.readFile(filePath, 'utf8').catch(() => ''));
+  if (current?.token === lock.token) await fs.unlink(filePath).catch(() => undefined);
+}
+
+export async function withStoreLock<T>(
+  name: string,
+  task: () => Promise<T>,
+  options: {ttlSeconds?: number; attempts?: number; retryDelayMs?: number} = {}
+) {
+  const attempts = Math.max(1, options.attempts || 1);
+  let lock: StoreLock | null = null;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    lock = await acquireStoreLock(name, options.ttlSeconds || 60);
+    if (lock) break;
+    if (attempt + 1 < attempts) {
+      await new Promise((resolve) => setTimeout(resolve, options.retryDelayMs || 100));
+    }
+  }
+  if (!lock) throw new Error(`Could not acquire durable lock: ${name}`);
+  try {
+    return await task();
+  } finally {
+    await releaseStoreLock(lock).catch((error) => {
+      console.error('[durable-store] lock release failed', {name, error: error instanceof Error ? error.message : String(error)});
+    });
+  }
 }

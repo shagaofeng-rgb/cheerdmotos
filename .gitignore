@@ -5,6 +5,9 @@ dist
 .env*.local
 public/legacy-html
 .tools
+.data/
+.learnings/
+*.tsbuildinfo
 old-home.html
 
 .vercel
