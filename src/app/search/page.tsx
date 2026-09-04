@@ -3,6 +3,7 @@ import Link from 'next/link';
 import {getAllBlogArticles} from '@/lib/blogFeed';
 import {getAllNewsArticles} from '@/lib/newsFeed';
 import {siteData, siteUrl} from '@/lib/site';
+import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
 
 type Props = {searchParams: Promise<{q?: string}>};
 
@@ -27,7 +28,8 @@ export default async function SearchPage({searchParams}: Props) {
   const results = query ? rows.filter((row) => `${row.title} ${row.excerpt} ${row.type}`.toLowerCase().includes(query)).slice(0, 40) : rows.slice(0, 20);
 
   return (
-    <main className="search-page">
+    <main className="search-page precision-page">
+      <PrecisionStorefrontHeader />
       <section className="article-hero">
         <p className="eyebrow">Search</p>
         <h1>Search CHEERDMOTO</h1>
@@ -47,6 +49,7 @@ export default async function SearchPage({searchParams}: Props) {
         ))}
         {!results.length ? <p>No matching results.</p> : null}
       </section>
+      <PrecisionStorefrontFooter />
     </main>
   );
 }

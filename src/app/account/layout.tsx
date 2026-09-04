@@ -1,3 +1,5 @@
+import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
+
 export const metadata = {
   robots: {
     index: false,
@@ -7,5 +9,5 @@ export const metadata = {
 };
 
 export default function AccountLayout({children}: {children: React.ReactNode}) {
-  return children;
+  return <div className="precision-account-frame"><PrecisionStorefrontHeader />{children}<PrecisionStorefrontFooter /></div>;
 }

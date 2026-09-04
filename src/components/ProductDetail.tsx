@@ -19,10 +19,14 @@ function money(currency: string, value: string) {
 }
 
 function track(type: string, payload: Record<string, unknown>) {
+  const visitorId = window.localStorage.getItem('cheerdmoto_visitor_id') || `v_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  const sessionId = window.sessionStorage.getItem('cheerdmoto_session_id') || `s_${Date.now()}_${Math.random().toString(16).slice(2)}`;
+  window.localStorage.setItem('cheerdmoto_visitor_id', visitorId);
+  window.sessionStorage.setItem('cheerdmoto_session_id', sessionId);
   fetch('/api/analytics/track', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
-    body: JSON.stringify({type, page: window.location.pathname, pageTitle: document.title, timestamp: new Date().toISOString(), ...payload}),
+    body: JSON.stringify({type, visitorId, sessionId, page: window.location.pathname, pageTitle: document.title, timestamp: new Date().toISOString(), ...payload}),
     keepalive: true
   }).catch(() => {});
 }

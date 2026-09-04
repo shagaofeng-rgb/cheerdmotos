@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import {Suspense} from 'react';
 import "./globals.css";
+import "./precision-storefront.css";
 import AnalyticsTracker from '@/components/AnalyticsTracker';
 
 export const metadata: Metadata = {

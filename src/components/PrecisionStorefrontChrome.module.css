@@ -1,0 +1,230 @@
+.header,
+.footer {
+  --precision-ink: #111315;
+  --precision-muted: #5f6468;
+  --precision-line: #c9ced1;
+  --precision-surface: #eef1f2;
+  --precision-dark: #151719;
+  --precision-orange: #f15a24;
+  box-sizing: border-box;
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.header *,
+.footer * {
+  box-sizing: border-box;
+}
+
+.header a,
+.footer a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.header {
+  position: relative;
+  z-index: 20;
+  display: grid;
+  grid-template-columns: minmax(190px, 1fr) auto minmax(190px, 1fr);
+  align-items: center;
+  min-height: 72px;
+  padding: 0 32px;
+  border-bottom: 1px solid rgb(17 19 21 / 14%);
+  color: var(--precision-ink);
+  background: rgb(238 241 242 / 94%);
+  backdrop-filter: blur(18px);
+}
+
+.logo {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  width: fit-content;
+  font-size: clamp(19px, 1.7vw, 28px);
+  font-weight: 900;
+  font-style: italic;
+  letter-spacing: -.055em;
+  line-height: 1.1;
+}
+
+.desktopNav,
+.actions {
+  display: flex;
+  align-items: center;
+}
+
+.desktopNav {
+  gap: clamp(20px, 2.3vw, 38px);
+  white-space: nowrap;
+}
+
+.actions {
+  justify-content: flex-end;
+  gap: 18px;
+}
+
+.desktopNav a,
+.actions > a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  transition: color 180ms ease, transform 180ms ease;
+}
+
+.actions > a {
+  min-width: 44px;
+  justify-content: center;
+}
+
+.desktopNav a:hover,
+.actions > a:hover {
+  color: var(--precision-orange);
+}
+
+.desktopNav a:active,
+.actions > a:active {
+  transform: translateY(1px);
+}
+
+.mobileMenu {
+  display: none;
+  position: relative;
+}
+
+.mobileMenu summary {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-content: center;
+  gap: 5px;
+  list-style: none;
+  cursor: pointer;
+}
+
+.mobileMenu summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobileMenu summary span {
+  display: block;
+  width: 22px;
+  height: 2px;
+  background: var(--precision-ink);
+}
+
+.mobileMenu nav {
+  position: absolute;
+  top: 52px;
+  right: 0;
+  display: grid;
+  width: min(86vw, 340px);
+  padding: 18px;
+  border: 1px solid var(--precision-line);
+  background: #f4f6f7;
+  box-shadow: 0 24px 70px rgb(22 27 29 / 20%);
+}
+
+.mobileMenu nav a {
+  display: flex;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 8px;
+  border-bottom: 1px solid var(--precision-line);
+  font-size: 14px;
+  font-weight: 750;
+  text-transform: uppercase;
+}
+
+.footer {
+  display: grid;
+  grid-template-columns: 2fr repeat(3, 1fr);
+  gap: clamp(34px, 5vw, 86px);
+  padding: 76px clamp(28px, 5.4vw, 88px);
+  color: #eef1f2;
+  background: var(--precision-dark);
+}
+
+.footerBrand p {
+  max-width: 390px;
+  margin: 22px 0 0;
+  color: #aeb5b9;
+  line-height: 1.65;
+}
+
+.footer > div:not(.footerBrand) {
+  display: grid;
+  align-content: start;
+  gap: 13px;
+}
+
+.footer strong {
+  margin-bottom: 8px;
+  color: var(--precision-orange);
+  font-size: 11px;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+}
+
+.footer > div:not(.footerBrand) a {
+  display: flex;
+  align-items: center;
+  min-height: 44px;
+  color: #cbd0d3;
+  font-size: 13px;
+}
+
+.footer a:hover {
+  color: #f5f7f8;
+}
+
+.header :focus-visible,
+.footer :focus-visible {
+  outline: 2px solid var(--precision-orange);
+  outline-offset: 3px;
+}
+
+@media (max-width: 1220px) {
+  .header {
+    grid-template-columns: 1fr auto;
+  }
+
+  .desktopNav,
+  .actions > a:not(:last-of-type) {
+    display: none;
+  }
+
+  .mobileMenu {
+    display: block;
+  }
+}
+
+@media (max-width: 900px) {
+  .header {
+    min-height: 64px;
+    padding: 0 18px;
+  }
+
+  .footer {
+    grid-template-columns: 1.4fr repeat(3, 1fr);
+    gap: 28px;
+  }
+}
+
+@media (max-width: 620px) {
+  .logo {
+    font-size: 21px;
+  }
+
+  .footer {
+    grid-template-columns: 1fr 1fr;
+    padding: 58px 22px;
+  }
+
+  .footerBrand {
+    grid-column: 1 / -1;
+  }
+}

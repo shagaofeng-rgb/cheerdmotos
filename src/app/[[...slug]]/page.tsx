@@ -17,6 +17,7 @@ import {getAllNewsArticles} from "@/lib/newsFeed";
 import ProductDetail from '@/components/ProductDetail';
 import ContactInquiryForm from '@/components/ContactInquiryForm';
 import PrecisionHomepage from '@/components/PrecisionHomepage';
+import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
 import {productPresentation} from '@/lib/productPresentation';
 import type { SiteItem } from "@/types";
 
@@ -128,61 +129,6 @@ const merchantPolicyJsonLd = {
     }
   }
 };
-
-const siteNav = [
-  {
-    label: "ELECTRIC DIRT BIKE",
-    href: "/electric-dirt-bikes",
-    children: [
-      { label: "Xceed - 72V", href: "/products/xceed-electric-dirt-bike" },
-      { label: "Xtreme - 96V", href: "/products/cheerdmoto-performance-96v-electric-dirtbike-xtreme" },
-      { label: "Refurbished Xceed", href: "/clearance" }
-    ]
-  },
-  {
-    label: "E BIKE",
-    href: "/e-bikes",
-    children: [
-      { label: "Xcite (Step-Thru)", href: "/products/grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto" },
-      { label: "Xplore (Over-Frame)", href: "/products/grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto" },
-      { label: "Xplus (Full-Suspension)", href: "/products/grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike" }
-    ]
-  },
-  {
-    label: "ELECTRIC WHEELCHAIR",
-    href: "/electric-wheelchairs",
-    children: [{ label: "Smart B02", href: "/products/cheerdmoto-electric-wheelchair-smart-b02" }]
-  },
-  { label: "ACCESSORIES", href: "/accessories" },
-  { label: "REFURBISHED & CLEARANCE", href: "/clearance" },
-  { label: "NEWS", href: "/news" },
-  {
-    label: "DISCOVER",
-    href: "#",
-    children: [
-      { label: "News", href: "/news" },
-      { label: "Blog", href: "/blog" },
-      { label: "About Us", href: "/about" },
-      { label: "Rider Club", href: "/rider-club" },
-      { label: "B2B Customer", href: "/dealer-program" },
-      { label: "Ride to China", href: "/discover" },
-      { label: "Affiliate Marketing", href: "/dealer-program" }
-    ]
-  },
-  {
-    label: "SUPPORT",
-    href: "#",
-    children: [
-      { label: "Contact Us", href: "/support" },
-      { label: "Product Registration", href: "/product-registration" },
-      { label: "Manual & Assembly", href: "/manuals" },
-      { label: "Warranty Policy", href: "/warranty" },
-      { label: "Shipping Policy", href: "/shipping-returns" },
-      { label: "Shipping & Returns", href: "/shipping-returns" },
-      { label: "Order Tracking", href: "/account/orders" }
-    ]
-  }
-];
 
 const designBase = "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package";
 const usableDir = "03_%E4%BD%BF%E7%94%A8%E5%9B%BE_usable";
@@ -315,75 +261,8 @@ const categoryDesigns: Record<string, CategoryDesign> = {
   }
 };
 
-function RallySiteNav({ dark = false }: { dark?: boolean }) {
-  return (
-    <header className={dark ? "rally-nav rally-nav-dark" : "rally-nav"}>
-      <Link className="rally-logo" href="/" aria-label="CHEERDMOTO home">
-        CHEERDMOTO
-      </Link>
-      <nav aria-label="Main navigation">
-        {siteNav.map((item) => (
-          <div className="rally-nav-item" key={item.label}>
-            <Link href={item.href}>{item.label}</Link>
-            {item.children?.length ? (
-              <div className="rally-submenu">
-                {item.children.map((child) => (
-                  <Link href={child.href} key={child.label}>
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            ) : null}
-          </div>
-        ))}
-      </nav>
-      <div className="rally-icons">
-        <span className="rally-country">
-          <span>USA</span>
-          </span>
-        <Link className="rally-signin" href="/account/login">
-          Sign In
-        </Link>
-        <Link className="rally-icon-link" href="/search" aria-label="Search">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="11" cy="11" r="7" />
-            <path d="m16.5 16.5 4 4" />
-          </svg>
-        </Link>
-        <Link className="rally-icon-link" href="/account" aria-label="Wishlist">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M20.8 4.6c-1.8-1.9-4.8-1.8-6.6.1L12 7l-2.2-2.3c-1.8-1.9-4.8-2-6.6-.1-1.9 2-1.8 5.1.1 7L12 20l8.7-8.4c1.9-1.9 2-5 .1-7Z" />
-          </svg>
-        </Link>
-        <Link className="rally-icon-link rally-cart" href="/cart" aria-label="Cart">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path d="M3 3h2l2.1 12.3a2 2 0 0 0 2 1.7h8.8a2 2 0 0 0 2-1.6L21 8H6" />
-            <circle cx="9" cy="21" r="1.4" />
-            <circle cx="18" cy="21" r="1.4" />
-          </svg>
-          </Link>
-        <details className="rally-mobile-nav">
-          <summary className="rally-menu-button" aria-label="Open navigation">
-            <span />
-            <span />
-            <span />
-          </summary>
-          <nav className="rally-mobile-nav-panel" aria-label="Mobile navigation">
-            {siteNav.map((item) => (
-              <div key={item.label}>
-                <Link href={item.href}>{item.label}</Link>
-                {item.children?.map((child) => (
-                  <Link href={child.href} key={child.label}>
-                    {child.label}
-                  </Link>
-                ))}
-              </div>
-            ))}
-          </nav>
-        </details>
-      </div>
-    </header>
-  );
+function RallySiteNav() {
+  return <PrecisionStorefrontHeader />;
 }
 
 
@@ -480,8 +359,8 @@ async function ProductPage({ item }: { item: SiteItem }) {
   };
 
   return (
-    <main>
-      <RallySiteNav dark />
+    <main className="precision-product-page">
+      <RallySiteNav />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}} />
       <ProductDetail item={item} product={presentation} />
@@ -494,20 +373,13 @@ async function ProductPage({ item }: { item: SiteItem }) {
 }
 
 function RallyFooter() {
-  return (
-    <footer className="rally-footer">
-      <div><strong>CHEERDMOTO</strong><p>Electric mobility equipment for performance, utility and everyday independence.</p></div>
-      <div><h3>SHOP</h3><Link href="/electric-dirt-bikes">Dirt bikes</Link><Link href="/e-bikes">E bikes</Link><Link href="/electric-wheelchairs">Wheelchairs</Link></div>
-      <div><h3>SUPPORT</h3><Link href="/support">Contact us</Link><Link href="/shipping-returns">Shipping & returns</Link><Link href="/warranty">Warranty</Link></div>
-      <div><h3>COMPANY</h3><Link href="/about">About us</Link><Link href="/news">News</Link><Link href="/blog">Blog</Link></div>
-    </footer>
-  );
+  return <PrecisionStorefrontFooter />;
 }
 
 function ShippingReturnsPage() {
   return (
     <main className="policy-page">
-      <RallySiteNav dark />
+      <RallySiteNav />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(merchantPolicyJsonLd)}} />
       <section className="policy-hero">
         <p className="eyebrow">Customer policy</p>
@@ -557,7 +429,7 @@ function ArticleLinkGrid({title, basePath, items}: {title: string; basePath: "/n
 function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryDesign }) {
   return (
     <main className="rally-category">
-      <RallySiteNav dark />
+      <RallySiteNav />
 
       <section className="rally-category-hero">
         <img
@@ -650,31 +522,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
         </div>
       </section>
 
-      <footer className="rally-footer">
-        <div>
-          <strong>CHEERDMOTO</strong>
-          <p>Electric mobility equipment for performance, utility and everyday independence.</p>
-        </div>
-        <div>
-          <h3>SHOP</h3>
-          <Link href="/electric-dirt-bikes">Dirt Bike</Link>
-          <Link href="/e-bikes">E Bike</Link>
-          <Link href="/electric-wheelchairs">Wheelchair</Link>
-        </div>
-        <div>
-          <h3>SUPPORT</h3>
-          <Link href="/support">Contact us</Link>
-          <Link href="/shipping-returns">Shipping & returns</Link>
-          <Link href="/warranty">Warranty</Link>
-        </div>
-        <div>
-          <h3>COMPANY</h3>
-          <Link href="/about">About us</Link>
-          <Link href="/news">News</Link>
-          <Link href="/blog">Blog</Link>
-          <Link href="/dealer-program">B2B customer</Link>
-        </div>
-      </footer>
+      <RallyFooter />
     </main>
   );
 }
@@ -699,10 +547,12 @@ async function CollectionPage({ item }: { item: SiteItem }) {
   });
 
   return (
-    <main>
+    <main className="precision-collection-page">
+      <RallySiteNav />
       <PageHero item={item} label="Collection" />
       <ProductGrid title={item.title} items={products.length ? products : catalog.slice(0, 12)} />
       <GeneratedContent item={item} compact />
+      <RallyFooter />
     </main>
   );
 }
@@ -727,7 +577,8 @@ function ContentPage({ item }: { item: SiteItem }) {
     productOptions: siteData.products.map((product) => product.title)
   };
   return (
-    <main>
+    <main className="precision-content-page">
+      <RallySiteNav />
       <PageHero item={item} label={item.kind === "article" ? "Article" : "Page"} />
       <GeneratedContent item={item} />
       {showInquiryForm ? (
@@ -741,6 +592,7 @@ function ContentPage({ item }: { item: SiteItem }) {
         </section>
       ) : null}
       <CardGrid title="Explore More" items={relatedItems(item)} />
+      <RallyFooter />
     </main>
   );
 }

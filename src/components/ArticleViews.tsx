@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import type {NewsArticle} from '@/lib/news';
 import {productDetailedSpecs, products, type ProductSlug} from '@/lib/site';
+import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from './PrecisionStorefrontChrome';
 
 export function ArticleListView({title, eyebrow, description, articles, basePath}: {
   title: string;
@@ -11,7 +12,8 @@ export function ArticleListView({title, eyebrow, description, articles, basePath
 }) {
   const categories = [...new Set(articles.map((article) => article.category).filter(Boolean))];
   return (
-    <main className="article-index">
+    <main className="article-index precision-page">
+      <PrecisionStorefrontHeader />
       <section className="article-hero">
         <p className="eyebrow">{eyebrow}</p>
         <h1>{title}</h1>
@@ -29,11 +31,12 @@ export function ArticleListView({title, eyebrow, description, articles, basePath
               <span>{article.category}</span>
               <h2>{article.title}</h2>
               <p>{article.excerpt}</p>
-              <small>{article.date} · {article.sourceName || article.sources[0]?.name || 'CHEERDMOTO'}</small>
+              <small>{article.date} / {article.sourceName || article.sources[0]?.name || 'CHEERDMOTO'}</small>
             </div>
           </Link>
         ))}
       </section>
+      <PrecisionStorefrontFooter />
     </main>
   );
 }
@@ -60,7 +63,8 @@ export function ArticleDetailView({article, basePath, type}: {
   };
 
   return (
-    <main className="article-detail">
+    <main className="article-detail precision-page">
+      <PrecisionStorefrontHeader />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(jsonLd)}} />
       <section className="article-detail-hero">
         <Link className="article-back" href={basePath}>← Back to {type === 'news' ? 'News' : 'Blog'}</Link>
@@ -116,9 +120,10 @@ export function ArticleDetailView({article, basePath, type}: {
         <section className="article-source-note">
           <h2>Information source</h2>
           <p>This article is based on public source information and independent CHEERDMOTO analysis. Original reporting belongs to the original publisher.</p>
-          <p>Image credit: {article.imageCredit?.publisher || 'CHEERDMOTO'} · {article.imageCredit?.note || 'Product image used for contextual illustration.'}</p>
+          <p>Image credit: {article.imageCredit?.publisher || 'CHEERDMOTO'} - {article.imageCredit?.note || 'Product image used for contextual illustration.'}</p>
         </section>
       </article>
+      <PrecisionStorefrontFooter />
     </main>
   );
 }
