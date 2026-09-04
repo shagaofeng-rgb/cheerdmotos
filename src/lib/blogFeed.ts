@@ -1,5 +1,6 @@
 import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
 import {type NewsArticle} from '@/lib/news';
+import {resolveNewsDisplayImage} from '@/lib/newsImage';
 import {siteUrl} from '@/lib/site';
 
 function sourceUrlFrom(post: ContentPost) {
@@ -9,6 +10,8 @@ function sourceUrlFrom(post: ContentPost) {
 function postToBlogArticle(post: ContentPost): NewsArticle {
   const sourceUrl = sourceUrlFrom(post);
   const sourceName = post.source.split(':')[0]?.trim() || 'COWIN editorial';
+  const hero = resolveNewsDisplayImage(post);
+  const usesStoredImage = hero === post.coverImage;
   const paragraphs = post.content.split(/\n{2,}/).map((item) => item.replace(/^#+\s*/, '').trim()).filter(Boolean);
   return {
     slug: post.slug,
@@ -16,13 +19,15 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
     updatedAt: post.updatedAt.slice(0, 10),
     title: post.title,
     excerpt: post.excerpt,
-    hero: post.coverImage,
+    hero,
     heroAlt: `${post.title} COWIN buying guide image`,
     imageCredit: {
-      publisher: sourceName,
+      publisher: usesStoredImage ? sourceName : 'COWIN',
       sourceUrl,
-      imageUrl: post.coverImage.startsWith('http') ? post.coverImage : `${siteUrl}${post.coverImage}`,
-      note: 'Image was validated before publication and is kept with visible attribution when based on a public source.',
+      imageUrl: hero.startsWith('http') ? hero : `${siteUrl}${hero}`,
+      note: usesStoredImage
+        ? 'Image was validated before publication and is kept with visible attribution when based on a public source.'
+        : 'A COWIN-owned product image replaces an unavailable legacy feature image.',
       accessedDate: post.updatedAt.slice(0, 10)
     },
     tags: post.tags,

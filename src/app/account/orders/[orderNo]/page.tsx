@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {notFound, redirect} from 'next/navigation';
 import {findStoreOrder, readShipmentRecords} from '@/lib/commerceStore';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
@@ -35,7 +36,7 @@ export default async function AccountOrderDetailPage({params}: {params: Promise<
       <section className="account-detail-grid">
         <article className="account-order-card">
           <h2>Product</h2>
-          <img className="account-detail-image" src={products[order.productSlug]?.image || '/assets/logo.jpg'} alt={order.productName} />
+          <Image className="account-detail-image" src={products[order.productSlug]?.image || '/assets/cowin-placeholder.svg'} alt={order.productName} width={720} height={540} sizes="(max-width: 820px) 100vw, 640px" />
           <dl>
             <div><dt>Name</dt><dd>{order.productName}</dd></div>
             <div><dt>SKU / model</dt><dd>{order.productSlug}</dd></div>

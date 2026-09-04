@@ -130,8 +130,7 @@ const merchantPolicyJsonLd = {
   }
 };
 
-const designBase = "/design-package-v3/cheerdmoto_style_a_rally_terrain_full_package";
-const usableDir = "03_%E4%BD%BF%E7%94%A8%E5%9B%BE_usable";
+const productAssetBase = "/homepage-assets/cheerdmoto_style_a_rally_terrain/assets";
 
 type CategoryProduct = {
   name: string;
@@ -146,6 +145,7 @@ type CategoryDesign = {
   headline: string;
   intro: string;
   heroImage: string;
+  heroFit?: "cover" | "contain";
   products: CategoryProduct[];
   features: string[];
   ctaTitle: string;
@@ -158,8 +158,9 @@ const categoryDesigns: Record<string, CategoryDesign> = {
     label: "NEXT-GEN PERFORMANCE",
     headline: "DIRT BIKES BUILT FOR THE WILD",
     intro: "High-output electric dirt bikes with serious torque, long range, and trail-ready control.",
-    heroImage: `${designBase}/01_category_dirt_bikes/${usableDir}/01_extracted_from_page/dirt_bikes_use_hero_scene.png`,
-    ctaImage: `${designBase}/01_category_dirt_bikes/${usableDir}/01_extracted_from_page/dirt_bikes_use_editorial_scene.png`,
+    heroImage: `${productAssetBase}/source/xtreme_lifestyle.webp`,
+    heroFit: "cover",
+    ctaImage: "/homepage-precision/precision-testing-bay.webp",
     ctaTitle: "RALLY POWER. REAL TERRAIN.",
     ctaCopy: "Choose the platform that matches your riding style, from balanced 72V agility to uncompromised 96V output.",
     features: ["up to 15,000w peak power", "up to 72 mph top speed", "up to 95 km estimated range"],
@@ -168,22 +169,15 @@ const categoryDesigns: Record<string, CategoryDesign> = {
         name: "XCEED",
         spec: "72V electric dirt bike",
         price: "$3,099",
-        image: `${designBase}/01_category_dirt_bikes/${usableDir}/02_related_products/dirt_bikes_use_product_xceed.png`,
+        image: `${productAssetBase}/source/xceed_product.webp`,
         href: "/products/xceed-electric-dirt-bike"
       },
       {
         name: "XTREME",
         spec: "96V flagship dirt bike",
         price: "From $4,499",
-        image: `${designBase}/01_category_dirt_bikes/${usableDir}/02_related_products/dirt_bikes_use_product_xtreme.png`,
+        image: `${productAssetBase}/source/xtreme_product.webp`,
         href: "/products/cheerdmoto-performance-96v-electric-dirtbike-xtreme"
-      },
-      {
-        name: "REFURBISHED XCEED",
-        spec: "72V inspected clearance model",
-        price: "From $2,599",
-        image: `${designBase}/01_category_dirt_bikes/${usableDir}/01_extracted_from_page/dirt_bikes_use_product_card_03.png`,
-        href: "/clearance"
       }
     ]
   },
@@ -191,8 +185,9 @@ const categoryDesigns: Record<string, CategoryDesign> = {
     label: "CITY RANGE",
     headline: "RIDE FREE. RIDE HAPPY.",
     intro: "Fat-tire e-bikes built for daily errands, weekend detours, and confident all-road comfort.",
-    heroImage: `${designBase}/02_category_e_bike/${usableDir}/01_extracted_from_page/e_bike_use_hero_scene.png`,
-    ctaImage: `${designBase}/02_category_e_bike/${usableDir}/01_extracted_from_page/e_bike_use_editorial_scene.png`,
+    heroImage: `${productAssetBase}/source/xcite_product.webp`,
+    heroFit: "contain",
+    ctaImage: "/precision-storefront/precision-gallery.webp",
     ctaTitle: "COMMUTE CLEAN. EXPLORE MORE.",
     ctaCopy: "Pick the frame that fits your day: low-step access, over-frame utility, or full-suspension comfort.",
     features: ["1350w peak motor", "fat tire stability", "city and trail utility"],
@@ -201,21 +196,21 @@ const categoryDesigns: Record<string, CategoryDesign> = {
         name: "XCITE",
         spec: "step-thru fat tire e-bike",
         price: "From $499",
-        image: `${designBase}/02_category_e_bike/${usableDir}/02_related_products/e_bike_use_product_xcite.png`,
+        image: `${productAssetBase}/source/xcite_product.webp`,
         href: "/products/grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto"
       },
       {
         name: "XPLORE",
         spec: "over-frame utility e-bike",
         price: "From $599",
-        image: `${designBase}/02_category_e_bike/${usableDir}/02_related_products/e_bike_use_product_xplore.png`,
+        image: `${productAssetBase}/source/xplore_product.webp`,
         href: "/products/grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto"
       },
       {
         name: "XPLUS",
         spec: "full-suspension comfort",
         price: "From $599",
-        image: `${designBase}/02_category_e_bike/${usableDir}/02_related_products/e_bike_use_product_xplus.png`,
+        image: `${productAssetBase}/source/xplus_product.webp`,
         href: "/products/grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike"
       }
     ]
@@ -224,8 +219,9 @@ const categoryDesigns: Record<string, CategoryDesign> = {
     label: "SMART MOBILITY",
     headline: "FREEDOM. COMFORT. MOBILITY.",
     intro: "Compact electric wheelchair mobility for everyday independence, travel, and confident indoor-outdoor movement.",
-    heroImage: `${designBase}/03_category_electric_wheelchair/${usableDir}/01_extracted_from_page/electric_wheelchair_use_hero_scene.png`,
-    ctaImage: `${designBase}/03_category_electric_wheelchair/${usableDir}/01_extracted_from_page/electric_wheelchair_use_lifestyle_1.png`,
+    heroImage: `${productAssetBase}/source/smart_b02_product.webp`,
+    heroFit: "contain",
+    ctaImage: "/homepage-precision/precision-testing-bay.webp",
     ctaTitle: "MOBILITY WITHOUT LIMITS.",
     ctaCopy: "Smart B02 folds into a practical daily platform with stable control and thoughtful comfort.",
     features: ["dual 250w motors", "lightweight folding frame", "indoor and outdoor use"],
@@ -234,7 +230,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
         name: "SMART B02",
         spec: "electric wheelchair",
         price: "Shop mobility",
-        image: `${designBase}/03_category_electric_wheelchair/${usableDir}/02_related_products/electric_wheelchair_use_product_smart_b02.png`,
+        image: `${productAssetBase}/source/smart_b02_product.webp`,
         href: "/products/cheerdmoto-electric-wheelchair-smart-b02"
       }
     ]
@@ -243,23 +239,59 @@ const categoryDesigns: Record<string, CategoryDesign> = {
     label: "GEAR & PARTS",
     headline: "ACCESSORIES THAT KEEP YOU MOVING.",
     intro: "Replacement parts, rider gear, and everyday upgrades for COWIN electric bikes and dirt bikes.",
-    heroImage: `${designBase}/04_category_parts_accessories/${usableDir}/01_extracted_from_page/parts_accessories_use_hero_scene.png`,
-    ctaImage: `${designBase}/04_category_parts_accessories/${usableDir}/01_extracted_from_page/parts_accessories_use_cta_scene.png`,
+    heroImage: "/homepage-precision/precision-testing-bay.webp",
+    heroFit: "cover",
+    ctaImage: "/precision-storefront/precision-gallery.webp",
     ctaTitle: "READY FOR THE NEXT RIDE.",
     ctaCopy: "Keep your machine tuned, protected, and ready with core accessories and service parts.",
     features: ["model-specific fit", "service-ready parts", "rider-focused upgrades"],
-    products: Array.from({ length: 12 }, (_, index) => {
-      const number = String(index + 1).padStart(2, "0");
-      return {
-        name: `ACCESSORY ${number}`,
-        spec: index < 4 ? "popular upgrade" : index < 8 ? "replacement part" : "rider essential",
-        price: "View details",
-        image: `${designBase}/04_category_parts_accessories/${usableDir}/01_extracted_from_page/parts_accessories_use_accessory_${number}.png`,
-        href: "/accessories"
-      };
-    })
+    products: [
+      {name: "Motorcycle Helmet", spec: "Rider protection", price: "View details", image: "", href: "/products/helmet"},
+      {name: "XCEED Brake Upgrade Kit", spec: "High-temperature brake upgrade", price: "View details", image: "", href: "/products/cheerdmoto-xceed-upgraded-high-temperature-performance-brake-upgrade-kit"},
+      {name: "XCEED Street-Legal Kit", spec: "Road-use equipment kit", price: "View details", image: "", href: "/products/xceed-street-legal-kit"},
+      {name: "XCEED LCD Display", spec: "Display with mount bracket", price: "View details", image: "", href: "/products/cheerdmoto-xceed-lcd-display-with-mount-bracket"},
+      {name: "XCEED 72V 30Ah Battery", spec: "Replacement battery", price: "View details", image: "", href: "/products/cheerdmoto-xceed-72v-30ah-battery"},
+      {name: "XCEED Wheel Upgrade Kit", spec: "Terrain-specific wheel options", price: "View details", image: "", href: "/products/cheerdmoto-xceed-dirtbike-wheel-upgrade-kit"}
+    ]
   }
 };
+
+const categoryProductSlugs: Record<string, string[]> = {
+  "/electric-dirt-bikes": [
+    "xceed-electric-dirt-bike",
+    "cheerdmoto-performance-96v-electric-dirtbike-xtreme"
+  ],
+  "/e-bikes": [
+    "grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto",
+    "grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto",
+    "grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike"
+  ],
+  "/electric-wheelchairs": ["cheerdmoto-electric-wheelchair-smart-b02"],
+  "/accessories": [
+    "helmet",
+    "cheerdmoto-xceed-upgraded-high-temperature-performance-brake-upgrade-kit",
+    "xceed-street-legal-kit",
+    "cheerdmoto-xceed-lcd-display-with-mount-bracket",
+    "cheerdmoto-xceed-72v-30ah-battery",
+    "cheerdmoto-xceed-dirtbike-wheel-upgrade-kit"
+  ]
+};
+
+const cleanCategoryProductImages: Record<string, string> = {
+  "xceed-electric-dirt-bike": `${productAssetBase}/source/xceed_product.webp`,
+  "cheerdmoto-performance-96v-electric-dirtbike-xtreme": `${productAssetBase}/source/xtreme_product.webp`,
+  "grandeux-xcite-electric-bike-1350w-step-thru-fat-tire-ebike-cheerdmoto": `${productAssetBase}/source/xcite_product.webp`,
+  "grandeux-xplore-electric-bike-1350w-over-frame-fat-tire-ebike-cheerdmoto": `${productAssetBase}/source/xplore_product.webp`,
+  "grandeux-xplus-electric-moped-bike-1350w-fat-tire-e-bike": `${productAssetBase}/source/xplus_product.webp`,
+  "cheerdmoto-electric-wheelchair-smart-b02": `${productAssetBase}/source/smart_b02_product.webp`
+};
+
+function usableCategoryImage(product: SiteItem) {
+  const preferred = cleanCategoryProductImages[product.slug];
+  if (preferred) return preferred;
+  if (/parts_accessories_use_accessory_|extracted_from_page/i.test(product.image || "")) return "";
+  return product.image || "";
+}
 
 function RallySiteNav() {
   return <PrecisionStorefrontHeader />;
@@ -427,18 +459,26 @@ function ArticleLinkGrid({title, basePath, items}: {title: string; basePath: "/n
 }
 
 function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryDesign }) {
+  const gridClass = [
+    "rally-collection-grid",
+    design.products.length > 4 ? "is-accessories" : "",
+    `count-${Math.min(design.products.length, 4)}`
+  ].filter(Boolean).join(" ");
+
   return (
-    <main className="rally-category">
+    <main className="rally-category" data-category={item.slug}>
       <RallySiteNav />
 
       <section className="rally-category-hero">
-        <img
-          className="rally-category-hero-image"
-          src={design.heroImage}
-          alt={`${design.headline} COWIN collection`}
-          decoding="async"
-          fetchPriority="high"
-        />
+        <div className={`rally-category-hero-media is-${design.heroFit || "cover"}`}>
+          <Image
+            src={design.heroImage}
+            alt={`${design.headline} COWIN collection`}
+            fill
+            fetchPriority="high"
+            sizes="(max-width: 820px) 100vw, 60vw"
+          />
+        </div>
         <div className="rally-category-hero-shade" />
         <div className="rally-category-hero-copy">
           <span>{design.label}</span>
@@ -476,21 +516,25 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
             <p>{design.products.length} PRODUCTS</p>
             <h2>SHOP THE COLLECTION</h2>
           </div>
-          <div className={design.products.length > 4 ? "rally-collection-grid is-accessories" : "rally-collection-grid"}>
+          <div className={gridClass}>
             {design.products.map((product) => (
               <Link className="rally-collection-card" href={product.href} key={`${product.name}-${product.image}`}>
-                <div>
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    loading="lazy"
-                    decoding="async"
-                    sizes={
-                      design.products.length > 4
+                <div className="rally-collection-media">
+                  {product.image ? (
+                    <Image
+                      src={product.image}
+                      alt={product.name}
+                      fill
+                      sizes={design.products.length > 4
                         ? "(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 25vw"
-                        : "(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 33vw"
-                    }
-                  />
+                        : "(max-width: 620px) 100vw, (max-width: 1080px) 50vw, 38vw"}
+                    />
+                  ) : (
+                    <div className="rally-image-placeholder" role="img" aria-label={`${product.name} image coming soon`}>
+                      <strong>COWIN</strong>
+                      <span>Product image coming soon</span>
+                    </div>
+                  )}
                 </div>
                 <h3>{product.name}</h3>
                 <p>{product.spec}</p>
@@ -511,7 +555,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
       </section>
 
       <section className="rally-editorial">
-        <img src={design.ctaImage} alt={`${design.ctaTitle} COWIN editorial image`} loading="lazy" decoding="async" sizes="100vw" />
+        <Image src={design.ctaImage} alt={`${design.ctaTitle} COWIN editorial image`} fill sizes="100vw" />
         <div>
           <span>{design.label}</span>
           <h2>{design.ctaTitle}</h2>
@@ -532,11 +576,20 @@ async function CollectionPage({ item }: { item: SiteItem }) {
   const catalog = await listPublicProducts();
 
   if (design) {
-    const categoryKey = item.route === '/electric-dirt-bikes' ? 'dirt bike' : item.route === '/e-bikes' ? 'e bike' : item.route === '/electric-wheelchairs' ? 'wheelchair' : item.route === '/accessories' ? 'accessories' : '';
-    const liveProducts = catalog
-      .filter((product) => categoryKey && `${product.title} ${product.description}`.toLowerCase().includes(categoryKey))
-      .map((product) => ({name: product.title, spec: product.description || product.availability, price: product.price || 'Contact us', image: product.image, href: product.route}))
-      .filter((product) => product.image);
+    const allowedSlugs = categoryProductSlugs[item.route] || [];
+    const liveProducts = allowedSlugs
+      .map((slug) => catalog.find((product) => product.slug === slug))
+      .filter((product): product is SiteItem => Boolean(product))
+      .map((product) => {
+        const presentation = productPresentation(product);
+        return {
+          name: presentation.displayName,
+          spec: presentation.shortDescription,
+          price: product.price || 'Contact us',
+          image: usableCategoryImage(product),
+          href: product.route
+        };
+      });
     return <RallyCategoryPage item={item} design={{...design, products: liveProducts.length ? liveProducts : design.products}} />;
   }
 
@@ -622,15 +675,17 @@ function ProductGrid({ title, items }: { title: string; items: SiteItem[] }) {
       <div className="section-heading">
         <h2>{title}</h2>
       </div>
-      <div className="product-grid">
-        {items.map((item) => (
+      <div className={`product-grid count-${Math.min(items.length, 4)}`}>
+        {items.map((item) => {
+          const presentation = productPresentation(item);
+          return (
           <Link className="product-card" href={item.route} key={item.route}>
             <div className="card-image">
-              {item.image ? <Image src={item.image} alt={item.title} fill sizes="(max-width: 700px) 100vw, 25vw" /> : null}
+              {item.image ? <Image src={item.image} alt={presentation.displayName} fill sizes="(max-width: 700px) 100vw, 38vw" /> : <div className="card-image-placeholder"><strong>COWIN</strong><span>Product image coming soon</span></div>}
             </div>
             <div className="card-copy">
-              <h3>{item.title}</h3>
-              <p>{item.description}</p>
+              <h3>{presentation.displayName}</h3>
+              <p>{presentation.shortDescription}</p>
               {item.price ? (
                 <span>
                   {item.currency} {item.price}
@@ -638,7 +693,8 @@ function ProductGrid({ title, items }: { title: string; items: SiteItem[] }) {
               ) : null}
             </div>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </section>
   );
@@ -652,18 +708,21 @@ function CardGrid({ title, items }: { title: string; items: SiteItem[] }) {
       <div className="section-heading">
         <h2>{title}</h2>
       </div>
-      <div className="content-grid">
-        {items.map((item) => (
+      <div className={`content-grid count-${Math.min(items.length, 4)}`}>
+        {items.map((item) => {
+          const presentation = item.kind === "product" ? productPresentation(item) : null;
+          return (
           <Link className="content-card" href={item.route} key={item.route}>
             {item.image ? (
               <div className="content-image">
                 <Image src={item.image} alt={item.title} fill sizes="(max-width: 700px) 100vw, 30vw" />
               </div>
             ) : null}
-            <h3>{item.title}</h3>
-            <p>{item.description}</p>
+            <h3>{presentation?.displayName || item.title}</h3>
+            <p>{presentation?.shortDescription || item.description}</p>
           </Link>
-        ))}
+          );
+        })}
       </div>
     </section>
   );

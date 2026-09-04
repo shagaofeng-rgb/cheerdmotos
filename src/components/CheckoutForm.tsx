@@ -2,6 +2,7 @@
 
 import {useEffect, useMemo, useState} from 'react';
 import Script from 'next/script';
+import Image from 'next/image';
 import {localizedPublicPath} from '@/lib/publicRoutes';
 import {shippingEstimateFor} from '@/lib/shipping';
 import type {CheckoutProductSlug} from '@/lib/site';
@@ -411,7 +412,10 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             <h2>Contact</h2>
             <a href={localizedPublicPath(locale, '/support')}>Need help?</a>
           </div>
-          <input name="contact" type="email" required placeholder="Email or mobile phone number" />
+          <label className="field-shell full">
+            <span>Email address</span>
+            <input name="contact" type="email" autoComplete="email" required placeholder="you@example.com" />
+          </label>
           <label className="checkout-checkbox">
             <input name="marketingOptIn" type="checkbox" defaultChecked />
             Receive product updates and quotation follow-up
@@ -437,17 +441,41 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             </select>
           </label>
           <div className="checkout-two">
-            <input name="firstName" required placeholder="First name" />
-            <input name="lastName" required placeholder="Last name" />
+            <label className="field-shell">
+              <span>First name</span>
+              <input name="firstName" autoComplete="given-name" required />
+            </label>
+            <label className="field-shell">
+              <span>Last name</span>
+              <input name="lastName" autoComplete="family-name" required />
+            </label>
           </div>
-          <input name="address" required placeholder="Address" />
-          <input name="apartment" placeholder="Apartment, suite, warehouse, port, etc." />
+          <label className="field-shell full">
+            <span>Street address</span>
+            <input name="address" autoComplete="street-address" required placeholder="Street and number" />
+          </label>
+          <label className="field-shell full">
+            <span>Apartment, suite, warehouse or port <small>(optional)</small></span>
+            <input name="apartment" autoComplete="address-line2" />
+          </label>
           <div className="checkout-three">
-            <input name="city" required placeholder="City" />
-            <input name="state" placeholder="State / province" />
-            <input name="zip" required placeholder="ZIP / postal code" />
+            <label className="field-shell">
+              <span>City</span>
+              <input name="city" autoComplete="address-level2" required />
+            </label>
+            <label className="field-shell">
+              <span>State / province</span>
+              <input name="state" autoComplete="address-level1" />
+            </label>
+            <label className="field-shell">
+              <span>ZIP / postal code</span>
+              <input name="zip" autoComplete="postal-code" required />
+            </label>
           </div>
-          <input name="phone" required pattern="^[+0-9 ()-]{6,24}$" placeholder="Phone / WhatsApp" />
+          <label className="field-shell full">
+            <span>Phone / WhatsApp</span>
+            <input name="phone" type="tel" autoComplete="tel" required pattern="^[+0-9 ()-]{6,24}$" placeholder="+1 555 000 0000" />
+          </label>
         </section>
 
         <section className="checkout-block">
@@ -548,15 +576,15 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             <input name="billingMode" type="radio" value="different" checked={billingMode === 'different'} onChange={() => setBillingMode('different')} />
             <span><strong>Use a different billing address</strong></span>
           </label>
-          {billingMode === 'different' ? <textarea name="billingAddress" placeholder="Billing name, address, tax ID or VAT details" /> : null}
-          <textarea name="message" placeholder="Order notes, delivery plan, packaging request, color, accessories or customization needs." />
+          {billingMode === 'different' ? <label className="field-shell full"><span>Billing name, address, tax ID or VAT details</span><textarea name="billingAddress" /></label> : null}
+          <label className="field-shell full"><span>Order notes <small>(optional)</small></span><textarea name="message" placeholder="Delivery plan, packaging request, color, accessories or customization needs." /></label>
         </section>
       </div>
 
       <aside className="checkout-summary">
         <div className="summary-product">
           <div className="summary-image-wrap">
-            <img src={productImage} alt={`${productName} checkout thumbnail`} />
+            <Image src={productImage} alt={`${productName} checkout thumbnail`} width={70} height={70} sizes="70px" />
             <span>{quantity}</span>
           </div>
           <div>

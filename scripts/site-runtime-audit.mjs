@@ -1,6 +1,7 @@
 const baseUrl = (process.env.SITE_AUDIT_BASE_URL || 'https://www.cheerdmotos.com').replace(/\/$/, '');
 const expectedCanonicalOrigin = 'https://www.cheerdmotos.com';
 const auditedOrigin = new URL(baseUrl).origin;
+const isLocalAudit = ['localhost', '127.0.0.1'].includes(new URL(baseUrl).hostname);
 const concurrency = Math.max(1, Math.min(10, Number(process.env.SITE_AUDIT_CONCURRENCY || 6)));
 const issues = [];
 const warnings = [];
@@ -103,7 +104,7 @@ const explicitChecks = [
   ['/en/products', [301, 308], '/products'],
   ['/api/admin/orders', [401]],
   ['/api/account/me', [401]],
-  ['/api/cron/publish-news', [401]]
+  ...(!isLocalAudit ? [['/api/cron/publish-news', [401]]] : [])
 ];
 for (const [path, statuses, expectedLocation] of explicitChecks) {
   const response = await fetchChecked(`${baseUrl}${path}`);

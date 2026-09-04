@@ -30,6 +30,7 @@
 
 /* Category pages */
 .rally-category-hero {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(360px, .78fr) minmax(520px, 1.22fr);
   min-height: min(690px, calc(100dvh - 72px));
@@ -37,19 +38,38 @@
   background: url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
 }
 
-.rally-category-hero-image {
+.rally-category-hero-media {
   position: relative;
   z-index: 1;
   grid-column: 2;
+  grid-row: 1;
+  min-width: 0;
+  min-height: 618px;
+  overflow: hidden;
+  background: linear-gradient(145deg, #edf0f1, #d9dfe1);
+}
+
+.rally-category-hero-media img {
   width: 100%;
   height: 100%;
-  min-height: 618px;
   object-fit: cover;
   object-position: center;
-  filter: saturate(.74) contrast(1.04);
+  filter: saturate(.86) contrast(1.03);
+}
+
+.rally-category-hero-media.is-contain img {
+  object-fit: contain;
+  padding: clamp(34px, 5vw, 84px);
+  filter: saturate(.92) contrast(1.03);
+}
+
+.rally-category[data-category="accessories"] .rally-category-hero-media img {
+  object-position: 64% center;
 }
 
 .rally-category-hero-shade {
+  position: absolute;
+  inset: 0;
   z-index: 2;
   background: linear-gradient(90deg, rgb(238 241 242 / 98%) 0%, rgb(238 241 242 / 88%) 37%, rgb(238 241 242 / 10%) 67%, transparent 100%);
 }
@@ -185,6 +205,9 @@
 }
 
 .rally-catalog-heading {
+  display: grid;
+  justify-items: start;
+  gap: 0;
   margin-bottom: 34px;
 }
 
@@ -211,7 +234,18 @@
   background: var(--ps-line);
 }
 
+.rally-collection-grid.count-1 {
+  grid-template-columns: minmax(0, 720px);
+}
+
+.rally-collection-grid.count-3,
+.rally-collection-grid.is-accessories {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
 .rally-collection-card {
+  display: grid;
+  align-content: start;
   min-width: 0;
   padding: 0 0 28px;
   border: 0;
@@ -229,18 +263,61 @@
   transform: translateY(-2px);
 }
 
-.rally-collection-card > div {
-  min-height: 390px;
+.rally-collection-card > .rally-collection-media {
+  position: relative;
+  width: 100%;
+  min-height: 0;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 0;
+  overflow: hidden;
   background: #e7ebec;
 }
 
-.rally-collection-grid.is-accessories .rally-collection-card > div {
-  min-height: 270px;
+.rally-collection-grid.is-accessories .rally-collection-card > .rally-collection-media {
+  min-height: 0;
+}
+
+.rally-collection-grid.count-1 .rally-collection-card > .rally-collection-media,
+.rally-collection-grid.count-2 .rally-collection-card > .rally-collection-media {
+  aspect-ratio: 4 / 3;
 }
 
 .rally-collection-card img {
   object-fit: contain;
-  padding: 24px;
+  padding: clamp(20px, 2.5vw, 38px);
+}
+
+.rally-image-placeholder,
+.card-image-placeholder {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 10px;
+  padding: 28px;
+  color: var(--ps-muted);
+  text-align: center;
+  background:
+    linear-gradient(145deg, transparent 0 56%, rgb(241 90 36 / 18%) 56% 58%, transparent 58%),
+    linear-gradient(145deg, #edf0f1, #d8dddf);
+}
+
+.rally-image-placeholder strong,
+.card-image-placeholder strong {
+  color: var(--ps-ink);
+  font-size: clamp(31px, 3.2vw, 52px);
+  font-weight: 900;
+  letter-spacing: -.065em;
+}
+
+.rally-image-placeholder span,
+.card-image-placeholder span {
+  color: var(--ps-muted);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: .1em;
+  text-transform: uppercase;
 }
 
 .rally-collection-card h3,
@@ -257,10 +334,15 @@
 
 .rally-collection-card p {
   color: var(--ps-muted);
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 4;
 }
 
 .rally-collection-card > span {
   display: block;
+  align-self: end;
   margin-top: 18px;
   color: var(--ps-orange);
   font-size: 12px;
@@ -291,12 +373,14 @@
 }
 
 .rally-editorial {
+  position: relative;
   min-height: 620px;
   color: #eef1f2;
   background: var(--ps-dark);
 }
 
 .rally-editorial img {
+  object-fit: cover;
   filter: saturate(.7) contrast(1.05);
 }
 
@@ -329,7 +413,14 @@
   min-height: 540px;
   padding: 0;
   border: 0;
-  background: url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
+  background:
+    linear-gradient(90deg, rgb(238 241 242 / 98%) 0%, rgb(238 241 242 / 91%) 44%, rgb(238 241 242 / 22%) 74%),
+    url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
+}
+
+.precision-collection-page .page-hero:not(:has(.page-hero-image)),
+.precision-content-page .page-hero:not(:has(.page-hero-image)) {
+  grid-template-columns: minmax(0, 980px) 1fr;
 }
 
 .precision-collection-page .page-hero > div:first-child,
@@ -424,6 +515,7 @@
 
 .precision-collection-page .card-image,
 .precision-product-page .card-image {
+  position: relative;
   min-height: 380px;
   background: #e6eaeb;
 }
@@ -465,6 +557,16 @@
   background: var(--ps-line);
 }
 
+.precision-content-page .content-grid.count-1,
+.precision-product-page .content-grid.count-1 {
+  grid-template-columns: minmax(0, 860px);
+}
+
+.precision-collection-page .product-grid.count-1,
+.precision-product-page .product-grid.count-1 {
+  grid-template-columns: minmax(0, 760px);
+}
+
 .precision-content-page .content-card,
 .precision-product-page .content-card {
   padding: 0 26px 30px;
@@ -481,6 +583,7 @@
   margin-top: 24px;
   font-size: 24px;
   letter-spacing: -.035em;
+  overflow-wrap: anywhere;
 }
 
 .generated-section,
@@ -839,7 +942,9 @@
   margin: 0;
   padding: clamp(70px, 9vw, 132px) clamp(24px, 5.4vw, 88px);
   border: 0;
-  background: url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
+  background:
+    linear-gradient(90deg, rgb(238 241 242 / 98%) 0%, rgb(238 241 242 / 90%) 54%, rgb(238 241 242 / 25%) 100%),
+    url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
 }
 
 .article-hero h1,
@@ -922,19 +1027,28 @@
   transform: translateY(-2px);
 }
 
-.article-card img {
+.article-card > .article-card-media {
+  position: relative;
+  display: block;
+  min-width: 0;
+  min-height: 330px;
+  padding: 0;
+  overflow: hidden;
+  background: var(--ps-surface-strong);
+}
+
+.article-card > .article-card-media img {
   width: 100%;
   height: 100%;
-  min-height: 330px;
   object-fit: cover;
   filter: saturate(.82);
 }
 
-.article-card:first-child img {
+.article-card:first-child .article-card-media {
   min-height: 500px;
 }
 
-.article-card > div {
+.article-card > .article-card-copy {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
@@ -986,11 +1100,16 @@
   font-size: 12px;
 }
 
-.article-detail-hero > img {
-  display: block;
+.article-detail-media {
+  position: relative;
   width: min(1180px, 100%);
-  max-height: 650px;
+  min-height: clamp(360px, 50vw, 650px);
   margin: 56px 0 0 auto;
+  overflow: hidden;
+  background: var(--ps-surface-strong);
+}
+
+.article-detail-media img {
   object-fit: cover;
   filter: saturate(.82);
 }
@@ -1051,6 +1170,18 @@
   border-radius: 0;
   color: var(--ps-ink);
   background: var(--ps-panel);
+}
+
+.article-product-media {
+  position: relative;
+  min-height: 280px;
+  overflow: hidden;
+  background: var(--ps-surface-strong);
+}
+
+.article-product-media img {
+  object-fit: contain;
+  padding: 20px;
 }
 
 .search-form {
@@ -1201,7 +1332,9 @@
   margin: 0;
   padding: clamp(70px, 8vw, 116px) clamp(24px, 5.4vw, 88px);
   color: var(--ps-ink);
-  background: url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
+  background:
+    linear-gradient(90deg, rgb(238 241 242 / 98%) 0%, rgb(238 241 242 / 90%) 58%, rgb(238 241 242 / 25%) 100%),
+    url('/precision-storefront/precision-gallery.webp') center / cover no-repeat;
 }
 
 .precision-checkout-frame .checkout-hero > div {
@@ -1225,9 +1358,27 @@
 }
 
 .precision-checkout-frame .checkout-form {
-  gap: 1px;
+  gap: clamp(20px, 3vw, 38px);
   align-items: start;
-  background: var(--ps-line);
+  background: transparent;
+}
+
+.precision-checkout-frame .checkout-summary {
+  align-self: start;
+  border-left: 0;
+  border-top: 4px solid var(--ps-orange);
+}
+
+.precision-checkout-frame .field-shell span {
+  color: #3f464a;
+  font-size: 12px;
+  font-weight: 800;
+  letter-spacing: .02em;
+}
+
+.precision-checkout-frame .field-shell span small {
+  color: var(--ps-muted);
+  font-weight: 650;
 }
 
 .precision-checkout-frame :where(.checkout-left, .checkout-summary, .checkout-fields, .checkout-summary-card) {
@@ -1331,6 +1482,12 @@
   to { opacity: 1; transform: translateY(0); }
 }
 
+@media (min-width: 821px) {
+  .rally-category[data-category="accessories"] .rally-category-hero-copy h1 {
+    font-size: clamp(48px, 4.5vw, 72px);
+  }
+}
+
 @media (max-width: 1100px) {
   .rally-category-hero {
     grid-template-columns: minmax(330px, .9fr) minmax(420px, 1.1fr);
@@ -1338,6 +1495,11 @@
 
   .rally-category-shell {
     grid-template-columns: 1fr;
+  }
+
+  .rally-collection-grid.count-3,
+  .rally-collection-grid.is-accessories {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .rally-filters {
@@ -1390,7 +1552,7 @@
     font-size: clamp(47px, 11vw, 70px);
   }
 
-  .rally-category-hero-image {
+  .rally-category-hero-media {
     grid-column: 1;
     grid-row: 2;
     min-height: 330px;
@@ -1411,6 +1573,8 @@
   }
 
   .rally-collection-grid,
+  .rally-collection-grid.count-1,
+  .rally-collection-grid.count-3,
   .rally-collection-grid.is-accessories,
   .precision-collection-page .product-grid,
   .precision-product-page .product-grid,
@@ -1458,8 +1622,8 @@
     grid-template-columns: 1fr;
   }
 
-  .article-card img,
-  .article-card:first-child img {
+  .article-card-media,
+  .article-card:first-child .article-card-media {
     min-height: 300px;
     max-height: 420px;
   }
@@ -1481,6 +1645,19 @@
 @media (max-width: 620px) {
   .rally-category-hero {
     grid-template-rows: auto 300px;
+  }
+
+  .rally-catalog-heading {
+    display: grid;
+    justify-items: start;
+    align-items: start;
+    gap: 0;
+  }
+
+  .rally-catalog-heading p {
+    width: auto;
+    max-width: 100%;
+    white-space: nowrap;
   }
 
   .rally-category-hero-copy {
@@ -1600,12 +1777,17 @@
     min-height: 0;
   }
 
-  .article-card img,
-  .article-card:first-child img {
+  .article-card-media,
+  .article-card:first-child .article-card-media {
     min-height: 240px;
   }
 
-  .article-card > div {
+  .article-detail-media {
+    min-height: 260px;
+    margin-top: 36px;
+  }
+
+  .article-card > .article-card-copy {
     padding: 24px;
   }
 

@@ -134,6 +134,42 @@ const productOverrides: Record<string, ProductOverrides> = {
     keyFeatures: ['1,350W peak motor', 'Full suspension comfort', '48V 20Ah removable battery', '7-speed Shimano drivetrain'],
     quickSpecs: [{label: 'Peak motor', value: '1,350W'}, {label: 'Battery', value: '48V 20Ah'}, {label: 'Top speed', value: '20 MPH'}, {label: 'Suspension', value: 'Front and rear'}],
     specifications: [{label: 'Model', value: 'XPLUS'}, {label: 'Peak motor', value: '1,350W'}, {label: 'Battery', value: '48V 20Ah removable lithium'}, {label: 'Top speed', value: '20 MPH'}, {label: 'Suspension', value: 'Full suspension'}, {label: 'Brakes', value: 'Hydraulic disc brakes'}]
+  },
+  helmet: {
+    displayName: 'COWIN Motorcycle Helmet',
+    category: 'Accessories',
+    categoryRoute: '/accessories',
+    model: 'Helmet'
+  },
+  'cheerdmoto-xceed-upgraded-high-temperature-performance-brake-upgrade-kit': {
+    displayName: 'XCEED Brake Upgrade Kit',
+    category: 'Accessories',
+    categoryRoute: '/accessories',
+    model: 'XCEED Brake Kit'
+  },
+  'xceed-street-legal-kit': {
+    displayName: 'XCEED Street-Legal Kit',
+    category: 'Accessories',
+    categoryRoute: '/accessories',
+    model: 'XCEED Street Kit'
+  },
+  'cheerdmoto-xceed-lcd-display-with-mount-bracket': {
+    displayName: 'XCEED LCD Display Kit',
+    category: 'Accessories',
+    categoryRoute: '/accessories',
+    model: 'XCEED LCD Kit'
+  },
+  'cheerdmoto-xceed-72v-30ah-battery': {
+    displayName: 'XCEED 72V 30Ah Battery',
+    category: 'Accessories',
+    categoryRoute: '/accessories',
+    model: 'XCEED 72V Battery'
+  },
+  'cheerdmoto-xceed-dirtbike-wheel-upgrade-kit': {
+    displayName: 'XCEED Wheel Upgrade Kit',
+    category: 'Accessories',
+    categoryRoute: '/accessories',
+    model: 'XCEED Wheel Kit'
   }
 };
 

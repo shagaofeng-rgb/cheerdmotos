@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type {NewsArticle} from '@/lib/news';
 import {productDetailedSpecs, products, type ProductSlug} from '@/lib/site';
 import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from './PrecisionStorefrontChrome';
@@ -26,8 +27,10 @@ export function ArticleListView({title, eyebrow, description, articles, basePath
       <section className="article-grid">
         {articles.map((article) => (
           <Link className="article-card" href={`${basePath}/${article.slug}`} key={article.slug}>
-            <img src={article.hero} alt={article.heroAlt || article.title} loading="lazy" decoding="async" />
-            <div>
+            <div className="article-card-media">
+              <Image src={article.hero} alt={article.heroAlt || article.title} fill sizes="(max-width: 820px) 100vw, 50vw" />
+            </div>
+            <div className="article-card-copy">
               <span>{article.category}</span>
               <h2>{article.title}</h2>
               <p>{article.excerpt}</p>
@@ -76,7 +79,9 @@ export function ArticleDetailView({article, basePath, type}: {
           <span>Updated {article.updatedAt}</span>
           <span>{article.readTime}</span>
         </div>
-        <img src={article.hero} alt={article.heroAlt || article.title} />
+        <div className="article-detail-media">
+          <Image src={article.hero} alt={article.heroAlt || article.title} fill fetchPriority="high" sizes="(max-width: 1180px) 100vw, 1180px" />
+        </div>
       </section>
 
       <article className="article-body">
@@ -109,7 +114,9 @@ export function ArticleDetailView({article, basePath, type}: {
           <div className="article-product-grid">
             {productSlugs.map((slug) => (
               <Link className="article-product-card" href={`/products/${slug}`} key={slug}>
-                <img src={products[slug].image} alt={products[slug].name} loading="lazy" decoding="async" />
+                <div className="article-product-media">
+                  <Image src={products[slug].image} alt={products[slug].name} fill sizes="(max-width: 820px) 100vw, 44vw" />
+                </div>
                 <strong>{products[slug].name}</strong>
                 <span>{products[slug].category}</span>
               </Link>

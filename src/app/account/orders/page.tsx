@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import {redirect} from 'next/navigation';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
 import {readStoreOrders} from '@/lib/commerceStore';
@@ -33,7 +34,7 @@ export default async function AccountOrdersPage() {
       <section className="account-order-list">
         {orders.length ? orders.map((order) => (
           <article className="account-order-card" key={order.id}>
-            <img className="account-order-thumb" src={products[order.productSlug]?.thumbnail || '/assets/logo-small.jpg'} alt={order.productName} />
+            <Image className="account-order-thumb" src={products[order.productSlug]?.thumbnail || '/assets/cowin-placeholder.svg'} alt={order.productName} width={110} height={90} sizes="110px" />
             <div>
               <small>{order.id}</small>
               <h2>{order.productName}</h2>
