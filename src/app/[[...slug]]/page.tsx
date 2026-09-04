@@ -43,23 +43,25 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   const item = await resolvedItem(routeFromSegments(slug));
 
   if (!item) return {};
+  const product = item.kind === 'product' ? productPresentation(item) : null;
+  const metaImage = product?.gallery[0] || (item.kind === 'product' ? '' : item.image);
 
   return {
-    title: item.kind === "home" ? { absolute: item.title } : item.kind === 'product' ? productPresentation(item).displayName : item.title,
-    description: item.kind === 'product' ? productPresentation(item).shortDescription : item.description,
+    title: item.kind === "home" ? { absolute: item.title } : product?.displayName || item.title,
+    description: product?.shortDescription || item.description,
     alternates: {
       canonical: `${siteUrl}${item.route === "/" ? "/" : item.route}`
     },
     openGraph: {
-      title: item.kind === 'product' ? productPresentation(item).displayName : item.title,
-      description: item.kind === 'product' ? productPresentation(item).shortDescription : item.description,
-      images: item.image ? [{ url: item.image }] : []
+      title: product?.displayName || item.title,
+      description: product?.shortDescription || item.description,
+      images: metaImage ? [{ url: metaImage }] : []
     },
     twitter: {
       card: 'summary_large_image',
-      title: item.kind === 'product' ? productPresentation(item).displayName : item.title,
-      description: item.kind === 'product' ? productPresentation(item).shortDescription : item.description,
-      images: item.image ? [item.image] : []
+      title: product?.displayName || item.title,
+      description: product?.shortDescription || item.description,
+      images: metaImage ? [metaImage] : []
     }
   };
 }
@@ -352,6 +354,7 @@ function HomePage({ item }: { item: SiteItem }) {
 
 async function ProductPage({ item }: { item: SiteItem }) {
   const presentation = productPresentation(item);
+  const displayItem = {...item, image: presentation.gallery[0] || ''};
   const [catalog, news, blogs] = await Promise.all([listPublicProducts(), getAllNewsArticles(), getAllBlogArticles()]);
   const related = catalog.filter((product) => product.slug !== item.slug).slice(0, 4);
   const linkedNews = news.filter((article) => article.productSlugs?.includes(item.slug)).slice(0, 3);
@@ -395,7 +398,7 @@ async function ProductPage({ item }: { item: SiteItem }) {
       <RallySiteNav />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}} />
-      <ProductDetail item={item} product={presentation} />
+      <ProductDetail item={displayItem} product={presentation} />
       <ArticleLinkGrid title="Related News" basePath="/news" items={linkedNews.length ? linkedNews : news.slice(0, 3)} />
       <ArticleLinkGrid title="Related Guides" basePath="/blog" items={linkedBlogs.length ? linkedBlogs : blogs.slice(0, 3)} />
       <ProductGrid title="Related Products" items={related} />
