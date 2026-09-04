@@ -4,6 +4,8 @@ import fs from 'node:fs/promises';
 import path from 'node:path';
 import {appendStoreLine, readStoreLines, readStoreObject, writeStoreObject} from '../src/lib/durableStore.ts';
 import {localizedPublicPath, normalizePublicLocale} from '../src/lib/publicRoutes.ts';
+import {newsDeliveryBaseUrl} from '../src/lib/newsDeliveryOrigin.ts';
+import {resolveNewsDisplayImage} from '../src/lib/newsImage.ts';
 
 test('public routes stay on the root English storefront', () => {
   assert.equal(normalizePublicLocale('en'), '');
@@ -35,4 +37,21 @@ test('product catalog never uses the favicon as a product image', async () => {
   const source = await fs.readFile(path.join(process.cwd(), 'src/lib/site.ts'), 'utf8');
   assert.doesNotMatch(source, /image:\s*["']\/favicon\.ico["']/);
   assert.doesNotMatch(source, /thumbnail:\s*["']\/favicon\.ico["']/);
+});
+
+test('deployed News delivery checks use the public storefront while local checks stay local', () => {
+  assert.equal(newsDeliveryBaseUrl('https://cheerdmotos-abc123.vercel.app/api/cron/publish-news'), 'https://www.cheerdmotos.com');
+  assert.equal(newsDeliveryBaseUrl('http://127.0.0.1:3100/api/cron/publish-news'), 'http://127.0.0.1:3100');
+});
+
+test('legacy News favicon images use a stable CHEERDMOTO image', () => {
+  const fallback = resolveNewsDisplayImage({coverImage: '/favicon.ico', productSlugs: ['xceed-electric-dirt-bike']});
+  assert.equal(fallback, '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png');
+  assert.equal(
+    resolveNewsDisplayImage({
+      coverImage: 'https://laikegeo.oss-cn-shanghai.aliyuncs.com/uploads/example.jpg',
+      productSlugs: []
+    }),
+    'https://laikegeo.oss-cn-shanghai.aliyuncs.com/uploads/example.jpg'
+  );
 });

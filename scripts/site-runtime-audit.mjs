@@ -1,5 +1,6 @@
 const baseUrl = (process.env.SITE_AUDIT_BASE_URL || 'https://www.cheerdmotos.com').replace(/\/$/, '');
 const expectedCanonicalOrigin = 'https://www.cheerdmotos.com';
+const auditedOrigin = new URL(baseUrl).origin;
 const concurrency = Math.max(1, Math.min(10, Number(process.env.SITE_AUDIT_CONCURRENCY || 6)));
 const issues = [];
 const warnings = [];
@@ -52,7 +53,7 @@ await mapLimit(sitemapUrls, async (sitemapUrl) => {
 });
 
 const internalPaths = new Set();
-const imagePaths = new Set();
+const imageUrls = new Set();
 
 await mapLimit([...pageUrls], async (canonicalUrl) => {
   const response = await fetchChecked(originMapped(canonicalUrl));
@@ -70,7 +71,10 @@ await mapLimit([...pageUrls], async (canonicalUrl) => {
   for (const image of html.matchAll(/<img\b[^>]*>/gi)) {
     if (!/\balt=["'][^"']*["']/i.test(image[0])) issues.push(`${path}: image missing alt`);
     const src = image[0].match(/\bsrc=["']([^"']+)/i)?.[1];
-    if (src) imagePaths.add(new URL(decodeHtml(src), baseUrl).pathname + new URL(decodeHtml(src), baseUrl).search);
+    if (src) {
+      const parsed = new URL(decodeHtml(src), baseUrl);
+      imageUrls.add(parsed.origin === auditedOrigin ? `${parsed.pathname}${parsed.search}` : parsed.toString());
+    }
   }
   for (const link of html.matchAll(/\bhref=["']([^"']+)/gi)) {
     try {
@@ -80,9 +84,9 @@ await mapLimit([...pageUrls], async (canonicalUrl) => {
   }
 });
 
-await mapLimit([...imagePaths], async (path) => {
-  const response = await fetchChecked(new URL(path, baseUrl), {method: 'GET'});
-  if (!response.ok) issues.push(`${path}: image HTTP ${response.status}`);
+await mapLimit([...imageUrls], async (imageUrl) => {
+  const response = await fetchChecked(new URL(imageUrl, baseUrl), {method: 'GET'});
+  if (!response.ok) issues.push(`${imageUrl}: image HTTP ${response.status}`);
 });
 
 await mapLimit([...internalPaths], async (path) => {
@@ -119,5 +123,5 @@ if (issues.length) {
   issues.forEach((issue) => console.error(`- ${issue}`));
   process.exitCode = 1;
 } else {
-  console.log(`Site runtime audit ok: ${pageUrls.size} pages, ${internalPaths.size} internal paths, ${imagePaths.size} rendered images, ${sitemapUrls.length} sitemap files.`);
+  console.log(`Site runtime audit ok: ${pageUrls.size} pages, ${internalPaths.size} internal paths, ${imageUrls.size} rendered images, ${sitemapUrls.length} sitemap files.`);
 }

@@ -3,6 +3,8 @@ import {
   publishDailyAutomatedNews,
   runNewsDeliveryTest
 } from '@/lib/newsPublisher';
+import {newsDeliveryBaseUrl} from '@/lib/newsDeliveryOrigin';
+import {siteUrl} from '@/lib/site';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -22,12 +24,13 @@ export async function GET(request: Request) {
   if (!authorized(request)) return json({ok: false, error: 'Unauthorized'}, 401);
 
   const url = new URL(request.url);
+  const deliveryBaseUrl = newsDeliveryBaseUrl(request.url, siteUrl);
   if (url.searchParams.get('cleanupTest') === '1') {
     const cleanup = await cleanupNewsAutomationTests();
     return json({ok: true, cleanup});
   }
   if (url.searchParams.get('deliveryTest') === '1') {
-    const result = await runNewsDeliveryTest(url.origin);
+    const result = await runNewsDeliveryTest(deliveryBaseUrl);
     return json(result, result.ok ? 200 : 500);
   }
 
@@ -35,7 +38,7 @@ export async function GET(request: Request) {
   const result = await publishDailyAutomatedNews({
     target: Number.isFinite(targetValue) ? targetValue : 1,
     dryRun: url.searchParams.get('dryRun') === '1',
-    deliveryBaseUrl: url.origin,
+    deliveryBaseUrl,
     trigger: (request.headers.get('user-agent') || '').includes('vercel-cron') ? 'cron' : 'manual'
   });
   return json(result, result.ok ? 200 : 503);

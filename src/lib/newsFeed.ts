@@ -1,5 +1,6 @@
 import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
 import {type NewsArticle} from '@/lib/news';
+import {newsDisplayImagePool, resolveNewsDisplayImage} from '@/lib/newsImage';
 import {siteUrl} from '@/lib/site';
 
 function slugify(value: string) {
@@ -18,16 +19,11 @@ function sourceUrlFrom(post: ContentPost) {
   return post.source.match(/https?:\/\/\S+/)?.[0]?.replace(/[),.;]+$/, '') || `${siteUrl}/discover/${post.slug}`;
 }
 
-const displayImagePool = [
-  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'},
-  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xtreme_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'},
-  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'},
-  {url: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/smart_b02_transparent.png', publisher: 'CHEERDMOTO', sourceUrl: siteUrl, note: 'CHEERDMOTO product image.'}
-];
-
 function postToArticle(post: ContentPost): NewsArticle {
   const sourceUrl = sourceUrlFrom(post);
   const sourceName = post.source.split(':')[0]?.trim() || 'Public source';
+  const hero = resolveNewsDisplayImage(post);
+  const usesStoredImage = hero === post.coverImage;
   const paragraphs = post.content.split(/\n{2,}/).map((item) => item.replace(/^#+\s*/, '').trim()).filter(Boolean);
   return {
     slug: post.slug,
@@ -35,13 +31,15 @@ function postToArticle(post: ContentPost): NewsArticle {
     updatedAt: post.updatedAt.slice(0, 10),
     title: post.title,
     excerpt: post.excerpt,
-    hero: post.coverImage,
+    hero,
     heroAlt: `${post.title} source-attributed news image`,
     imageCredit: {
-      publisher: sourceName,
-      sourceUrl,
-      imageUrl: post.coverImage.startsWith('http') ? post.coverImage : `${siteUrl}${post.coverImage}`,
-      note: 'Feature image was validated before publication and is shown from a stable CHEERDMOTO-hosted copy when available.',
+      publisher: usesStoredImage ? sourceName : 'CHEERDMOTO',
+      sourceUrl: usesStoredImage ? sourceUrl : siteUrl,
+      imageUrl: hero.startsWith('http') ? hero : `${siteUrl}${hero}`,
+      note: usesStoredImage
+        ? 'Feature image was validated before publication and is shown from a stable source copy.'
+        : 'A CHEERDMOTO-owned product image replaces an unavailable legacy feature image.',
       accessedDate: post.updatedAt.slice(0, 10)
     },
     tags: post.tags,
@@ -90,7 +88,7 @@ function diversifyArticleImages(articles: NewsArticle[]) {
       used.add(article.hero);
       return article;
     }
-    const replacement = displayImagePool.find((image) => !used.has(image.url));
+    const replacement = newsDisplayImagePool.find((image) => !used.has(image.url));
     if (!replacement) return article;
     used.add(replacement.url);
     return {
@@ -99,7 +97,7 @@ function diversifyArticleImages(articles: NewsArticle[]) {
       heroAlt: `${article.title} supporting industry image`,
       imageCredit: {
         publisher: replacement.publisher,
-        sourceUrl: replacement.sourceUrl,
+        sourceUrl: siteUrl,
         imageUrl: `${siteUrl}${replacement.url}`,
         note: replacement.note,
         accessedDate: article.updatedAt

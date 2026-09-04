@@ -1,5 +1,16 @@
 const nextConfig = {
   poweredByHeader: false,
+  images: {
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "laikegeo.oss-cn-shanghai.aliyuncs.com",
+        port: "",
+        pathname: "/uploads/**",
+        search: ""
+      }
+    ]
+  },
   async redirects() {
     return [
       {
