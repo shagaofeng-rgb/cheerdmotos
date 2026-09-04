@@ -678,10 +678,11 @@ function ProductGrid({ title, items }: { title: string; items: SiteItem[] }) {
       <div className={`product-grid count-${Math.min(items.length, 4)}`}>
         {items.map((item) => {
           const presentation = productPresentation(item);
+          const productImage = presentation.gallery[0] || "";
           return (
           <Link className="product-card" href={item.route} key={item.route}>
             <div className="card-image">
-              {item.image ? <Image src={item.image} alt={presentation.displayName} fill sizes="(max-width: 700px) 100vw, 38vw" /> : <div className="card-image-placeholder"><strong>COWIN</strong><span>Product image coming soon</span></div>}
+              {productImage ? <Image src={productImage} alt={presentation.displayName} fill sizes="(max-width: 700px) 100vw, 38vw" /> : <div className="card-image-placeholder"><strong>COWIN</strong><span>Product image coming soon</span></div>}
             </div>
             <div className="card-copy">
               <h3>{presentation.displayName}</h3>
@@ -711,11 +712,12 @@ function CardGrid({ title, items }: { title: string; items: SiteItem[] }) {
       <div className={`content-grid count-${Math.min(items.length, 4)}`}>
         {items.map((item) => {
           const presentation = item.kind === "product" ? productPresentation(item) : null;
+          const cardImage = presentation ? presentation.gallery[0] || "" : item.image;
           return (
           <Link className="content-card" href={item.route} key={item.route}>
-            {item.image ? (
+            {cardImage ? (
               <div className="content-image">
-                <Image src={item.image} alt={item.title} fill sizes="(max-width: 700px) 100vw, 30vw" />
+                <Image src={cardImage} alt={presentation?.displayName || item.title} fill sizes="(max-width: 700px) 100vw, 30vw" />
               </div>
             ) : null}
             <h3>{presentation?.displayName || item.title}</h3>

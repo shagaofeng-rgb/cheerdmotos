@@ -189,6 +189,10 @@ function cleanText(value: string) {
   return text.replaceAll('鈥?', '-').replace(/\s+/g, ' ').trim();
 }
 
+function usableProductImage(value: string) {
+  return Boolean(value && !/\/favicon\.ico(?:$|[?#])|parts_accessories_use_accessory_|extracted_from_page/i.test(value));
+}
+
 function genericCategory(item: SiteItem) {
   if (item.route.includes('wheelchair')) return {category: 'Electric Wheelchairs', categoryRoute: '/electric-wheelchairs'};
   if (/helmet|kit|battery|display/.test(item.slug)) return {category: 'Accessories', categoryRoute: '/accessories'};
@@ -199,8 +203,8 @@ function genericCategory(item: SiteItem) {
 export function productPresentation(item: SiteItem): ProductPresentation {
   const override = productOverrides[item.slug] || {};
   const fallbackCategory = genericCategory(item);
-  const image = item.image || '';
-  const gallery = [...new Set([...(override.gallery || []), image].filter(Boolean))];
+  const image = usableProductImage(item.image || '') ? item.image : '';
+  const gallery = [...new Set([...(override.gallery || []), image].filter(usableProductImage))];
   const description = cleanText(override.description || item.description || 'Product details will be confirmed by the COWIN support team.');
   const sku = skuBySlug[item.slug] || `CM-${item.slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 48)}`;
   const availability = item.availability || '';
