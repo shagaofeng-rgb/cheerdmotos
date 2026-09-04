@@ -7,8 +7,8 @@ import AnalyticsTracker from '@/components/AnalyticsTracker';
 export const metadata: Metadata = {
   metadataBase: new URL("https://www.cheerdmotos.com"),
   title: {
-    default: "CHEERDMOTO | Wholesale E-Bikes & E-Motorcycles for Business",
-    template: "%s | CHEERDMOTO"
+    default: "COWIN | Wholesale E-Bikes & E-Motorcycles for Business",
+    template: "%s | COWIN"
   },
   description:
     "Wholesale and fleet solutions for dealers, couriers, and patrol. Dealer pricing, bulk orders, warranty, and worldwide shipping.",

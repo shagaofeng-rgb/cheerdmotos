@@ -16,7 +16,7 @@ ${articles.map((article) => `  <url>
     <loc>${siteUrl}/news/${article.slug}</loc>
     <news:news>
       <news:publication>
-        <news:name>CHEERDMOTO News</news:name>
+        <news:name>COWIN News</news:name>
         <news:language>en</news:language>
       </news:publication>
       <news:publication_date>${article.date}</news:publication_date>

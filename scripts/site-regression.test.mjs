@@ -6,6 +6,7 @@ import {appendStoreLine, readStoreLines, readStoreObject, writeStoreObject} from
 import {localizedPublicPath, normalizePublicLocale} from '../src/lib/publicRoutes.ts';
 import {newsDeliveryBaseUrl} from '../src/lib/newsDeliveryOrigin.ts';
 import {resolveNewsDisplayImage} from '../src/lib/newsImage.ts';
+import {currentBrand, normalizeBrandValue} from '../src/lib/brand.ts';
 
 test('public routes stay on the root English storefront', () => {
   assert.equal(normalizePublicLocale('en'), '');
@@ -44,7 +45,7 @@ test('deployed News delivery checks use the public storefront while local checks
   assert.equal(newsDeliveryBaseUrl('http://127.0.0.1:3100/api/cron/publish-news'), 'http://127.0.0.1:3100');
 });
 
-test('legacy News favicon images use a stable CHEERDMOTO image', () => {
+test('legacy News favicon images use a stable COWIN image', () => {
   const fallback = resolveNewsDisplayImage({coverImage: '/favicon.ico', productSlugs: ['xceed-electric-dirt-bike']});
   assert.equal(fallback, '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png');
   assert.equal(
@@ -53,5 +54,13 @@ test('legacy News favicon images use a stable CHEERDMOTO image', () => {
       productSlugs: []
     }),
     'https://laikegeo.oss-cn-shanghai.aliyuncs.com/uploads/example.jpg'
+  );
+});
+
+test('legacy display copy is presented under the COWIN brand without changing technical URLs', () => {
+  assert.equal(currentBrand('CHEERDMOTO / CheerdMoto / Cheerdmoto'), 'COWIN / COWIN / COWIN');
+  assert.deepEqual(
+    normalizeBrandValue({title: 'About CHEERDMOTO', url: 'https://www.cheerdmotos.com/about'}),
+    {title: 'About COWIN', url: 'https://www.cheerdmotos.com/about'}
   );
 });

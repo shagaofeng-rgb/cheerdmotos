@@ -66,7 +66,7 @@ function cleanSiteData(data: SiteData): SiteData {
     { route: "/electric-wheelchairs", title: "Electric Wheelchairs", slug: "electric-wheelchairs", description: "Compact electric mobility platforms for independence and everyday travel." },
     { route: "/accessories", title: "Accessories", slug: "accessories", description: "Parts, batteries, rider gear, and model-specific service accessories." },
     { route: "/clearance", title: "Refurbished & Clearance", slug: "clearance", description: "Inspected clearance products and limited-availability deals." },
-    { route: "/products", title: "All Products", slug: "products", description: "Browse CHEERDMOTO electric dirt bikes, e-bikes, mobility products, and accessories." }
+    { route: "/products", title: "All Products", slug: "products", description: "Browse COWIN electric dirt bikes, e-bikes, mobility products, and accessories." }
   ].map((item) => cleanItem({
     url: item.route,
     route: item.route,
@@ -82,15 +82,15 @@ function cleanSiteData(data: SiteData): SiteData {
     html: ""
   }));
   const pages = [
-    { route: "/support", title: "Support", slug: "support", description: "Contact CHEERDMOTO support for product, order, warranty, and dealer questions." },
-    { route: "/about", title: "About CHEERDMOTO", slug: "about", description: "CHEERDMOTO builds electric mobility products for performance, utility, and everyday independence." },
+    { route: "/support", title: "Support", slug: "support", description: "Contact COWIN support for product, order, warranty, and dealer questions." },
+    { route: "/about", title: "About COWIN", slug: "about", description: "COWIN builds electric mobility products for performance, utility, and everyday independence." },
     { route: "/dealer-program", title: "Dealer Program", slug: "dealer-program", description: "Apply for dealer, fleet, and B2B buying support." },
-    { route: "/rider-club", title: "Rider Club", slug: "rider-club", description: "Join the CHEERDMOTO rider community." },
-    { route: "/product-registration", title: "Product Registration", slug: "product-registration", description: "Register your CHEERDMOTO product for service and support." },
+    { route: "/rider-club", title: "Rider Club", slug: "rider-club", description: "Join the COWIN rider community." },
+    { route: "/product-registration", title: "Product Registration", slug: "product-registration", description: "Register your COWIN product for service and support." },
     { route: "/manuals", title: "Manuals & Assembly", slug: "manuals", description: "Find setup, assembly, and maintenance guidance." },
-    { route: "/warranty", title: "Warranty Policy", slug: "warranty", description: "Review CHEERDMOTO warranty coverage and service terms." },
+    { route: "/warranty", title: "Warranty Policy", slug: "warranty", description: "Review COWIN warranty coverage and service terms." },
     { route: "/shipping-returns", title: "Shipping & Returns", slug: "shipping-returns", description: "Review shipping, delivery, returns, and after-sales support policies." },
-    { route: "/discover", title: "Discover", slug: "discover", description: "CHEERDMOTO product guides, rider resources, and company updates." }
+    { route: "/discover", title: "Discover", slug: "discover", description: "COWIN product guides, rider resources, and company updates." }
   ].map((item) => cleanItem({
     url: item.route,
     route: item.route,
@@ -183,7 +183,7 @@ function catalogProduct(slug: string): CatalogProduct {
   const item = siteData.products.find((entry) => entry.slug === slug);
   if (!item) {
     return {
-      name: "CHEERDMOTO Payment Item",
+      name: "COWIN Payment Item",
       image: "/assets/logo-small.jpg",
       thumbnail: "/assets/logo-small.jpg",
       category: "Payment",
@@ -194,20 +194,20 @@ function catalogProduct(slug: string): CatalogProduct {
   }
   const amount = priceAmount(item.price);
   return {
-    name: item.title.replace(/\s*\|\s*CheerdMoto.*$/i, ""),
+    name: item.title.replace(/\s*\|\s*COWIN.*$/i, ""),
     image: item.image || "/assets/logo-small.jpg",
     thumbnail: item.image || "/assets/logo-small.jpg",
     category: productCategory(item),
     price: `USD ${amount.toLocaleString()}`,
     priceAmount: amount,
-    specs: [item.availability || "Available", item.currency || "USD", productCategory(item), "CHEERDMOTO"]
+    specs: [item.availability || "Available", item.currency || "USD", productCategory(item), "COWIN"]
   };
 }
 
 export const products = {
   ...Object.fromEntries(productSlugs.map((slug) => [slug, catalogProduct(slug)])),
   "payment-test": {
-    name: "CHEERDMOTO Payment Gateway Test Product",
+    name: "COWIN Payment Gateway Test Product",
     image: siteData.products[0]?.image || "/assets/logo-small.jpg",
     thumbnail: siteData.products[0]?.image || "/assets/logo-small.jpg",
     category: "Payment Test",
@@ -216,7 +216,7 @@ export const products = {
     specs: ["Test order", "No shipment", "Gateway check", "USD 10"]
   },
   "one-time-35": {
-    name: "CHEERDMOTO One-Time Payment Link",
+    name: "COWIN One-Time Payment Link",
     image: siteData.products[0]?.image || "/assets/logo-small.jpg",
     thumbnail: siteData.products[0]?.image || "/assets/logo-small.jpg",
     category: "One-Time Payment",

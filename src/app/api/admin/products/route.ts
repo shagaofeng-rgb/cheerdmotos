@@ -67,7 +67,7 @@ export async function POST(request: Request) {
       moq: Math.max(1, numberValue(formData, 'moq', existing?.moq || 1)),
       weightDimension: text(formData, 'weightDimension', 220) || existing?.weightDimension || '',
       shippingInfo: text(formData, 'shippingInfo', 360) || existing?.shippingInfo || '',
-      seoTitle: text(formData, 'seoTitle', 180) || existing?.seoTitle || `${text(formData, 'name', 180)} | CHEERDMOTO`,
+      seoTitle: text(formData, 'seoTitle', 180) || existing?.seoTitle || `${text(formData, 'name', 180)} | COWIN`,
       seoDescription: text(formData, 'seoDescription', 320) || existing?.seoDescription || '',
       status: publishStatus(text(formData, 'status', 24)),
       sortOrder: Math.max(1, numberValue(formData, 'sortOrder', existing?.sortOrder || store.products.length + 1)),

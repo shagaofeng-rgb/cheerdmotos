@@ -137,7 +137,7 @@ async function fetchFeed(feedUrl: string, productCatalog: NewsProductReference[]
       const response = await fetch(feedUrl, {
         cache: 'no-store',
         signal: controller.signal,
-        headers: {'user-agent': 'CHEERDMOTO-NewsBot/2.0 (+https://www.cheerdmotos.com/robots.txt)'}
+        headers: {'user-agent': 'COWIN-NewsBot/2.0 (+https://www.cheerdmotos.com/robots.txt)'}
       });
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const xml = await response.text();
@@ -165,7 +165,7 @@ function candidateReason(
   const lookbackMs = numberEnv('NEWS_LOOKBACK_HOURS', 72, 1, 336) * 60 * 60 * 1000;
   if (!Number.isFinite(age) || age < 0 || age > lookbackMs) return 'Source publication time is outside the configured lookback window.';
   const threshold = numberEnv('NEWS_RELEVANCE_THRESHOLD', 0.55, 0, 1);
-  if (!candidate.productSlugs.length || candidate.relevanceScore < threshold) return 'Candidate is not sufficiently related to a CHEERDMOTO product category.';
+  if (!candidate.productSlugs.length || candidate.relevanceScore < threshold) return 'Candidate is not sufficiently related to a COWIN product category.';
   const dedupSince = Date.now() - numberEnv('NEWS_DEDUP_DAYS', 30, 1, 3650) * 86_400_000;
   const normalized = normalizeNewsTitle(candidate.originalTitle);
   const duplicate = posts.some((post) => {
@@ -197,16 +197,16 @@ function postFromCandidate(candidate: NewsCandidate, runId: string, index: numbe
     category: candidate.category,
     content: [
       `## What happened\n\n${candidate.excerpt}`,
-      `## Why it matters for CHEERDMOTO buyers\n\nThis update is relevant to buyers comparing ${candidate.category.toLowerCase()}, ownership requirements, dealer support and practical use cases.`,
-      `## CHEERDMOTO perspective\n\nThis section is independent CHEERDMOTO analysis. Buyers should review the original report and verify current specifications, availability, local regulations and support requirements before making a purchase decision.`,
-      `## Related CHEERDMOTO products\n\n${productLinks}`,
+      `## Why it matters for COWIN buyers\n\nThis update is relevant to buyers comparing ${candidate.category.toLowerCase()}, ownership requirements, dealer support and practical use cases.`,
+      `## COWIN perspective\n\nThis section is independent COWIN analysis. Buyers should review the original report and verify current specifications, availability, local regulations and support requirements before making a purchase decision.`,
+      `## Related COWIN products\n\n${productLinks}`,
       `## Source\n\n[${candidate.sourceName}](${candidate.sourceUrl}) published the original report. This page provides a concise source-attributed summary and independent product context.`
     ].join('\n\n'),
     publishDate,
-    author: 'CHEERDMOTO Editorial Team',
+    author: 'COWIN Editorial Team',
     source: `${candidate.sourceName}: ${candidate.sourceUrl}`,
     tags: candidate.tags,
-    seoTitle: `${title.slice(0, 72)} | CHEERDMOTO News`,
+    seoTitle: `${title.slice(0, 72)} | COWIN News`,
     seoDescription: candidate.excerpt.slice(0, 155),
     geoSummary: `Source-attributed industry context for ${productNames}. Verify current facts on the source and product pages.`,
     productSlugs: candidate.productSlugs,
@@ -223,9 +223,9 @@ function postFromCandidate(candidate: NewsCandidate, runId: string, index: numbe
     sourceFingerprint: candidate.fingerprint,
     eventFingerprint: sha256(`${normalizeNewsTitle(candidate.originalTitle)}|${candidate.category}`).slice(0, 32),
     contentHash: sha256(candidate.excerpt),
-    imageAlt: `${products[firstSlug].name} CHEERDMOTO product image`,
+    imageAlt: `${products[firstSlug].name} COWIN product image`,
     imageSourceUrl: siteUrl,
-    imageCredit: 'CHEERDMOTO-owned product image.',
+    imageCredit: 'COWIN-owned product image.',
     relevanceScore: candidate.relevanceScore,
     credibilityScore: candidate.credibilityScore,
     productRelations: candidate.productSlugs.map((slug, relationIndex) => ({
@@ -293,7 +293,7 @@ async function maybeSendFailureAlert(run: NewsRunLog) {
   const consecutive = recent.filter((item) => FAILURE_STATUSES.has(item.status)).length;
   if (consecutive < threshold || consecutive % threshold !== 0) return;
   await sendSystemAlertEmail({
-    subject: `[CHEERDMOTO] News automation needs attention (${run.status})`,
+    subject: `[COWIN] News automation needs attention (${run.status})`,
     text: [
       `Run: ${run.id}`,
       `Status: ${run.status}`,
@@ -448,27 +448,27 @@ function deliveryTestPost(runId: string): ContentPost {
     category: 'Automation Test',
     content: '## Automation test\n\nThis marked post verifies persistent storage, the News list, detail rendering and News Sitemap delivery.',
     publishDate: siteDateKey(),
-    author: 'CHEERDMOTO Automation Test',
-    source: 'CHEERDMOTO internal delivery test',
+    author: 'COWIN Automation Test',
+    source: 'COWIN internal delivery test',
     tags: ['automation-test'],
-    seoTitle: 'CHEERDMOTO News Automation Test',
+    seoTitle: 'COWIN News Automation Test',
     seoDescription: 'Temporary marked News automation delivery test.',
     productSlugs: ['xceed-electric-dirt-bike'],
-    sourceName: 'CHEERDMOTO',
+    sourceName: 'COWIN',
     sourceUrl: siteUrl,
     canonicalSourceUrl: `${siteUrl}/news/${slug}`,
     sourcePublishedAt: now,
     collectedAt: now,
     sourceFetchedAt: now,
     sourceTimezone: 'UTC',
-    originalTitle: 'CHEERDMOTO News automation delivery test',
+    originalTitle: 'COWIN News automation delivery test',
     originalLanguage: 'en',
     normalizedTitle: slug,
     sourceFingerprint: newsFingerprint(`${siteUrl}/news/${slug}`, slug),
     contentHash: sha256(slug),
-    imageAlt: 'CHEERDMOTO News automation test image',
+    imageAlt: 'COWIN News automation test image',
     imageSourceUrl: siteUrl,
-    imageCredit: 'CHEERDMOTO-owned product image.',
+    imageCredit: 'COWIN-owned product image.',
     relevanceScore: 1,
     credibilityScore: 1,
     retryCount: 0,

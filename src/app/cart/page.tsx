@@ -3,7 +3,7 @@ import CartPageClient from '@/components/CartPageClient';
 
 export const metadata: Metadata = {
   title: 'Your Cart',
-  description: 'Review the CHEERDMOTO products saved to your cart.',
+  description: 'Review the COWIN products saved to your cart.',
   robots: {index: false, follow: false}
 };
 

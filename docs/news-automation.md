@@ -1,4 +1,4 @@
-# CHEERDMOTO News automation
+# COWIN News automation
 
 ## Production flow
 
@@ -8,7 +8,7 @@ Each run performs the following steps:
 
 1. Acquire the durable `news-publisher` lease so overlapping invocations cannot publish twice.
 2. Fetch the configured RSS feeds, with the built-in trusted defaults `https://electrek.co/feed/` and `https://cleantechnica.com/feed/` when `NEWS_RSS_FEEDS` is empty.
-3. Enforce source allowlisting, language, freshness, CHEERDMOTO product-category relevance and source/title fingerprint deduplication.
+3. Enforce source allowlisting, language, freshness, COWIN product-category relevance and source/title fingerprint deduplication.
 4. Create at most one published `type: news` post per scheduled window, up to `NEWS_DAILY_TARGET` per site day.
 5. Verify the new slug on `/news`, `/news/{slug}` and `/news-sitemap.xml`.
 6. Keep the post published only when all delivery checks pass. A failed delivery is changed to `unpublished` and recorded.

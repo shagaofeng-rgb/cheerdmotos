@@ -35,7 +35,7 @@ export default async function CheckoutSuccessPage({
           ) : (
             <p>
               Order number: <strong>{orderId || "missing"}</strong>. We could not load this order record.
-              Please contact CHEERDMOTO with the order number shown here.
+              Please contact COWIN with the order number shown here.
             </p>
           )}
           <div className="checkout-success-actions">

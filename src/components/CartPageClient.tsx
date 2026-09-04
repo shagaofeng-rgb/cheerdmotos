@@ -44,7 +44,7 @@ export default function CartPageClient() {
       <div className="cart-heading"><p className="eyebrow">Your cart</p><h1>Ready when you are.</h1><p>{cart.itemCount} item{cart.itemCount === 1 ? '' : 's'} saved to this device.</p></div>
       <div className="cart-layout">
         <section className="cart-items">{cart.items.map((item) => <article key={item.productSlug}>
-        <div className="cart-item-image">{item.image ? <Image src={item.image} alt={item.name} fill sizes="112px" /> : <span>CHEERDMOTO</span>}</div>
+        <div className="cart-item-image">{item.image ? <Image src={item.image} alt={item.name} fill sizes="112px" /> : <span>COWIN</span>}</div>
         <div><h2>{item.name}</h2><p>{money(item.price, item.currency)} each</p><div className="cart-quantity"><button type="button" onClick={() => update(item.productSlug, 'update', Math.max(1, item.quantity - 1))} disabled={busy === item.productSlug || item.quantity <= 1}>-</button><span>{item.quantity}</span><button type="button" onClick={() => update(item.productSlug, 'update', item.quantity + 1)} disabled={busy === item.productSlug}>+</button></div></div>
         <div className="cart-item-actions"><strong>{money(item.subtotal, item.currency)}</strong><Link className="button primary" href={`/checkout?product=${encodeURIComponent(item.productSlug)}&qty=${item.quantity}`}>Checkout</Link><button type="button" onClick={() => update(item.productSlug, 'remove')} disabled={busy === item.productSlug}>Remove</button></div>
         </article>)}</section>

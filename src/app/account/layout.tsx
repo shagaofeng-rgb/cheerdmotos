@@ -5,7 +5,7 @@ export const metadata = {
     index: false,
     follow: false
   },
-  title: 'CHEERDMOTO Customer Account'
+  title: 'COWIN Customer Account'
 };
 
 export default function AccountLayout({children}: {children: React.ReactNode}) {

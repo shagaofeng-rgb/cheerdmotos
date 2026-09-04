@@ -29,7 +29,7 @@ export async function GET(request: Request) {
     return new Response(`\uFEFF${visitorRecordsCsv(report.records)}`, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="cheerdmoto-visitor-records-${new Date().toISOString().slice(0, 10)}.csv"`,
+        'Content-Disposition': `attachment; filename="cowin-visitor-records-${new Date().toISOString().slice(0, 10)}.csv"`,
         'Cache-Control': 'no-store, no-cache, must-revalidate'
       }
     });

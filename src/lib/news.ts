@@ -31,18 +31,18 @@ export const newsArticles: NewsArticle[] = [
     date: '2026-07-07',
     updatedAt: '2026-07-07',
     title: 'How Buyers Should Compare Electric Dirt Bikes Beyond Top Speed',
-    excerpt: 'A CHEERDMOTO guide to comparing motor output, battery range, suspension, braking, support and real riding workflow.',
+    excerpt: 'A COWIN guide to comparing motor output, battery range, suspension, braking, support and real riding workflow.',
     hero: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
-    heroAlt: 'CHEERDMOTO XCEED electric dirt bike',
-    imageCredit: {publisher: 'CHEERDMOTO', sourceUrl: siteSource, imageUrl: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png', note: 'CHEERDMOTO product image.', accessedDate: '2026-07-07'},
+    heroAlt: 'COWIN XCEED electric dirt bike',
+    imageCredit: {publisher: 'COWIN', sourceUrl: siteSource, imageUrl: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png', note: 'COWIN product image.', accessedDate: '2026-07-07'},
     tags: ['Electric Dirt Bike', 'XCEED', 'Buying Guide'],
     category: 'Electric Dirt Bikes',
     readTime: '4 min read',
-    sources: [{name: 'CHEERDMOTO', title: 'CHEERDMOTO Product Catalog', url: siteSource, publishedDate: '2026', accessedDate: '2026-07-07', note: 'Used for CHEERDMOTO product positioning.'}],
+    sources: [{name: 'COWIN', title: 'COWIN Product Catalog', url: siteSource, publishedDate: '2026', accessedDate: '2026-07-07', note: 'Used for COWIN product positioning.'}],
     keyTakeaways: ['Compare complete riding workflow, not only top speed.', 'Battery, suspension and brakes shape real trail confidence.', 'Dealer and after-sales support matter for repeat buyers.'],
     body: [
       {heading: 'What buyers should compare', paragraphs: ['Electric dirt bike buyers should compare peak output, controller tuning, battery range, suspension travel, braking hardware and parts support together.', 'A balanced model can be easier to ride and maintain than a bike selected only by headline speed.']},
-      {heading: 'CHEERDMOTO product angle', paragraphs: ['XCEED is positioned as the balanced 72V platform for trail and enduro-style riding.', 'XTREME is the higher-output 96V flagship for riders who want maximum power and range.']}
+      {heading: 'COWIN product angle', paragraphs: ['XCEED is positioned as the balanced 72V platform for trail and enduro-style riding.', 'XTREME is the higher-output 96V flagship for riders who want maximum power and range.']}
     ],
     productFit: 'Best matched with XCEED and XTREME electric dirt bikes.'
   },
@@ -53,12 +53,12 @@ export const newsArticles: NewsArticle[] = [
     title: 'Choosing a Fat Tire E-Bike for City Range and Trail Attitude',
     excerpt: 'A simple model-selection guide for Xcite, Xplore and Xplus riders.',
     hero: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png',
-    heroAlt: 'CHEERDMOTO XPLUS fat tire e-bike',
-    imageCredit: {publisher: 'CHEERDMOTO', sourceUrl: siteSource, imageUrl: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png', note: 'CHEERDMOTO product image.', accessedDate: '2026-07-07'},
+    heroAlt: 'COWIN XPLUS fat tire e-bike',
+    imageCredit: {publisher: 'COWIN', sourceUrl: siteSource, imageUrl: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xplus_transparent.png', note: 'COWIN product image.', accessedDate: '2026-07-07'},
     tags: ['E Bike', 'Fat Tire', 'City Mobility'],
     category: 'E Bikes',
     readTime: '4 min read',
-    sources: [{name: 'CHEERDMOTO', title: 'CHEERDMOTO E-Bike Catalog', url: siteSource, publishedDate: '2026', accessedDate: '2026-07-07', note: 'Used for product model positioning.'}],
+    sources: [{name: 'COWIN', title: 'COWIN E-Bike Catalog', url: siteSource, publishedDate: '2026', accessedDate: '2026-07-07', note: 'Used for product model positioning.'}],
     keyTakeaways: ['Step-through frames help daily access.', 'Over-frame utility suits heavier everyday use.', 'Full suspension improves comfort on mixed surfaces.'],
     body: [
       {heading: 'Frame choice', paragraphs: ['Xcite suits riders who want easy step-through access.', 'Xplore is a practical over-frame utility option, while Xplus focuses on full-suspension comfort.']},
@@ -73,16 +73,16 @@ export const newsArticles: NewsArticle[] = [
     title: 'Smart Mobility Buyers Need Comfort, Folding, Control and Support',
     excerpt: 'How to evaluate compact electric wheelchair mobility for daily independence and travel.',
     hero: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/smart_b02_transparent.png',
-    heroAlt: 'CHEERDMOTO Smart B02 electric wheelchair',
-    imageCredit: {publisher: 'CHEERDMOTO', sourceUrl: siteSource, imageUrl: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/smart_b02_transparent.png', note: 'CHEERDMOTO product image.', accessedDate: '2026-07-07'},
+    heroAlt: 'COWIN Smart B02 electric wheelchair',
+    imageCredit: {publisher: 'COWIN', sourceUrl: siteSource, imageUrl: '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/smart_b02_transparent.png', note: 'COWIN product image.', accessedDate: '2026-07-07'},
     tags: ['Electric Wheelchair', 'Smart B02', 'Mobility'],
     category: 'Electric Wheelchairs',
     readTime: '3 min read',
-    sources: [{name: 'CHEERDMOTO', title: 'CHEERDMOTO Smart Mobility Catalog', url: siteSource, publishedDate: '2026', accessedDate: '2026-07-07', note: 'Used for Smart B02 product positioning.'}],
+    sources: [{name: 'COWIN', title: 'COWIN Smart Mobility Catalog', url: siteSource, publishedDate: '2026', accessedDate: '2026-07-07', note: 'Used for Smart B02 product positioning.'}],
     keyTakeaways: ['Comfort and control matter as much as range.', 'Folding design helps transport and storage.', 'Support and parts planning protect long-term use.'],
     body: [
       {heading: 'Daily mobility workflow', paragraphs: ['Smart mobility buyers should evaluate turning control, seat comfort, folding workflow, charging routine and service access before purchase.', 'A compact mobility product should make daily movement easier, not add complexity.']},
-      {heading: 'CHEERDMOTO product angle', paragraphs: ['Smart B02 is positioned around practical folding mobility, dual-motor movement and everyday independence.']}
+      {heading: 'COWIN product angle', paragraphs: ['Smart B02 is positioned around practical folding mobility, dual-motor movement and everyday independence.']}
     ],
     productFit: 'Best matched with Smart B02 electric wheelchair.'
   }

@@ -7,7 +7,7 @@ import { shippingEstimateFor } from "@/lib/shipping";
 
 export const metadata: Metadata = {
   title: "Checkout",
-  description: "Submit buyer, shipping and payment details for CHEERDMOTO orders.",
+  description: "Submit buyer, shipping and payment details for COWIN orders.",
   robots: { index: false, follow: false }
 };
 
@@ -32,7 +32,7 @@ export default async function CheckoutPage({
           <div>
             <p className="eyebrow">payment link closed</p>
             <h1>this one-time payment link is no longer available.</h1>
-            <p>The USD 35 one-time payment has already been reserved or completed. Please contact CHEERDMOTO for a new payment link.</p>
+            <p>The USD 35 one-time payment has already been reserved or completed. Please contact COWIN for a new payment link.</p>
           </div>
         </section>
       </main>
@@ -43,11 +43,11 @@ export default async function CheckoutPage({
     <main>
       <section className="checkout-hero">
         <div>
-          <p className="eyebrow">cheerdmoto order</p>
+          <p className="eyebrow">COWIN order</p>
           <h1>confirm buyer details and payment preparation</h1>
           <p>
             Submit buyer, delivery and payment preference details. Final quotation, logistics cost and payment collection
-            are confirmed by the CHEERDMOTO sales team.
+            are confirmed by the COWIN sales team.
           </p>
         </div>
       </section>

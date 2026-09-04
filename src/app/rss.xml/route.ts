@@ -16,9 +16,9 @@ export async function GET() {
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <rss version="2.0">
   <channel>
-    <title>CHEERDMOTO News and Blog</title>
+    <title>COWIN News and Blog</title>
     <link>${siteUrl}</link>
-    <description>Source-attributed news and buying guides from CHEERDMOTO.</description>
+    <description>Source-attributed news and buying guides from COWIN.</description>
     ${items.map((item) => `<item>
       <title>${escapeXml(item.title)}</title>
       <link>${siteUrl}${item.path}</link>

@@ -29,7 +29,7 @@ export default async function CheckoutFailedPage({
               <p>{order.logisticsStatus || reason}</p>
             </div>
           ) : (
-            <p>{reason} Please contact CHEERDMOTO if you need help confirming this payment attempt.</p>
+            <p>{reason} Please contact COWIN if you need help confirming this payment attempt.</p>
           )}
           <div className="checkout-success-actions">
             <a className="button primary" href={order ? `/checkout?product=${encodeURIComponent(order.productSlug)}&qty=${order.quantity}` : "/checkout"}>try again</a>

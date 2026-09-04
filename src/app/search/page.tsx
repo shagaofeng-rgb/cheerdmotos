@@ -10,8 +10,8 @@ type Props = {searchParams: Promise<{q?: string}>};
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-  title: 'Search CHEERDMOTO',
-  description: 'Search CHEERDMOTO products, news, buying guides and support pages.',
+  title: 'Search COWIN',
+  description: 'Search COWIN products, news, buying guides and support pages.',
   alternates: {canonical: `${siteUrl}/search`},
   robots: {index: false, follow: true}
 };
@@ -32,7 +32,7 @@ export default async function SearchPage({searchParams}: Props) {
       <PrecisionStorefrontHeader />
       <section className="article-hero">
         <p className="eyebrow">Search</p>
-        <h1>Search CHEERDMOTO</h1>
+        <h1>Search COWIN</h1>
         <p>Find products, News, Blog guides and support pages.</p>
         <form className="search-form" action="/search">
           <input name="q" defaultValue={q} placeholder="Search electric dirt bikes, XCEED, shipping..." />

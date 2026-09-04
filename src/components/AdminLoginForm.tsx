@@ -23,7 +23,7 @@ export default function AdminLoginForm({hasError, hasResetNotice}: Props) {
 
   return (
     <form className="admin-login-card" action="/api/admin/login" method="post" onSubmit={() => setSubmitting(true)}>
-      <p className="eyebrow">CHEERDMOTO 后台</p>
+      <p className="eyebrow">COWIN 后台</p>
       <h1>管理员登录</h1>
       <p>登录后可以管理商品、订单、客户、线索、访问数据、支付配置、内容和网站设置。</p>
 

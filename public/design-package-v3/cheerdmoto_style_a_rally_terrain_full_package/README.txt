@@ -1,4 +1,4 @@
-Cheerdmoto Codex-ready asset package
+COWIN Codex-ready asset package
 
 Package: cheerdmoto_style_a_rally_terrain_full_package
 

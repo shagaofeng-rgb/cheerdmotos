@@ -137,7 +137,7 @@ async function sendSmtpMail(message: MailPayload) {
 
   const boundary = `cheerdmoto-${Date.now()}`;
   const raw = [
-    `From: CHEERDMOTO <${config.from}>`,
+    `From: COWIN <${config.from}>`,
     `To: ${message.to}`,
     `Subject: =?UTF-8?B?${b64(message.subject)}?=`,
     'MIME-Version: 1.0',
@@ -170,11 +170,11 @@ export async function sendOrderSuccessEmailOnce(order: StoreOrder) {
   if (await hasSentEmail(order.id, 'order_success')) return;
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.cheerdmotos.com').replace(/\/$/, '');
   const customerName = order.customer.name || `${order.checkout.firstName} ${order.checkout.lastName}`.trim() || 'Customer';
-  const subject = `CHEERDMOTO order confirmed: ${order.id}`;
+  const subject = `COWIN order confirmed: ${order.id}`;
   const text = [
     `Hello ${customerName},`,
     '',
-    'Your CHEERDMOTO payment has been confirmed.',
+    'Your COWIN payment has been confirmed.',
     `Order number: ${order.id}`,
     `Amount: ${order.currency} ${order.total.toLocaleString()}`,
     `Payment method: ${order.paymentMethod}`,
@@ -186,7 +186,7 @@ export async function sendOrderSuccessEmailOnce(order: StoreOrder) {
   ].join('\n');
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6">
-      <h2>CHEERDMOTO order confirmed</h2>
+      <h2>COWIN order confirmed</h2>
       <p>Hello ${escapeHtml(customerName)}, your payment has been confirmed.</p>
       <table style="border-collapse:collapse;width:100%;max-width:620px">
         <tr><td><b>Order number</b></td><td>${escapeHtml(order.id)}</td></tr>
@@ -195,7 +195,7 @@ export async function sendOrderSuccessEmailOnce(order: StoreOrder) {
         <tr><td><b>Product</b></td><td>${escapeHtml(order.productName)} x ${order.quantity}</td></tr>
         <tr><td><b>Order time</b></td><td>${escapeHtml(order.createdAt)}</td></tr>
       </table>
-      <p><a href="${siteUrl}" style="color:#ee2f2f">Visit CHEERDMOTO</a></p>
+      <p><a href="${siteUrl}" style="color:#ee2f2f">Visit COWIN</a></p>
     </div>
   `;
 
@@ -225,12 +225,12 @@ export async function sendOrderSuccessEmailOnce(order: StoreOrder) {
 
 export async function sendAdminOrderNotice(order: StoreOrder, reason = 'order_submitted') {
   const adminEmail = adminNotificationEmail();
-  const subject = `[CHEERDMOTO Order] ${reason}: ${order.id} - ${order.currency} ${order.total.toLocaleString()}`;
+  const subject = `[COWIN Order] ${reason}: ${order.id} - ${order.currency} ${order.total.toLocaleString()}`;
   const rows = [['Notice type', reason], ...orderRows(order)];
   const text = rowsText(rows);
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6">
-      <h2>CHEERDMOTO order notification</h2>
+      <h2>COWIN order notification</h2>
       <p>A customer order event was recorded on cheerdmotos.com.</p>
       <table style="border-collapse:collapse;width:100%;max-width:780px">${rowsHtml(rows)}</table>
     </div>
@@ -271,7 +271,7 @@ export async function sendAdminPaymentNotice(order: StoreOrder, input: {
 }) {
   const adminEmail = adminNotificationEmail();
   const statusLabel = input.paymentStatus || order.status || order.gatewayStatus || 'unknown';
-  const subject = `[CHEERDMOTO Payment] ${statusLabel}: ${order.id}`;
+  const subject = `[COWIN Payment] ${statusLabel}: ${order.id}`;
   const rows = [
     ['Notice source', input.source],
     ['Verified', typeof input.verified === 'boolean' ? String(input.verified) : ''],
@@ -283,7 +283,7 @@ export async function sendAdminPaymentNotice(order: StoreOrder, input: {
   const text = rowsText(rows);
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6">
-      <h2>CHEERDMOTO payment notification</h2>
+      <h2>COWIN payment notification</h2>
       <p>A payment update was received. This notice is sent whether the payment succeeded, failed, is processing, or could not be verified.</p>
       <table style="border-collapse:collapse;width:100%;max-width:780px">${rowsHtml(rows)}</table>
     </div>
@@ -318,9 +318,9 @@ export async function sendAdminPaymentNotice(order: StoreOrder, input: {
 export async function sendAccountActivationEmail(order: StoreOrder, setupUrl: string) {
   const alreadySent = await hasSentEmail(order.id, 'account_activation');
   if (alreadySent) return;
-  const subject = `Set up your CHEERDMOTO account for order ${order.id}`;
-  const text = `Your CHEERDMOTO account is ready. Set your password here: ${setupUrl}`;
-  const html = `<p>Your CHEERDMOTO account is ready.</p><p><a href="${escapeHtml(setupUrl)}">Set your password</a></p>`;
+  const subject = `Set up your COWIN account for order ${order.id}`;
+  const text = `Your COWIN account is ready. Set your password here: ${setupUrl}`;
+  const html = `<p>Your COWIN account is ready.</p><p><a href="${escapeHtml(setupUrl)}">Set your password</a></p>`;
   try {
     const result = await sendSmtpMail({to: order.customer.email, subject, text, html});
     await appendEmailLog({
@@ -346,9 +346,9 @@ export async function sendAccountActivationEmail(order: StoreOrder, setupUrl: st
 }
 
 export async function sendPasswordResetEmail(email: string, resetUrl: string) {
-  const subject = 'Reset your CHEERDMOTO account password';
+  const subject = 'Reset your COWIN account password';
   const text = [
-    'CHEERDMOTO account password reset',
+    'COWIN account password reset',
     '',
     `Use this link within 60 minutes: ${resetUrl}`,
     '',
@@ -357,7 +357,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   ].join('\n');
   const html = `
     <p>Hello,</p>
-    <p>We received a request to reset your CHEERDMOTO customer account password.</p>
+    <p>We received a request to reset your COWIN customer account password.</p>
     <p><a href="${escapeHtml(resetUrl)}">Set a new password</a></p>
     <p>This link is valid for 60 minutes. If you did not request this, you can ignore this email.</p>
     <p>Support: support@cheerdmotos.com</p>
@@ -389,11 +389,11 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
 export async function sendRegistrationWelcomeEmail(email: string, name: string) {
   const siteUrl = (process.env.NEXT_PUBLIC_SITE_URL || 'https://www.cheerdmotos.com').replace(/\/$/, '');
   const customerName = name || 'Customer';
-  const subject = 'Welcome to your CHEERDMOTO customer account';
+  const subject = 'Welcome to your COWIN customer account';
   const text = [
     `Hello ${customerName},`,
     '',
-    'Your CHEERDMOTO customer account has been created.',
+    'Your COWIN customer account has been created.',
     'You can now view your orders, payment status and shipment updates from the account center.',
     '',
     `Account center: ${siteUrl}/account/orders`,
@@ -402,7 +402,7 @@ export async function sendRegistrationWelcomeEmail(email: string, name: string) 
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6;background:#f6f8f5;padding:24px">
       <div style="max-width:620px;margin:0 auto;background:#ffffff;border:1px solid #d8ddd9;border-radius:8px;padding:28px">
-        <p style="margin:0 0 10px;color:#0077c8;font-size:12px;font-weight:700;text-transform:uppercase">CHEERDMOTO customer account</p>
+        <p style="margin:0 0 10px;color:#0077c8;font-size:12px;font-weight:700;text-transform:uppercase">COWIN customer account</p>
         <h2 style="margin:0 0 14px;color:#111318">Welcome, ${escapeHtml(customerName)}</h2>
         <p>Your customer account has been created. You can now view order history, payment status and shipment updates in one place.</p>
         <p><a href="${siteUrl}/account/orders" style="display:inline-block;background:#ee2f2f;color:#ffffff;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:700">Open account center</a></p>
@@ -450,7 +450,7 @@ export async function sendContactInquiryEmail(input: {
   message: string;
 }) {
   const adminEmail = adminNotificationEmail();
-  const subject = `New CHEERDMOTO inquiry from ${input.email}`;
+  const subject = `New COWIN inquiry from ${input.email}`;
   const rows = [
     ['Name', input.name],
     ['Email', input.email],
@@ -469,7 +469,7 @@ export async function sendContactInquiryEmail(input: {
   const text = rows.map(([label, value]) => `${label}: ${value || '-'}`).join('\n');
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6">
-      <h2>New CHEERDMOTO website inquiry</h2>
+      <h2>New COWIN website inquiry</h2>
       <table style="border-collapse:collapse;width:100%;max-width:720px">
         ${rows.map(([label, value]) => `<tr><td style="padding:7px 10px;border:1px solid #d8ddd9"><b>${escapeHtml(label)}</b></td><td style="padding:7px 10px;border:1px solid #d8ddd9">${escapeHtml(value || '-')}</td></tr>`).join('')}
       </table>

@@ -8,7 +8,7 @@ function sourceUrlFrom(post: ContentPost) {
 
 function postToBlogArticle(post: ContentPost): NewsArticle {
   const sourceUrl = sourceUrlFrom(post);
-  const sourceName = post.source.split(':')[0]?.trim() || 'CHEERDMOTO editorial';
+  const sourceName = post.source.split(':')[0]?.trim() || 'COWIN editorial';
   const paragraphs = post.content.split(/\n{2,}/).map((item) => item.replace(/^#+\s*/, '').trim()).filter(Boolean);
   return {
     slug: post.slug,
@@ -17,7 +17,7 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
     title: post.title,
     excerpt: post.excerpt,
     hero: post.coverImage,
-    heroAlt: `${post.title} CHEERDMOTO buying guide image`,
+    heroAlt: `${post.title} COWIN buying guide image`,
     imageCredit: {
       publisher: sourceName,
       sourceUrl,
@@ -38,8 +38,8 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
     }],
     keyTakeaways: [
       'Commercial buyers should evaluate product fit, operating workflow and support before purchase.',
-      'CHEERDMOTO buying guides connect product details with rider, dealer and mobility use cases.',
-      'Each guide links back to real CHEERDMOTO product lines instead of inventing specifications.'
+      'COWIN buying guides connect product details with rider, dealer and mobility use cases.',
+      'Each guide links back to real COWIN product lines instead of inventing specifications.'
     ],
     body: [
       {
@@ -49,11 +49,11 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
       {
         heading: 'How to use this guide',
         paragraphs: paragraphs.slice(2, 5).length ? paragraphs.slice(2, 5) : [
-          'Use this guide to compare CHEERDMOTO products by rider type, daily workflow, service requirements and dealer fit.'
+          'Use this guide to compare COWIN products by rider type, daily workflow, service requirements and dealer fit.'
         ]
       }
     ],
-    productFit: 'Relevant to CHEERDMOTO electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.',
+    productFit: 'Relevant to COWIN electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.',
     productSlugs: post.productSlugs || [],
     geoSummary: post.geoSummary,
     sourceName: post.sourceName,

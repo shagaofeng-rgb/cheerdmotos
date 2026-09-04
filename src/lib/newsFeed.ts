@@ -10,7 +10,7 @@ function slugify(value: string) {
 function topicFingerprint(article: Pick<NewsArticle, 'title' | 'excerpt'>) {
   return `${article.title} ${article.excerpt}`
     .toLowerCase()
-    .replace(/\(\d{4}-\d{2}-\d{2}\)/g, '')
+    .replace(/\(\d{4}-\d{2}-\d{2}\)/g, '')
     .replace(/[^a-z0-9]+/g, '-')
     .replace(/^-|-$/g, '');
 }
@@ -34,12 +34,12 @@ function postToArticle(post: ContentPost): NewsArticle {
     hero,
     heroAlt: `${post.title} source-attributed news image`,
     imageCredit: {
-      publisher: usesStoredImage ? sourceName : 'CHEERDMOTO',
+      publisher: usesStoredImage ? sourceName : 'COWIN',
       sourceUrl: usesStoredImage ? sourceUrl : siteUrl,
       imageUrl: hero.startsWith('http') ? hero : `${siteUrl}${hero}`,
       note: usesStoredImage
         ? 'Feature image was validated before publication and is shown from a stable source copy.'
-        : 'A CHEERDMOTO-owned product image replaces an unavailable legacy feature image.',
+        : 'A COWIN-owned product image replaces an unavailable legacy feature image.',
       accessedDate: post.updatedAt.slice(0, 10)
     },
     tags: post.tags,
@@ -54,9 +54,9 @@ function postToArticle(post: ContentPost): NewsArticle {
       note: 'Used for source attribution and market context.'
     }],
     keyTakeaways: [
-      'CHEERDMOTO product signals support rider, dealer and mobility planning.',
+      'COWIN product signals support rider, dealer and mobility planning.',
       'Buyers should compare products by rider use case, operating workflow and after-sales support.',
-      'CHEERDMOTO keeps image and source attribution visible on every automated news item.'
+      'COWIN keeps image and source attribution visible on every automated news item.'
     ],
     body: [
       {
@@ -70,7 +70,7 @@ function postToArticle(post: ContentPost): NewsArticle {
         ]
       }
     ],
-    productFit: 'Relevant to CHEERDMOTO electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.',
+    productFit: 'Relevant to COWIN electric dirt bikes, e-bikes, mobility products, riders, dealers and fleets.',
     productSlugs: post.productSlugs || [],
     geoSummary: post.geoSummary,
     sourceName: post.sourceName,

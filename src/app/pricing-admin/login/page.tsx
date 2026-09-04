@@ -10,7 +10,7 @@ export default async function PricingAdminLoginPage({
   return (
     <main className="pricing-login-page">
       <form className="pricing-login-card" action="/api/pricing-admin/login" method="post">
-        <p className="pricing-kicker">CHEERDMOTO Pricing Admin</p>
+        <p className="pricing-kicker">COWIN Pricing Admin</p>
         <h1>计价后台登录</h1>
         <p>这个后台独立用于价格、汇率、佣金和成交订单记录。</p>
         {params.error ? <strong className="pricing-login-error">登录失败，请检查账号或密码。</strong> : null}

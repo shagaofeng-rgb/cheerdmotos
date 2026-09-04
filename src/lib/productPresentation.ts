@@ -78,7 +78,7 @@ const productOverrides: Record<string, ProductOverrides> = {
       `${assetBase}/assets/source/xtreme_lifestyle.webp`
     ],
     featureImage: `${assetBase}/assets/source/xtreme_lifestyle.webp`,
-    description: 'XTREME is CHEERDMOTO\'s high-output 96V electric dirt bike platform for riders prioritizing torque, top speed, and serious terrain capability.',
+    description: 'XTREME is COWIN\'s high-output 96V electric dirt bike platform for riders prioritizing torque, top speed, and serious terrain capability.',
     keyFeatures: ['96V performance platform', '15,000W peak output', '72 MPH top speed', 'Up to 95 km estimated range'],
     quickSpecs: [{label: 'Voltage', value: '96V'}, {label: 'Peak power', value: '15,000W'}, {label: 'Top speed', value: '72 MPH'}, {label: 'Estimated range', value: '95 km'}],
     specifications: [{label: 'Model', value: 'XTREME 96V'}, {label: 'Motor', value: '96V 6,000W rated / 15,000W peak'}, {label: 'Battery', value: '96V 50Ah lithium-ion'}, {label: 'Top speed', value: '115 km/h'}, {label: 'Estimated range', value: '95 km'}, {label: 'Max load', value: '150 kg'}]
@@ -165,7 +165,7 @@ export function productPresentation(item: SiteItem): ProductPresentation {
   const fallbackCategory = genericCategory(item);
   const image = item.image || '';
   const gallery = [...new Set([...(override.gallery || []), image].filter(Boolean))];
-  const description = cleanText(override.description || item.description || 'Product details will be confirmed by the CHEERDMOTO support team.');
+  const description = cleanText(override.description || item.description || 'Product details will be confirmed by the COWIN support team.');
   const sku = skuBySlug[item.slug] || `CM-${item.slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 48)}`;
   const availability = item.availability || '';
   const inStock = !/outofstock|out of stock|sold out/i.test(availability);

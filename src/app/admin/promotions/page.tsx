@@ -19,7 +19,7 @@ export default async function AdminPromotionsPage() {
       <div className="admin-metrics">
         <article><span>优惠订单</span><strong>{couponOrders.length}</strong><small>使用优惠码的订单</small></article>
         <article><span>优惠订单金额</span><strong>USD {couponRevenue.toLocaleString()}</strong><small>使用优惠码订单合计</small></article>
-        <article><span>当前活动</span><strong>1</strong><small>CHEERDMOTO 结账优惠码</small></article>
+        <article><span>当前活动</span><strong>1</strong><small>COWIN 结账优惠码</small></article>
         <article><span>待配置</span><strong>0</strong><small>满减、赠品、阶梯折扣未启用</small></article>
       </div>
 
@@ -35,7 +35,7 @@ export default async function AdminPromotionsPage() {
             </thead>
             <tbody>
               <tr>
-                <td>CHEERDMOTO</td>
+                <td>COWIN</td>
                 <td>结账页 3% 优惠</td>
                 <td>当前可结账商品</td>
                 <td>已启用</td>

@@ -89,9 +89,9 @@ export async function POST(request: Request) {
           coverImage: payload.imageUrl || '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
           category: payload.classId || 'blog', content, publishDate: now.slice(0, 10), author: actor,
           source: 'External blog plugin webhook', tags: [payload.classId || 'blog', 'external-plugin'],
-          seoTitle: `${payload.title} | CHEERDMOTO`, seoDescription: excerpt.slice(0, 160), sourceName: 'External Blog Plugin', sourceUrl: 'https://www.cheerdmotos.com', sourceFingerprint: fingerprint,
+          seoTitle: `${payload.title} | COWIN`, seoDescription: excerpt.slice(0, 160), sourceName: 'External Blog Plugin', sourceUrl: 'https://www.cheerdmotos.com', sourceFingerprint: fingerprint,
           contentHash: crypto.createHash('sha256').update(content).digest('hex'), imageAlt: `${payload.title} cover image`, imageSourceUrl: payload.imageUrl,
-          imageCredit: payload.imageUrl ? 'Provided by external blog plugin.' : 'CHEERDMOTO default product image.', status: 'published', createdAt: now, updatedAt: now
+          imageCredit: payload.imageUrl ? 'Provided by external blog plugin.' : 'COWIN default product image.', status: 'published', createdAt: now, updatedAt: now
         }]
       };
     });

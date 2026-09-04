@@ -1,6 +1,6 @@
-# CHEERDMOTO Next.js Website
+# COWIN Next.js Website
 
-CHEERDMOTO 新站，包含 B2C 前台页面和中文管理后台。
+COWIN 新站，包含 B2C 前台页面和中文管理后台。
 
 ## 本地开发
 

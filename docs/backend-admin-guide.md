@@ -1,4 +1,4 @@
-# CHEERDMOTO Backend Admin Guide
+# COWIN Backend Admin Guide
 
 ## Current Delivery
 

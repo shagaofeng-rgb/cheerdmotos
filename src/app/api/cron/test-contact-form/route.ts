@@ -17,11 +17,11 @@ export async function GET(request: Request) {
   const checkedAt = new Date().toISOString();
   const notificationEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_FROM || 'support@cheerdmotos.com';
   const payload = {
-    name: 'CHEERDMOTO Semi-Monthly Contact Form Health Check',
+    name: 'COWIN Semi-Monthly Contact Form Health Check',
     email: 'semi-monthly-form-check@cheerdmotos.com',
     phone: '+86 17621485205',
     country: 'Automated Test',
-    company: 'CHEERDMOTO Website Monitor',
+    company: 'COWIN Website Monitor',
     buyerType: 'Website health check',
     product: 'Contact form email delivery test',
     quantity: '1 semi-monthly test',
@@ -42,7 +42,7 @@ export async function GET(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'User-Agent': 'CHEERDMOTO-Monthly-Contact-Form-Health-Check/1.0'
+        'User-Agent': 'COWIN-Monthly-Contact-Form-Health-Check/1.0'
       },
       body: JSON.stringify(payload),
       cache: 'no-store'

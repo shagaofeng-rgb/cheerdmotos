@@ -98,7 +98,7 @@ const merchantPolicyJsonLd = {
   "@context": "https://schema.org",
   "@type": "Organization",
   "@id": `${siteUrl}/#organization`,
-  name: "CHEERDMOTO",
+  name: "COWIN",
   url: siteUrl,
   hasMerchantReturnPolicy: {
     "@id": `${merchantPolicyUrl}#return-policy`,
@@ -111,7 +111,7 @@ const merchantPolicyJsonLd = {
   hasShippingService: {
     "@id": `${merchantPolicyUrl}#shipping-policy`,
     "@type": "ShippingService",
-    name: "CHEERDMOTO Contiguous U.S. Shipping",
+    name: "COWIN Contiguous U.S. Shipping",
     description: "Free shipping for orders delivered to the contiguous United States.",
     fulfillmentType: "https://schema.org/FulfillmentTypeDelivery",
     shippingConditions: {
@@ -242,7 +242,7 @@ const categoryDesigns: Record<string, CategoryDesign> = {
   "/accessories": {
     label: "GEAR & PARTS",
     headline: "ACCESSORIES THAT KEEP YOU MOVING.",
-    intro: "Replacement parts, rider gear, and everyday upgrades for CHEERDMOTO electric bikes and dirt bikes.",
+    intro: "Replacement parts, rider gear, and everyday upgrades for COWIN electric bikes and dirt bikes.",
     heroImage: `${designBase}/04_category_parts_accessories/${usableDir}/01_extracted_from_page/parts_accessories_use_hero_scene.png`,
     ctaImage: `${designBase}/04_category_parts_accessories/${usableDir}/01_extracted_from_page/parts_accessories_use_cta_scene.png`,
     ctaTitle: "READY FOR THE NEXT RIDE.",
@@ -276,7 +276,7 @@ function HomePage({ item }: { item: SiteItem }) {
       <section className="hero">
         <div className="hero-copy">
           <p className="eyebrow">Wholesale electric mobility</p>
-          <h1>{item.title || "CHEERDMOTO"}</h1>
+          <h1>{item.title || "COWIN"}</h1>
           <p>{item.description}</p>
           <div className="action-row">
             <Link className="button primary" href="/dealer-program">
@@ -330,7 +330,7 @@ async function ProductPage({ item }: { item: SiteItem }) {
     "@type": "Product",
     name: presentation.displayName,
     description: presentation.shortDescription,
-    brand: { "@type": "Brand", name: "CHEERDMOTO" },
+    brand: { "@type": "Brand", name: "COWIN" },
     sku: presentation.sku,
     ...(presentation.gallery.length ? {image: presentation.gallery.map((image) => `https://www.cheerdmotos.com${image}`)} : {}),
     offers: Number.isFinite(price) && price > 0 ? {
@@ -384,18 +384,18 @@ function ShippingReturnsPage() {
       <section className="policy-hero">
         <p className="eyebrow">Customer policy</p>
         <h1>Shipping &amp; returns</h1>
-        <p>Clear delivery and return information for orders placed through CHEERDMOTO.</p>
+        <p>Clear delivery and return information for orders placed through COWIN.</p>
       </section>
       <section className="policy-content">
         <article id="shipping-policy">
           <p className="eyebrow">Shipping</p>
           <h2>Free shipping in the contiguous United States</h2>
-          <p>CHEERDMOTO offers free shipping for orders delivered to the 48 contiguous U.S. states. Delivery availability and any product-specific handling requirements are confirmed during checkout.</p>
+          <p>COWIN offers free shipping for orders delivered to the 48 contiguous U.S. states. Delivery availability and any product-specific handling requirements are confirmed during checkout.</p>
         </article>
         <article id="return-policy">
           <p className="eyebrow">Returns</p>
           <h2>14-day return window</h2>
-          <p>You may contact CHEERDMOTO support to request a return within 14 days of delivery. Please wait for return instructions and authorization before sending an item back, so that product condition, order details, and the applicable return process can be confirmed.</p>
+          <p>You may contact COWIN support to request a return within 14 days of delivery. Please wait for return instructions and authorization before sending an item back, so that product condition, order details, and the applicable return process can be confirmed.</p>
           <Link className="button" href="/support">Contact support</Link>
         </article>
       </section>
@@ -435,7 +435,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
         <img
           className="rally-category-hero-image"
           src={design.heroImage}
-          alt={`${design.headline} CHEERDMOTO collection`}
+          alt={`${design.headline} COWIN collection`}
           decoding="async"
           fetchPriority="high"
         />
@@ -462,7 +462,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
       <section className="rally-category-shell" id="rally-catalog">
         <aside className="rally-filters" aria-label="Collection filters">
           <h2>{item.title}</h2>
-          <p>{item.description || "Shop CHEERDMOTO products by model, power, and riding style."}</p>
+          <p>{item.description || "Shop COWIN products by model, power, and riding style."}</p>
           {["category", "availability", "price", "model"].map((label) => (
             <button type="button" key={label}>
               <span>{label}</span>
@@ -511,7 +511,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
       </section>
 
       <section className="rally-editorial">
-        <img src={design.ctaImage} alt={`${design.ctaTitle} CHEERDMOTO editorial image`} loading="lazy" decoding="async" sizes="100vw" />
+        <img src={design.ctaImage} alt={`${design.ctaTitle} COWIN editorial image`} loading="lazy" decoding="async" sizes="100vw" />
         <div>
           <span>{design.label}</span>
           <h2>{design.ctaTitle}</h2>
@@ -584,7 +584,7 @@ function ContentPage({ item }: { item: SiteItem }) {
       {showInquiryForm ? (
         <section className="inquiry-section">
           <div className="section-heading">
-            <p className="eyebrow">Contact CHEERDMOTO</p>
+            <p className="eyebrow">Contact COWIN</p>
             <h2>Send your request</h2>
             <p>Required details help our sales and support team route your request correctly.</p>
           </div>
@@ -673,14 +673,14 @@ function GeneratedContent({ item, compact = false }: { item: SiteItem; compact?:
   const isProduct = item.kind === "product";
   const pageGuidance: Record<string, string> = {
     support: "Include your product model, order number, destination country, and a clear description of the question so the support team can respond efficiently.",
-    about: "Learn how CHEERDMOTO approaches electric mobility across performance riding, daily utility, and accessible transportation.",
+    about: "Learn how COWIN approaches electric mobility across performance riding, daily utility, and accessible transportation.",
     "dealer-program": "Share your market, expected order quantity, target products, and delivery destination to discuss dealer or fleet purchasing.",
-    "rider-club": "Explore product updates, ownership resources, and stories for the CHEERDMOTO rider community.",
+    "rider-club": "Explore product updates, ownership resources, and stories for the COWIN rider community.",
     "product-registration": "Keep your product model, serial information, purchase date, and proof of purchase available when requesting registration support.",
     manuals: "Choose the matching product model before using setup, assembly, charging, or maintenance instructions.",
     warranty: "Review coverage before service and keep your order details, serial information, and supporting photos available for a warranty request.",
     "shipping-returns": "Delivery timing, freight cost, return eligibility, and handling requirements depend on the product, destination, and order status.",
-    discover: "Browse product guides, comparisons, rider resources, and current CHEERDMOTO updates."
+    discover: "Browse product guides, comparisons, rider resources, and current COWIN updates."
   };
 
   return (
@@ -690,12 +690,12 @@ function GeneratedContent({ item, compact = false }: { item: SiteItem; compact?:
         {isProduct && item.description ? <p>{item.description}</p> : null}
         {isProduct ? (
           <ul>
-            <li>New CHEERDMOTO storefront page generated inside this Next.js site.</li>
-            <li>This page renders only the new CHEERDMOTO Next.js storefront content and checkout flow.</li>
+            <li>New COWIN storefront page generated inside this Next.js site.</li>
+            <li>This page renders only the new COWIN Next.js storefront content and checkout flow.</li>
             <li>Use the new checkout and support flow for current availability, service, and dealer questions.</li>
           </ul>
         ) : (
-          <p>{pageGuidance[item.slug] || "Use the related resources on this page, or contact CHEERDMOTO support when you need help with a product, order, delivery, or service question."}</p>
+          <p>{pageGuidance[item.slug] || "Use the related resources on this page, or contact COWIN support when you need help with a product, order, delivery, or service question."}</p>
         )}
       </div>
     </section>

@@ -1,4 +1,4 @@
-# CHEERDMOTO Style A — Rally Terrain
+# COWIN Style A — Rally Terrain
 
 This package is designed for direct use by Codex or a front-end developer.
 
@@ -7,7 +7,7 @@ This package is designed for direct use by Codex or a front-end developer.
 - `styles.css`: responsive image stack
 - `preview/homepage_full.webp`: complete visual reference
 - `slices/`: numbered, implementation-ready section images
-- `assets/products/`: transparent PNG cutouts of the current CHEERDMOTO products
+- `assets/products/`: transparent PNG cutouts of the current COWIN products
 - `manifest.json`: filenames, dimensions and product mapping
 
 ## Filename convention

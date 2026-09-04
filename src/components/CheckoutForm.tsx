@@ -99,7 +99,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
   const cardScriptReady = opScriptReady && cardSdkReady;
   const activeShippingEstimate = country ? shippingEstimateFor(productSlug, country) : shippingEstimate;
   const total = unitPrice * quantity + activeShippingEstimate;
-  const discount = useMemo(() => (!isOneTimePayment && coupon.trim().toUpperCase() === 'CHEERDMOTO' ? Math.round(total * 0.03) : 0), [coupon, isOneTimePayment, total]);
+  const discount = useMemo(() => (!isOneTimePayment && ['COWIN', 'CHEERDMOTO'].includes(coupon.trim().toUpperCase()) ? Math.round(total * 0.03) : 0), [coupon, isOneTimePayment, total]);
   const finalTotal = total - discount;
 
   useEffect(() => {
@@ -166,7 +166,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         window.location.href = localizedPublicPath(locale, `/checkout/failed?order=${encodeURIComponent(orderNumber)}&payment=failed`);
         return;
       }
-      setStatus(message || 'Oceanpayment returned a payment response. If payment did not continue, please try again or contact CHEERDMOTO sales.');
+      setStatus(message || 'Oceanpayment returned a payment response. If payment did not continue, please try again or contact COWIN sales.');
       setIsSubmitting(false);
     };
     return () => {
@@ -229,7 +229,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
 
   function submitHostedOceanpayment(oceanpayment: OceanpaymentPayload) {
     if (!oceanpayment.gatewayUrl) {
-      setStatus('Oceanpayment hosted payment URL is not configured. Please contact CHEERDMOTO sales.');
+      setStatus('Oceanpayment hosted payment URL is not configured. Please contact COWIN sales.');
       setIsSubmitting(false);
       return;
     }
@@ -352,12 +352,12 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       });
       const paymentResult = await paymentResponse.json();
       if (!paymentResponse.ok) {
-        setStatus(paymentResult.message || 'Oceanpayment request failed. Please contact CHEERDMOTO sales.');
+        setStatus(paymentResult.message || 'Oceanpayment request failed. Please contact COWIN sales.');
         setIsSubmitting(false);
         return;
       }
       if (paymentResult.status === 'waiting_for_credentials' || paymentResult.status === 'manual_follow_up') {
-        setStatus(paymentResult.message || `Order ${result.order.id} received. CHEERDMOTO sales will send payment instructions by email.`);
+        setStatus(paymentResult.message || `Order ${result.order.id} received. COWIN sales will send payment instructions by email.`);
         window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}&payment=manual_followup`);
         return;
       }
@@ -384,7 +384,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       }, isOneTimePayment ? 18000 : 15000);
       return;
     }
-    setStatus(`Project order received: ${result.order.id}. CHEERDMOTO sales will confirm quotation, logistics and payment next.`);
+    setStatus(`Project order received: ${result.order.id}. COWIN sales will confirm quotation, logistics and payment next.`);
     window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}`);
   }
 
@@ -493,7 +493,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             {paymentMethod === 'oceanpayment_card' ? (
               <div className="checkout-card-fields">
                 <div id="oceanpayment-element" className="oceanpayment-card-element" role="group" aria-label="Oceanpayment secure card form" />
-                <p className="payment-safe-note">Enter card details in the Oceanpayment secure card form. CHEERDMOTO does not store full card numbers or CVV.</p>
+                <p className="payment-safe-note">Enter card details in the Oceanpayment secure card form. COWIN does not store full card numbers or CVV.</p>
               </div>
             ) : null}
             <button
@@ -532,7 +532,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
               <input type="radio" checked={paymentMethod === 'bank_transfer'} onChange={() => setPaymentMethod('bank_transfer')} />
               <span>
                 <strong>Bank transfer / T/T</strong>
-                <small>Receive proforma invoice and bank details from CHEERDMOTO sales.</small>
+                <small>Receive proforma invoice and bank details from COWIN sales.</small>
               </span>
             </label>
           ) : null}
@@ -561,7 +561,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
           </div>
           <div>
             <h3>{productName}</h3>
-            <p>CHEERDMOTO electric mobility order</p>
+            <p>COWIN electric mobility order</p>
           </div>
           <strong>USD {(unitPrice * quantity).toLocaleString()}</strong>
         </div>
@@ -580,7 +580,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         <button className="button primary checkout-pay-button" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Processing...' : 'Pay now'}
         </button>
-        <p className="form-note">{status || 'After submission, CHEERDMOTO sales will confirm final quotation, logistics and payment method before any charge.'}</p>
+        <p className="form-note">{status || 'After submission, COWIN sales will confirm final quotation, logistics and payment method before any charge.'}</p>
       </aside>
     </form>
   );

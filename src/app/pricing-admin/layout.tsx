@@ -3,7 +3,7 @@ export const metadata = {
     index: false,
     follow: false
   },
-  title: 'CHEERDMOTO Pricing Admin'
+  title: 'COWIN Pricing Admin'
 };
 
 export default function PricingAdminLayout({children}: {children: React.ReactNode}) {

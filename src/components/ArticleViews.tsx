@@ -31,7 +31,7 @@ export function ArticleListView({title, eyebrow, description, articles, basePath
               <span>{article.category}</span>
               <h2>{article.title}</h2>
               <p>{article.excerpt}</p>
-              <small>{article.date} / {article.sourceName || article.sources[0]?.name || 'CHEERDMOTO'}</small>
+              <small>{article.date} / {article.sourceName || article.sources[0]?.name || 'COWIN'}</small>
             </div>
           </Link>
         ))}
@@ -57,8 +57,8 @@ export function ArticleDetailView({article, basePath, type}: {
     image: article.hero,
     datePublished: article.date,
     dateModified: article.updatedAt,
-    author: { '@type': 'Organization', name: 'CHEERDMOTO Editorial Team' },
-    publisher: { '@type': 'Organization', name: 'CHEERDMOTO' },
+    author: { '@type': 'Organization', name: 'COWIN Editorial Team' },
+    publisher: { '@type': 'Organization', name: 'COWIN' },
     mainEntityOfPage: `${basePath}/${article.slug}`
   };
 
@@ -85,7 +85,7 @@ export function ArticleDetailView({article, basePath, type}: {
           <p>{article.keyTakeaways.join(' ')}</p>
           <dl>
             <div><dt>Original title</dt><dd>{article.originalTitle || source?.title || article.title}</dd></div>
-            <div><dt>Original source</dt><dd>{article.sourceName || source?.name || 'CHEERDMOTO'}</dd></div>
+            <div><dt>Original source</dt><dd>{article.sourceName || source?.name || 'COWIN'}</dd></div>
             <div><dt>Original published time</dt><dd>{article.sourcePublishedAt?.slice(0, 10) || source?.publishedDate || article.date}</dd></div>
             <div><dt>Source accessed</dt><dd>{article.sourceFetchedAt?.slice(0, 10) || article.updatedAt}</dd></div>
             <div><dt>Source URL</dt><dd><a href={article.sourceUrl || source?.url || '#'} rel="nofollow noopener noreferrer">{article.sourceUrl || source?.url || 'Source retained in CMS'}</a></dd></div>
@@ -100,12 +100,12 @@ export function ArticleDetailView({article, basePath, type}: {
         ))}
 
         <section>
-          <h2>CHEERDMOTO perspective</h2>
+          <h2>COWIN perspective</h2>
           <p>{article.geoSummary || article.productFit}</p>
         </section>
 
         <section>
-          <h2>Related CHEERDMOTO products</h2>
+          <h2>Related COWIN products</h2>
           <div className="article-product-grid">
             {productSlugs.map((slug) => (
               <Link className="article-product-card" href={`/products/${slug}`} key={slug}>
@@ -119,8 +119,8 @@ export function ArticleDetailView({article, basePath, type}: {
 
         <section className="article-source-note">
           <h2>Information source</h2>
-          <p>This article is based on public source information and independent CHEERDMOTO analysis. Original reporting belongs to the original publisher.</p>
-          <p>Image credit: {article.imageCredit?.publisher || 'CHEERDMOTO'} - {article.imageCredit?.note || 'Product image used for contextual illustration.'}</p>
+          <p>This article is based on public source information and independent COWIN analysis. Original reporting belongs to the original publisher.</p>
+          <p>Image credit: {article.imageCredit?.publisher || 'COWIN'} - {article.imageCredit?.note || 'Product image used for contextual illustration.'}</p>
         </section>
       </article>
       <PrecisionStorefrontFooter />

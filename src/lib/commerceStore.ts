@@ -3,6 +3,7 @@ import {shippingEstimateFor} from '@/lib/shipping';
 import {oneTimePaymentSlug, products, type CheckoutProductSlug} from '@/lib/site';
 import type {AttributionSnapshot} from '@/lib/trafficAttribution';
 import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
+import {normalizeBrandValue} from '@/lib/brand';
 
 const ORDERS_FILE = 'orders.jsonl';
 const EVENTS_FILE = 'analytics-events.jsonl';
@@ -366,7 +367,7 @@ export async function createStoreOrder(input: {
 }
 
 export async function readStoreOrders() {
-  return (await readStoreLines<StoreOrder>(ORDERS_FILE)).map(withOrderDefaults);
+  return (await readStoreLines<StoreOrder>(ORDERS_FILE)).map((order) => normalizeBrandValue(withOrderDefaults(order)));
 }
 
 export async function isOneTimePaymentUnavailable(productSlug: CheckoutProductSlug) {

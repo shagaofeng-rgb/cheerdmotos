@@ -49,7 +49,7 @@ export default async function AdminProductsPage() {
           <h2>新增产品</h2>
         </div>
         <form className="admin-form-grid admin-form-wide" action="/api/admin/products" method="post">
-          <input name="name" placeholder="Product name, e.g. CHEERDMOTO XCEED Electric Dirt Bike" required />
+          <input name="name" placeholder="Product name, e.g. COWIN XCEED Electric Dirt Bike" required />
           <input name="slug" placeholder="产品链接 slug，例如 x1-pro" required />
           <select name="categorySlug" required>
             {categories.map((category) => <option value={category.slug} key={category.id}>{category.name}</option>)}

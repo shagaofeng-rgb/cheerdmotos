@@ -96,7 +96,7 @@ export default async function PrecisionHomepage() {
         <div className={styles.heroProduct}>
           <Image
             src={`${productBase}/products/xtreme_transparent.png`}
-            alt="CHEERDMOTO XTREME 96V electric dirt bike"
+            alt="COWIN XTREME 96V electric dirt bike"
             fill
             priority
             sizes="(max-width: 760px) 96vw, 58vw"
@@ -136,7 +136,7 @@ export default async function PrecisionHomepage() {
       <section className={styles.xceedStory}>
         <Image className={styles.testingBackground} src="/homepage-precision/precision-testing-bay.webp" alt="Graphite electric vehicle testing bay" fill sizes="100vw" />
         <div className={styles.xceedProduct}>
-          <Image src={`${productBase}/products/xceed_transparent.png`} alt="CHEERDMOTO XCEED 72V electric dirt bike" fill sizes="(max-width: 760px) 94vw, 56vw" />
+          <Image src={`${productBase}/products/xceed_transparent.png`} alt="COWIN XCEED 72V electric dirt bike" fill sizes="(max-width: 760px) 94vw, 56vw" />
         </div>
         <div className={styles.xceedCopy}>
           <p className={styles.darkEyebrow}>XCEED 72V</p>
@@ -182,7 +182,7 @@ export default async function PrecisionHomepage() {
           <Link className={styles.primaryButton} href="/products/cheerdmoto-electric-wheelchair-smart-b02">Shop SMART B02</Link>
         </div>
         <div className={styles.mobilityProduct}>
-          <Image src={`${productBase}/products/smart_b02_transparent.png`} alt="CHEERDMOTO SMART B02 folding electric wheelchair" fill sizes="(max-width: 760px) 88vw, 45vw" />
+          <Image src={`${productBase}/products/smart_b02_transparent.png`} alt="COWIN SMART B02 folding electric wheelchair" fill sizes="(max-width: 760px) 88vw, 45vw" />
         </div>
       </section>
 
@@ -215,7 +215,7 @@ export default async function PrecisionHomepage() {
       </section>
 
       <section className={styles.finalCta}>
-        <div><h2>Built to move<br />on your terms.</h2><p>Compare every CHEERDMOTO dirt bike, E-bike and mobility product in one catalog.</p></div>
+        <div><h2>Built to move<br />on your terms.</h2><p>Compare every COWIN dirt bike, E-bike and mobility product in one catalog.</p></div>
         <Link className={styles.primaryButton} href="/products">Explore all models</Link>
       </section>
 

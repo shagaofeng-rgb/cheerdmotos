@@ -13,8 +13,8 @@ const navigation = [
 export function PrecisionStorefrontHeader() {
   return (
     <header className={styles.header}>
-      <Link className={styles.logo} href="/" aria-label="CHEERDMOTO home">
-        CHEERDMOTO
+      <Link className={styles.logo} href="/" aria-label="COWIN home">
+        COWIN
       </Link>
       <nav className={styles.desktopNav} aria-label="Main navigation">
         {navigation.map((item) => <Link href={item.href} key={item.href}>{item.label}</Link>)}
@@ -40,7 +40,7 @@ export function PrecisionStorefrontFooter() {
   return (
     <footer className={styles.footer}>
       <div className={styles.footerBrand}>
-        <Link className={styles.logo} href="/">CHEERDMOTO</Link>
+        <Link className={styles.logo} href="/">COWIN</Link>
         <p>Electric mobility engineered for performance, utility and everyday independence.</p>
       </div>
       <div><strong>Shop</strong><Link href="/electric-dirt-bikes">Dirt bikes</Link><Link href="/e-bikes">E-bikes</Link><Link href="/electric-wheelchairs">Mobility</Link><Link href="/accessories">Accessories</Link></div>

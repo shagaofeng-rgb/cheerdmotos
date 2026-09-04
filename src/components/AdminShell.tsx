@@ -63,7 +63,7 @@ export default async function AdminShell({active, children}: {active: string; ch
       <aside className="admin-sidebar">
         <a className="admin-logo" href="/admin">
           <span>CM</span>
-          <strong>CHEERDMOTO 后台</strong>
+          <strong>COWIN 后台</strong>
         </a>
         <nav aria-label="后台导航">
           {navGroups.map((group) => (

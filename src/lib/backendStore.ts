@@ -5,6 +5,7 @@ import {readAnalyticsEvents, readStoreOrders, type AnalyticsEvent, type StoreOrd
 import {readStoreObject, withStoreLock, writeStoreObject} from '@/lib/durableStore';
 import {classifyTraffic, type AttributionSnapshot} from '@/lib/trafficAttribution';
 import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
+import {normalizeBrandValue} from '@/lib/brand';
 
 const STORE_FILE = 'admin-store.json';
 
@@ -202,7 +203,7 @@ export async function readAdminStore() {
         console.error('[backend-store] catalog image migration could not be persisted', error instanceof Error ? error.message : String(error));
       });
     }
-    return normalized;
+    return normalizeBrandValue(normalized);
   }
   const seeded = createSeedStore();
   await writeStoreObject(STORE_FILE, seeded);
@@ -371,10 +372,10 @@ function createSeedStore(): AdminStore {
     id: `cat-${index + 1}`,
     name,
     slug: name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, ''),
-    description: `CHEERDMOTO ${name} catalog category for retail buyers, dealers and fleet customers.`,
+    description: `COWIN ${name} catalog category for retail buyers, dealers and fleet customers.`,
     coverImage: products[productSlugs[index] || productSlugs[0]].image,
-    seoTitle: `${name} Supplier | CHEERDMOTO`,
-    seoDescription: `Browse CHEERDMOTO ${name} products for electric mobility, off-road riding, commuters and dealers.`,
+    seoTitle: `${name} Supplier | COWIN`,
+    seoDescription: `Browse COWIN ${name} products for electric mobility, off-road riding, commuters and dealers.`,
     sortOrder: index + 1,
     status: 'published' as const,
     parentId: '',
@@ -392,7 +393,7 @@ function createSeedStore(): AdminStore {
       coverImage: product.image,
       galleryImages: productGalleryImages[slug],
       shortDescription: `${product.name} for electric mobility customers, dealers, fleet buyers and direct online orders.`,
-      fullDescription: `${product.name} is connected to the CHEERDMOTO backend for specs, applications, pricing, inventory and SEO management.`,
+      fullDescription: `${product.name} is connected to the COWIN backend for specs, applications, pricing, inventory and SEO management.`,
       keyFeatures: product.specs,
       specifications: product.specs.map((value, specIndex) => ({label: ['Power/System', 'Battery/Voltage', 'Speed', 'Endurance/Feature'][specIndex] || `Spec ${specIndex + 1}`, value})),
       applicationScenarios: ['Retail buyers', 'Dealers', 'Fleet programs', 'Outdoor riders', 'Mobility customers'],
@@ -404,7 +405,7 @@ function createSeedStore(): AdminStore {
       moq: 1,
       weightDimension: 'Confirmed by model and shipping package.',
       shippingInfo: 'Shipping cost is confirmed by destination, quantity and carrier.',
-      seoTitle: `${product.name} | CHEERDMOTO`,
+      seoTitle: `${product.name} | COWIN`,
       seoDescription: `${product.name} for direct buyers, dealers, fleets and electric mobility projects.`,
       status: 'published' as const,
       sortOrder: index + 1,
@@ -435,10 +436,10 @@ function createSeedStore(): AdminStore {
     category: article.tags[0] || 'Water Sports',
     content: article.body.map((section) => `## ${section.heading}\n\n${section.paragraphs.join('\n\n')}`).join('\n\n'),
     publishDate: article.date,
-    author: 'CHEERDMOTO Editorial Team',
+    author: 'COWIN Editorial Team',
     source: article.sources.map((source) => `${source.name}: ${source.url}`).join('\n'),
     tags: article.tags,
-    seoTitle: `${article.title} | CHEERDMOTO`,
+    seoTitle: `${article.title} | COWIN`,
     seoDescription: article.excerpt,
     status: 'published' as const,
     createdAt,
@@ -450,11 +451,11 @@ function createSeedStore(): AdminStore {
     media,
     posts,
     settings: {
-      companyName: 'CHEERDMOTO',
+      companyName: 'COWIN',
       adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || 'support@cheerdmotos.com',
       contactEmail: 'support@cheerdmotos.com',
       whatsapp: '+86 17621485205',
-      address: 'CHEERDMOTO sales office',
+      address: 'COWIN sales office',
       paymentCurrency: 'USD',
       qianhaiStatus: process.env.QIANHAI_MERCHANT_ID ? '已配置' : '等待前海通道参数',
       cookieConsentReady: false,

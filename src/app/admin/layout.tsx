@@ -3,7 +3,7 @@ export const metadata = {
     index: false,
     follow: false
   },
-  title: 'CHEERDMOTO 后台'
+  title: 'COWIN 后台'
 };
 
 export default function AdminLayout({children}: {children: React.ReactNode}) {

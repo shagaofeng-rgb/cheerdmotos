@@ -54,7 +54,7 @@ export async function POST(request: Request) {
       gatewayStatus: oceanpayment.configured ? 'pending' : 'not_submitted',
       logisticsStatus: oceanpayment.configured
         ? 'Oceanpayment request generated. Waiting for buyer payment result.'
-        : 'Online card payment is not active yet. CHEERDMOTO sales will send payment instructions manually.'
+        : 'Online card payment is not active yet. COWIN sales will send payment instructions manually.'
     });
 
     await appendAnalyticsEvent({
@@ -89,7 +89,7 @@ export async function POST(request: Request) {
       status: oceanpayment.configured ? 'ready_to_submit' : 'manual_follow_up',
       message: oceanpayment.configured
         ? 'Secure payment request is ready.'
-        : 'Order received. CHEERDMOTO sales will confirm quotation, logistics and payment instructions by email.',
+        : 'Order received. COWIN sales will confirm quotation, logistics and payment instructions by email.',
       order: updated || order,
       oceanpayment: {
         configured: oceanpayment.configured,

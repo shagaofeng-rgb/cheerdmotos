@@ -1,4 +1,4 @@
-# CHEERDMOTO 全站核查与修复记录
+# COWIN 全站核查与修复记录
 
 日期：2026-08-11（Asia/Shanghai）  
 生产站点：`https://www.cheerdmotos.com`  

@@ -1,4 +1,4 @@
-# CHEERDMOTO Sitemap automation
+# COWIN Sitemap automation
 
 Production domain: `https://www.cheerdmotos.com`
 

@@ -45,7 +45,7 @@ export default async function AdminDashboardPage({
   return (
     <AdminShell active="dashboard">
       <div className="admin-title" id="overview">
-        <p className="eyebrow">CHEERDMOTO 后台</p>
+        <p className="eyebrow">COWIN 后台</p>
         <h1>数据总览</h1>
         <p>这里汇总真实采集到的订单、访问、线索、产品内容和转化数据，方便你快速判断网站经营状态。</p>
         <AdminTimeFilter action="/admin" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="统计时间" summary={timeFilter.summary} />
