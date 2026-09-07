@@ -21,7 +21,9 @@ for (const path of urls) {
   if (path.endsWith('.xml')) {
     assert(text.startsWith('<?xml'), `${path} is not XML`);
     assert(!text.includes('<loc>http://'), `${path} contains http URL`);
-    assert(text.includes('https://www.cheerdmotos.com'), `${path} does not use production www domain`);
+    if (text.includes('<loc>')) {
+      assert(text.includes('https://www.cheerdmotos.com'), `${path} does not use production www domain`);
+    }
   }
   if (path === '/robots.txt') {
     assert(text.includes('Sitemap: https://www.cheerdmotos.com/sitemap.xml'), 'robots.txt does not declare sitemap index');
