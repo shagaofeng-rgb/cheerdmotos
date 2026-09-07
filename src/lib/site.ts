@@ -128,8 +128,15 @@ function cleanSiteData(data: SiteData): SiteData {
 
 export const siteData = cleanSiteData(rawData as SiteData);
 
-const configuredSiteUrl = process.env.NEXT_PUBLIC_SITE_URL || "https://www.cheerdmotos.com";
-export const siteUrl = configuredSiteUrl.replace(/^http:\/\//, "https://").replace(/\/$/, "");
+const productionSiteUrl = "https://www.cheerdmotos.com";
+const configuredSiteUrl = (process.env.NEXT_PUBLIC_SITE_URL || productionSiteUrl)
+  .replace(/^http:\/\//, "https://")
+  .replace(/\/$/, "");
+
+// Prevent an unrelated deployment variable from leaking another site's domain into canonicals or sitemaps.
+export const siteUrl = /^https:\/\/(?:www\.)?cheerdmotos\.com$/i.test(configuredSiteUrl)
+  ? configuredSiteUrl
+  : productionSiteUrl;
 
 export const productSlugs = [
   "xceed-electric-dirt-bike",
