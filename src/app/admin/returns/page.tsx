@@ -1,6 +1,8 @@
 import AdminShell from '@/components/AdminShell';
-import {readRefundRecords, readStoreOrders} from '@/lib/commerceStore';
+import {readRefundRecords, readStoreOrders, type RefundRecord, type StoreOrder} from '@/lib/commerceStore';
 import {zhOrderStatus} from '@/lib/adminZh';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -8,10 +10,15 @@ function money(value: number) {
   return `USD ${value.toLocaleString()}`;
 }
 
-export default async function AdminReturnsPage() {
-  const [orders, refunds] = await Promise.all([readStoreOrders(), readRefundRecords()]);
+type ReturnRecord = {kind: 'refund'; refund: RefundRecord} | {kind: 'order'; order: StoreOrder};
+
+export default async function AdminReturnsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [orders, refunds, params] = await Promise.all([readStoreOrders(), readRefundRecords(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
   const returnedOrders = orders.filter((order) => order.shipmentStatus === 'returned' || ['refunded', 'partial_refunded'].includes(order.status));
   const pendingRefunds = refunds.filter((refund) => ['pending', 'submitted'].includes(refund.status));
+  const records: ReturnRecord[] = refunds.length ? refunds.slice().reverse().map((refund) => ({kind: 'refund', refund})) : returnedOrders.map((order) => ({kind: 'order', order}));
+  const pagedRecords = paginate(records, page, perPage);
 
   return (
     <AdminShell active="returns">
@@ -39,28 +46,29 @@ export default async function AdminReturnsPage() {
               <tr><th>记录号</th><th>订单号</th><th>金额</th><th>状态</th><th>原因</th><th>创建时间</th></tr>
             </thead>
             <tbody>
-              {refunds.length ? refunds.slice().reverse().map((refund) => (
-                <tr key={refund.id}>
-                  <td>{refund.refundNo}</td>
-                  <td>{refund.orderId}</td>
-                  <td>{money(refund.amount)}</td>
-                  <td>{refund.status}</td>
-                  <td>{refund.reason || '-'}</td>
-                  <td>{refund.createdAt.slice(0, 10)}</td>
+              {pagedRecords.items.length ? pagedRecords.items.map((entry) => entry.kind === 'refund' ? (
+                <tr key={entry.refund.id}>
+                  <td>{entry.refund.refundNo}</td>
+                  <td>{entry.refund.orderId}</td>
+                  <td>{money(entry.refund.amount)}</td>
+                  <td>{entry.refund.status}</td>
+                  <td>{entry.refund.reason || '-'}</td>
+                  <td>{entry.refund.createdAt.slice(0, 10)}</td>
                 </tr>
-              )) : returnedOrders.length ? returnedOrders.map((order) => (
-                <tr key={order.id}>
-                  <td>{order.id}</td>
-                  <td>{order.id}</td>
-                  <td>{money(order.total)}</td>
-                  <td>{zhOrderStatus(order.status)}</td>
-                  <td>{order.refundStatus || '订单处于售后状态'}</td>
-                  <td>{order.updatedAt.slice(0, 10)}</td>
+              ) : (
+                <tr key={entry.order.id}>
+                  <td>{entry.order.id}</td>
+                  <td>{entry.order.id}</td>
+                  <td>{money(entry.order.total)}</td>
+                  <td>{zhOrderStatus(entry.order.status)}</td>
+                  <td>{entry.order.refundStatus || '订单处于售后状态'}</td>
+                  <td>{entry.order.updatedAt.slice(0, 10)}</td>
                 </tr>
               )) : <tr><td colSpan={6}>暂无退换货或退款记录。</td></tr>}
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/returns" params={params} page={pagedRecords.page} perPage={pagedRecords.perPage} total={pagedRecords.total} totalPages={pagedRecords.totalPages} />
       </section>
     </AdminShell>
   );

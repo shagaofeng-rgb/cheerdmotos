@@ -4,6 +4,8 @@ import {redirect} from 'next/navigation';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
 import {readStoreOrders} from '@/lib/commerceStore';
 import {products} from '@/lib/site';
+import StorefrontPagination from '@/components/StorefrontPagination';
+import {paginateItems, readPage, type SearchParams} from '@/lib/storefrontPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,13 +13,15 @@ function money(value: number, currency = 'USD') {
   return `${currency} ${value.toLocaleString()}`;
 }
 
-export default async function AccountOrdersPage() {
+export default async function AccountOrdersPage({searchParams}: {searchParams: Promise<SearchParams>}) {
   const session = await getCustomerSession();
   if (!session) redirect('/account/login');
+  const query = await searchParams;
   const email = session.email || '';
   const orders = (await readStoreOrders())
     .filter((order) => customerOwnsOrder(order, session))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const pagedOrders = paginateItems(orders, readPage(query.page));
 
   return (
     <main className="account-page wide">
@@ -32,7 +36,7 @@ export default async function AccountOrdersPage() {
         </form>
       </section>
       <section className="account-order-list">
-        {orders.length ? orders.map((order) => (
+        {pagedOrders.items.length ? pagedOrders.items.map((order) => (
           <article className="account-order-card" key={order.id}>
             <Image className="account-order-thumb" src={products[order.productSlug]?.thumbnail || '/assets/cowin-placeholder.svg'} alt={order.productName} width={110} height={90} sizes="110px" />
             <div>
@@ -57,6 +61,7 @@ export default async function AccountOrdersPage() {
           </article>
         )}
       </section>
+      <StorefrontPagination pathname="/account/orders" params={query} label="Order history" {...pagedOrders} />
     </main>
   );
 }

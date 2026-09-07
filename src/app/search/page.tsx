@@ -4,8 +4,10 @@ import {getAllBlogArticles} from '@/lib/blogFeed';
 import {getAllNewsArticles} from '@/lib/newsFeed';
 import {siteData, siteUrl} from '@/lib/site';
 import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
+import StorefrontPagination from '@/components/StorefrontPagination';
+import {paginateItems, readPage, type SearchParams} from '@/lib/storefrontPagination';
 
-type Props = {searchParams: Promise<{q?: string}>};
+type Props = {searchParams: Promise<SearchParams>};
 
 export const dynamic = 'force-dynamic';
 
@@ -17,7 +19,8 @@ export const metadata: Metadata = {
 };
 
 export default async function SearchPage({searchParams}: Props) {
-  const {q = ''} = await searchParams;
+  const queryParams = await searchParams;
+  const q = Array.isArray(queryParams.q) ? queryParams.q[0] || '' : queryParams.q || '';
   const query = q.trim().toLowerCase();
   const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
   const rows = [
@@ -25,7 +28,8 @@ export default async function SearchPage({searchParams}: Props) {
     ...news.map((item) => ({title: item.title, excerpt: item.excerpt, href: `/news/${item.slug}`, type: 'news'})),
     ...blogs.map((item) => ({title: item.title, excerpt: item.excerpt, href: `/blog/${item.slug}`, type: 'blog'}))
   ];
-  const results = query ? rows.filter((row) => `${row.title} ${row.excerpt} ${row.type}`.toLowerCase().includes(query)).slice(0, 40) : rows.slice(0, 20);
+  const results = query ? rows.filter((row) => `${row.title} ${row.excerpt} ${row.type}`.toLowerCase().includes(query)) : rows;
+  const pagedResults = paginateItems(results, readPage(queryParams.page));
 
   return (
     <main className="search-page precision-page">
@@ -40,7 +44,7 @@ export default async function SearchPage({searchParams}: Props) {
         </form>
       </section>
       <section className="search-results">
-        {results.map((row) => (
+        {pagedResults.items.map((row) => (
           <Link href={row.href} key={`${row.type}-${row.href}`}>
             <span>{row.type}</span>
             <strong>{row.title}</strong>
@@ -49,6 +53,7 @@ export default async function SearchPage({searchParams}: Props) {
         ))}
         {!results.length ? <p>No matching results.</p> : null}
       </section>
+      <StorefrontPagination pathname="/search" params={queryParams} label="Search results" {...pagedResults} />
       <PrecisionStorefrontFooter />
     </main>
   );

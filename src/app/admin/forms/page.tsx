@@ -1,12 +1,16 @@
 import AdminShell from '@/components/AdminShell';
 import {readAnalyticsEvents, readEmailLogs} from '@/lib/commerceStore';
 import {zhEventType} from '@/lib/adminZh';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminFormsPage() {
-  const [events, emailLogs] = await Promise.all([readAnalyticsEvents(), readEmailLogs()]);
+export default async function AdminFormsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [events, emailLogs, params] = await Promise.all([readAnalyticsEvents(), readEmailLogs(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
   const formEvents = events.filter((event) => ['form_submit', 'contact_inquiry', 'contact_click'].includes(event.type));
+  const pagedEvents = paginate(formEvents.slice().reverse(), page, perPage);
   const inquiryEmails = emailLogs.filter((log) => log.templateType === 'contact_inquiry' || log.templateType === 'admin_order_notice');
   const sentEmails = inquiryEmails.filter((log) => log.status === 'sent');
 
@@ -36,7 +40,7 @@ export default async function AdminFormsPage() {
               <tr><th>时间</th><th>事件</th><th>页面</th><th>国家/地区</th><th>联系方式</th><th>附加信息</th></tr>
             </thead>
             <tbody>
-              {formEvents.length ? formEvents.slice(-50).reverse().map((event) => (
+              {pagedEvents.items.length ? pagedEvents.items.map((event) => (
                 <tr key={event.id}>
                   <td>{event.timestamp.slice(0, 16).replace('T', ' ')}</td>
                   <td>{zhEventType(event.type)}</td>
@@ -49,6 +53,7 @@ export default async function AdminFormsPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/forms" params={params} page={pagedEvents.page} perPage={pagedEvents.perPage} total={pagedEvents.total} totalPages={pagedEvents.totalPages} />
       </section>
     </AdminShell>
   );

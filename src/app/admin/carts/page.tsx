@@ -1,12 +1,16 @@
 import AdminShell from '@/components/AdminShell';
 import {readAnalyticsEvents, readStoreOrders} from '@/lib/commerceStore';
 import {zhEventType} from '@/lib/adminZh';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCartsPage() {
-  const [events, orders] = await Promise.all([readAnalyticsEvents(), readStoreOrders()]);
+export default async function AdminCartsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [events, orders, params] = await Promise.all([readAnalyticsEvents(), readStoreOrders(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
   const checkoutEvents = events.filter((event) => ['checkout_start', 'checkout_submit', 'begin_checkout'].includes(event.type));
+  const pagedEvents = paginate(checkoutEvents.slice().reverse(), page, perPage);
   const orderSessions = new Set(orders.map((order) => order.attribution?.sessionId).filter(Boolean));
   const abandonedSessions = new Set(checkoutEvents.filter((event) => !orderSessions.has(event.sessionId)).map((event) => event.sessionId));
   const productClicks = events.filter((event) => event.type === 'commerce_click' || event.type === 'product_view');
@@ -37,7 +41,7 @@ export default async function AdminCartsPage() {
               <tr><th>时间</th><th>事件</th><th>页面</th><th>访客</th><th>会话</th><th>国家/地区</th></tr>
             </thead>
             <tbody>
-              {checkoutEvents.length ? checkoutEvents.slice(-40).reverse().map((event) => (
+              {pagedEvents.items.length ? pagedEvents.items.map((event) => (
                 <tr key={event.id}>
                   <td>{event.timestamp.slice(0, 16).replace('T', ' ')}</td>
                   <td>{zhEventType(event.type)}</td>
@@ -50,6 +54,7 @@ export default async function AdminCartsPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/carts" params={params} page={pagedEvents.page} perPage={pagedEvents.perPage} total={pagedEvents.total} totalPages={pagedEvents.totalPages} />
       </section>
     </AdminShell>
   );

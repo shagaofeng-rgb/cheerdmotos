@@ -1,6 +1,8 @@
 import AdminShell from '@/components/AdminShell';
 import {zhPublishStatus} from '@/lib/adminZh';
 import {listAdminCategories, listAdminProducts} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,8 +16,10 @@ function discount(compareAt: number, sale: number) {
   return `${Math.round(((compareAt - sale) / compareAt) * 100)}%`;
 }
 
-export default async function AdminProductsPage() {
-  const [products, categories] = await Promise.all([listAdminProducts(), listAdminCategories()]);
+export default async function AdminProductsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [products, categories, params] = await Promise.all([listAdminProducts(), listAdminCategories(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedProducts = paginate(products, page, perPage);
 
   return (
     <AdminShell active="products">
@@ -93,7 +97,7 @@ export default async function AdminProductsPage() {
               <tr><th>产品</th><th>分类</th><th>价格</th><th>库存</th><th>媒体</th><th>状态</th><th>SEO</th></tr>
             </thead>
             <tbody>
-              {products.length ? products.map((product) => {
+              {pagedProducts.items.length ? pagedProducts.items.map((product) => {
                 const sale = product.salePriceCents || product.priceCents;
                 return (
                   <tr key={product.id}>
@@ -116,12 +120,13 @@ export default async function AdminProductsPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/products" params={params} page={pagedProducts.page} perPage={pagedProducts.perPage} total={pagedProducts.total} totalPages={pagedProducts.totalPages} />
       </section>
 
       <section className="admin-panel">
         <div><p className="eyebrow">编辑已存商品</p><h2>商品发布与核心信息</h2></div>
         <div className="admin-content-list">
-          {products.map((product) => (
+          {pagedProducts.items.map((product) => (
             <details key={product.id} className="admin-content-item">
               <summary><span><strong>{product.name}</strong><small>{product.slug} · SKU {product.sku}</small></span><span className={`admin-status ${product.status}`}>{zhPublishStatus(product.status)}</span></summary>
               <form className="admin-form-grid admin-form-wide" action="/api/admin/products" method="post">

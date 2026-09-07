@@ -5,6 +5,8 @@ import {
   readPaymentNotifications,
   readRefundRecords
 } from '@/lib/commerceStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -12,13 +14,16 @@ function money(value: number) {
   return `USD ${value.toLocaleString()}`;
 }
 
-export default async function AdminPaymentsPage() {
-  const [snapshot, refunds, notifications, authorizations] = await Promise.all([
+export default async function AdminPaymentsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [snapshot, refunds, notifications, authorizations, params] = await Promise.all([
     getCommerceSnapshot(),
     readRefundRecords(),
     readPaymentNotifications(),
-    readAuthorizationRecords()
+    readAuthorizationRecords(),
+    searchParams
   ]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedRefunds = paginate(refunds.slice().reverse(), page, perPage);
   const verifiedNotifications = notifications.filter((item) => item.verified);
   const refundAmount = refunds.reduce((sum, refund) => sum + refund.amount, 0);
 
@@ -61,7 +66,7 @@ export default async function AdminPaymentsPage() {
               <tr><th>退款单号</th><th>订单号</th><th>金额</th><th>状态</th><th>原因</th><th>时间</th></tr>
             </thead>
             <tbody>
-              {refunds.length ? refunds.slice().reverse().map((refund) => (
+              {pagedRefunds.items.length ? pagedRefunds.items.map((refund) => (
                 <tr key={refund.id}>
                   <td>{refund.refundNo}</td>
                   <td>{refund.orderId}</td>
@@ -74,6 +79,7 @@ export default async function AdminPaymentsPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/payments" params={params} page={pagedRefunds.page} perPage={pagedRefunds.perPage} total={pagedRefunds.total} totalPages={pagedRefunds.totalPages} />
       </section>
     </AdminShell>
   );

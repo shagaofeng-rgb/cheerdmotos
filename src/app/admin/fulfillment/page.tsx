@@ -1,11 +1,15 @@
 import AdminShell from '@/components/AdminShell';
 import {readShipmentRecords, readStoreOrders} from '@/lib/commerceStore';
 import {zhOrderStatus, zhShipmentStatus} from '@/lib/adminZh';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminFulfillmentPage() {
-  const [orders, shipments] = await Promise.all([readStoreOrders(), readShipmentRecords()]);
+export default async function AdminFulfillmentPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [orders, shipments, params] = await Promise.all([readStoreOrders(), readShipmentRecords(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedOrders = paginate(orders.slice().reverse(), page, perPage);
   const shipmentMap = new Map(shipments.map((shipment) => [shipment.orderId, shipment]));
   const needShip = orders.filter((order) => ['paid', 'processing'].includes(order.status) && order.shipmentStatus === 'unshipped');
   const shipped = orders.filter((order) => ['shipped', 'in_transit', 'delivered'].includes(order.shipmentStatus));
@@ -36,7 +40,7 @@ export default async function AdminFulfillmentPage() {
               <tr><th>订单号</th><th>订单状态</th><th>商品</th><th>客户</th><th>物流商</th><th>追踪号</th><th>发货状态</th><th>客户备注</th></tr>
             </thead>
             <tbody>
-              {orders.length ? orders.slice().reverse().map((order) => {
+              {pagedOrders.items.length ? pagedOrders.items.map((order) => {
                 const shipment = shipmentMap.get(order.id);
                 return (
                   <tr key={order.id}>
@@ -54,6 +58,7 @@ export default async function AdminFulfillmentPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/fulfillment" params={params} page={pagedOrders.page} perPage={pagedOrders.perPage} total={pagedOrders.total} totalPages={pagedOrders.totalPages} />
       </section>
     </AdminShell>
   );

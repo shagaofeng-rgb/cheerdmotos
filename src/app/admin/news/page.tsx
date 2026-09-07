@@ -1,11 +1,15 @@
 import AdminShell from '@/components/AdminShell';
 import {zhPublishStatus} from '@/lib/adminZh';
 import {listAdminPosts} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminNewsPage() {
-  const posts = await listAdminPosts('news');
+export default async function AdminNewsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [posts, params] = await Promise.all([listAdminPosts('news'), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedPosts = paginate(posts, page, perPage);
   return (
     <AdminShell active="news">
       <div className="admin-title">
@@ -49,7 +53,7 @@ export default async function AdminNewsPage() {
           <table>
             <thead><tr><th>标题</th><th>日期</th><th>来源</th><th>状态</th><th>SEO / 摘要</th></tr></thead>
             <tbody>
-              {posts.length ? posts.map((post) => (
+              {pagedPosts.items.length ? pagedPosts.items.map((post) => (
                 <tr key={post.id}>
                   <td><strong>{post.title}</strong><br /><small>{post.slug}</small></td>
                   <td>{post.publishDate}</td>
@@ -61,6 +65,7 @@ export default async function AdminNewsPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/news" params={params} page={pagedPosts.page} perPage={pagedPosts.perPage} total={pagedPosts.total} totalPages={pagedPosts.totalPages} />
       </section>
     </AdminShell>
   );

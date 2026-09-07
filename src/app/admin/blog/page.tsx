@@ -1,6 +1,8 @@
 import AdminShell from '@/components/AdminShell';
 import {zhPublishStatus} from '@/lib/adminZh';
 import {listAdminPosts, type ContentPost} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -31,15 +33,18 @@ function BlogFields({post}: {post?: ContentPost}) {
   </>;
 }
 
-export default async function AdminBlogPage({searchParams}: {searchParams: Promise<{error?: string}>}) {
+export default async function AdminBlogPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
   const [posts, params] = await Promise.all([listAdminPosts('blog'), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedPosts = paginate(posts, page, perPage);
+  const error = Array.isArray(params.error) ? params.error[0] : params.error;
   return <AdminShell active="blog">
     <div className="admin-title">
       <p className="eyebrow">SEO / 内容运营</p>
       <h1>博客管理</h1>
       <p>管理真实持久化博客数据。草稿、发布、定时发布、下线和归档均会同步影响前台与 sitemap。</p>
     </div>
-    {params.error ? <p className="admin-form-error" role="alert">{params.error}</p> : null}
+    {error ? <p className="admin-form-error" role="alert">{error}</p> : null}
     <section className="admin-panel">
       <div><p className="eyebrow">新建内容</p><h2>创建博客</h2></div>
       <form className="admin-form-grid admin-form-wide" action="/api/admin/posts" method="post"><BlogFields /><button type="submit">保存博客</button></form>
@@ -47,7 +52,7 @@ export default async function AdminBlogPage({searchParams}: {searchParams: Promi
     <section className="admin-panel">
       <div><p className="eyebrow">内容库</p><h2>{posts.length} 篇博客</h2></div>
       <div className="admin-content-list">
-        {posts.map((post) => <details key={post.id} className="admin-content-item">
+        {pagedPosts.items.map((post) => <details key={post.id} className="admin-content-item">
           <summary><span><strong>{post.title}</strong><small>{post.slug} · {post.publishDate}</small></span><span className={`admin-status ${post.status}`}>{zhPublishStatus(post.status)}</span></summary>
           <form className="admin-form-grid admin-form-wide" action="/api/admin/posts" method="post"><BlogFields post={post} /><button type="submit">保存修改</button></form>
           <form action="/api/admin/posts" method="post" className="admin-inline-form">
@@ -57,6 +62,7 @@ export default async function AdminBlogPage({searchParams}: {searchParams: Promi
         </details>)}
         {!posts.length ? <p>暂无博客数据。</p> : null}
       </div>
+      <AdminPagination basePath="/admin/blog" params={params} page={pagedPosts.page} perPage={pagedPosts.perPage} total={pagedPosts.total} totalPages={pagedPosts.totalPages} />
     </section>
   </AdminShell>;
 }

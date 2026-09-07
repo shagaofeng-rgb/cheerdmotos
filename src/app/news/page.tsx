@@ -2,6 +2,7 @@ import type {Metadata} from 'next';
 import {ArticleListView} from '@/components/ArticleViews';
 import {getAllNewsArticles} from '@/lib/newsFeed';
 import {siteUrl} from '@/lib/site';
+import {readPage, readParam, type SearchParams} from '@/lib/storefrontPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,8 +12,8 @@ export const metadata: Metadata = {
   alternates: {canonical: `${siteUrl}/news`}
 };
 
-export default async function NewsPage() {
-  const articles = await getAllNewsArticles();
+export default async function NewsPage({searchParams}: {searchParams: Promise<SearchParams>}) {
+  const [articles, query] = await Promise.all([getAllNewsArticles(), searchParams]);
   return (
     <ArticleListView
       title="COWIN News"
@@ -20,6 +21,9 @@ export default async function NewsPage() {
       description="News and market updates connected to COWIN electric dirt bikes, e-bikes, mobility products and buyer workflows."
       articles={articles}
       basePath="/news"
+      page={readPage(query.page)}
+      category={readParam(query.category)}
+      query={query}
     />
   );
 }

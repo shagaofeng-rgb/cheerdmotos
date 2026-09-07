@@ -1,10 +1,14 @@
 import AdminShell from '@/components/AdminShell';
 import {listAdminProducts} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminInventoryPage() {
-  const products = await listAdminProducts();
+export default async function AdminInventoryPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [products, params] = await Promise.all([listAdminProducts(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedProducts = paginate(products, page, perPage);
   const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
   const lowStock = products.filter((product) => product.stock > 0 && product.stock <= 5);
   const outOfStock = products.filter((product) => product.stock <= 0);
@@ -36,7 +40,7 @@ export default async function AdminInventoryPage() {
               <tr><th>SKU</th><th>商品</th><th>分类</th><th>库存</th><th>MOQ</th><th>可购物车</th><th>可直接下单</th><th>更新时间</th></tr>
             </thead>
             <tbody>
-              {products.length ? products.map((product) => (
+              {pagedProducts.items.length ? pagedProducts.items.map((product) => (
                 <tr key={product.id}>
                   <td>{product.sku || product.slug}</td>
                   <td><strong>{product.name}</strong><br /><small>{product.slug}</small></td>
@@ -51,6 +55,7 @@ export default async function AdminInventoryPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/inventory" params={params} page={pagedProducts.page} perPage={pagedProducts.perPage} total={pagedProducts.total} totalPages={pagedProducts.totalPages} />
       </section>
     </AdminShell>
   );

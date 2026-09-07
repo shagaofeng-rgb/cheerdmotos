@@ -1,11 +1,15 @@
 import AdminShell from '@/components/AdminShell';
 import {zhPublishStatus} from '@/lib/adminZh';
 import {listAdminCategories} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCategoriesPage() {
-  const categories = await listAdminCategories();
+export default async function AdminCategoriesPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [categories, params] = await Promise.all([listAdminCategories(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedCategories = paginate(categories, page, perPage);
   return (
     <AdminShell active="分类管理">
       <div className="admin-title">
@@ -28,7 +32,7 @@ export default async function AdminCategoriesPage() {
       </section>
       <section className="admin-panel">
         <div className="admin-grid-list">
-          {categories.length ? categories.map((category) => (
+          {pagedCategories.items.length ? pagedCategories.items.map((category) => (
             <article key={category.id}>
               <strong>{category.name}</strong>
               <span>{category.slug} | {zhPublishStatus(category.status)}</span>
@@ -36,6 +40,7 @@ export default async function AdminCategoriesPage() {
             </article>
           )) : <article><strong>暂无分类数据</strong><span>请先新增分类</span></article>}
         </div>
+        <AdminPagination basePath="/admin/categories" params={params} page={pagedCategories.page} perPage={pagedCategories.perPage} total={pagedCategories.total} totalPages={pagedCategories.totalPages} />
       </section>
     </AdminShell>
   );

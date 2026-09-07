@@ -1,10 +1,13 @@
 import AdminShell from '@/components/AdminShell';
 import {listAdminProducts} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminProductAttributesPage() {
-  const products = await listAdminProducts();
+export default async function AdminProductAttributesPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [products, params] = await Promise.all([listAdminProducts(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
   const specs = products.flatMap((product) => product.specifications.map((spec) => ({
     product: product.name,
     sku: product.sku,
@@ -12,6 +15,7 @@ export default async function AdminProductAttributesPage() {
     value: spec.value
   })));
   const featureCount = products.reduce((sum, product) => sum + product.keyFeatures.length, 0);
+  const pagedSpecs = paginate(specs, page, perPage);
 
   return (
     <AdminShell active="product-attributes">
@@ -39,7 +43,7 @@ export default async function AdminProductAttributesPage() {
               <tr><th>商品</th><th>SKU</th><th>规格名称</th><th>规格值</th></tr>
             </thead>
             <tbody>
-              {specs.length ? specs.map((spec, index) => (
+              {pagedSpecs.items.length ? pagedSpecs.items.map((spec, index) => (
                 <tr key={`${spec.sku}-${spec.label}-${index}`}>
                   <td>{spec.product}</td>
                   <td>{spec.sku}</td>
@@ -50,6 +54,7 @@ export default async function AdminProductAttributesPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/product-attributes" params={params} page={pagedSpecs.page} perPage={pagedSpecs.perPage} total={pagedSpecs.total} totalPages={pagedSpecs.totalPages} />
       </section>
     </AdminShell>
   );

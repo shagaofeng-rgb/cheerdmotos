@@ -1,10 +1,14 @@
 import AdminShell from '@/components/AdminShell';
 import {readAuditLogs} from '@/lib/adminAudit';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminAuditLogsPage() {
-  const logs = await readAuditLogs(200);
+export default async function AdminAuditLogsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [logs, params] = await Promise.all([readAuditLogs(200), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedLogs = paginate(logs, page, perPage);
   const failed = logs.filter((log) => log.result === 'failed');
   const actors = new Set(logs.map((log) => log.actor)).size;
 
@@ -34,7 +38,7 @@ export default async function AdminAuditLogsPage() {
               <tr><th>时间</th><th>账号</th><th>模块</th><th>操作</th><th>结果</th><th>IP</th><th>说明</th></tr>
             </thead>
             <tbody>
-              {logs.length ? logs.map((log) => (
+              {pagedLogs.items.length ? pagedLogs.items.map((log) => (
                 <tr key={log.id}>
                   <td>{log.createdAt.slice(0, 16).replace('T', ' ')}</td>
                   <td>{log.actor}</td>
@@ -48,6 +52,7 @@ export default async function AdminAuditLogsPage() {
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/audit-logs" params={params} page={pagedLogs.page} perPage={pagedLogs.perPage} total={pagedLogs.total} totalPages={pagedLogs.totalPages} />
       </section>
     </AdminShell>
   );

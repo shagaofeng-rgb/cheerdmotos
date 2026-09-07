@@ -19,10 +19,13 @@ import ContactInquiryForm from '@/components/ContactInquiryForm';
 import PrecisionHomepage from '@/components/PrecisionHomepage';
 import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
 import {productPresentation} from '@/lib/productPresentation';
+import StorefrontPagination from '@/components/StorefrontPagination';
+import {paginateItems, readPage, readParam, type SearchParams} from '@/lib/storefrontPagination';
 import type { SiteItem } from "@/types";
 
 type PageProps = {
   params: Promise<{ slug?: string[] }>;
+  searchParams: Promise<SearchParams>;
 };
 
 export function generateStaticParams() {
@@ -66,8 +69,8 @@ export async function generateMetadata({ params }: PageProps): Promise<Metadata>
   };
 }
 
-export default async function MigratedPage({ params }: PageProps) {
-  const { slug } = await params;
+export default async function MigratedPage({ params, searchParams }: PageProps) {
+  const [{ slug }, query] = await Promise.all([params, searchParams]);
   const item = await resolvedItem(routeFromSegments(slug));
 
   if (!item) notFound();
@@ -77,11 +80,11 @@ export default async function MigratedPage({ params }: PageProps) {
   }
 
   if (item.kind === "product") {
-    return <ProductPage item={item} />;
+    return <ProductPage item={item} section={readParam(query.section)} />;
   }
 
   if (item.kind === "collection") {
-    return <CollectionPage item={item} />;
+    return <CollectionPage item={item} page={readPage(query.page)} query={query} />;
   }
 
   if (item.route === "/shipping-returns") {
@@ -352,7 +355,7 @@ function HomePage({ item }: { item: SiteItem }) {
   );
 }
 
-async function ProductPage({ item }: { item: SiteItem }) {
+async function ProductPage({ item, section }: { item: SiteItem; section: string }) {
   const presentation = productPresentation(item);
   const displayItem = {...item, image: presentation.gallery[0] || ''};
   const [catalog, news, blogs] = await Promise.all([listPublicProducts(), getAllNewsArticles(), getAllBlogArticles()]);
@@ -398,10 +401,12 @@ async function ProductPage({ item }: { item: SiteItem }) {
       <RallySiteNav />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(productJsonLd)}} />
       <script type="application/ld+json" dangerouslySetInnerHTML={{__html: JSON.stringify(breadcrumbJsonLd)}} />
-      <ProductDetail item={displayItem} product={presentation} />
-      <ArticleLinkGrid title="Related News" basePath="/news" items={linkedNews.length ? linkedNews : news.slice(0, 3)} />
-      <ArticleLinkGrid title="Related Guides" basePath="/blog" items={linkedBlogs.length ? linkedBlogs : blogs.slice(0, 3)} />
-      <ProductGrid title="Related Products" items={related} />
+      <ProductDetail item={displayItem} product={presentation} activeSection={section} />
+      {section === 'resources' ? <section className="product-resource-groups">
+        <ArticleLinkGrid title="Related News" basePath="/news" items={linkedNews.length ? linkedNews : news.slice(0, 3)} />
+        <ArticleLinkGrid title="Related Guides" basePath="/blog" items={linkedBlogs.length ? linkedBlogs : blogs.slice(0, 3)} />
+        <ProductGrid title="Related Products" items={related} />
+      </section> : null}
       <RallyFooter />
     </main>
   );
@@ -461,11 +466,12 @@ function ArticleLinkGrid({title, basePath, items}: {title: string; basePath: "/n
   );
 }
 
-function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryDesign }) {
+function RallyCategoryPage({ item, design, page, query }: { item: SiteItem; design: CategoryDesign; page: number; query: SearchParams }) {
+  const pagedProducts = paginateItems(design.products, page);
   const gridClass = [
     "rally-collection-grid",
-    design.products.length > 4 ? "is-accessories" : "",
-    `count-${Math.min(design.products.length, 4)}`
+    pagedProducts.items.length > 4 ? "is-accessories" : "",
+    `count-${Math.min(pagedProducts.items.length, 4)}`
   ].filter(Boolean).join(" ");
 
   return (
@@ -506,21 +512,21 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
         <aside className="rally-filters" aria-label="Collection filters">
           <h2>{item.title}</h2>
           <p>{item.description || "Shop COWIN products by model, power, and riding style."}</p>
-          {["category", "availability", "price", "model"].map((label) => (
-            <button type="button" key={label}>
-              <span>{label}</span>
-              <span>+</span>
-            </button>
-          ))}
+          <nav aria-label="Browse collections">
+            <Link href="/electric-dirt-bikes">Dirt bikes</Link>
+            <Link href="/e-bikes">E-bikes</Link>
+            <Link href="/electric-wheelchairs">Mobility</Link>
+            <Link href="/accessories">Accessories</Link>
+          </nav>
         </aside>
 
         <div className="rally-catalog">
           <div className="rally-catalog-heading">
-            <p>{design.products.length} PRODUCTS</p>
+            <p>{pagedProducts.start}-{pagedProducts.end} OF {pagedProducts.total} PRODUCTS</p>
             <h2>SHOP THE COLLECTION</h2>
           </div>
           <div className={gridClass}>
-            {design.products.map((product) => (
+            {pagedProducts.items.map((product) => (
               <Link className="rally-collection-card" href={product.href} key={`${product.name}-${product.image}`}>
                 <div className="rally-collection-media">
                   {product.image ? (
@@ -545,6 +551,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
               </Link>
             ))}
           </div>
+          <StorefrontPagination pathname={item.route} params={query} label={`${item.title} products`} {...pagedProducts} />
         </div>
       </section>
 
@@ -574,7 +581,7 @@ function RallyCategoryPage({ item, design }: { item: SiteItem; design: CategoryD
   );
 }
 
-async function CollectionPage({ item }: { item: SiteItem }) {
+async function CollectionPage({ item, page, query }: { item: SiteItem; page: number; query: SearchParams }) {
   const design = categoryDesigns[item.route];
   const catalog = await listPublicProducts();
 
@@ -593,7 +600,7 @@ async function CollectionPage({ item }: { item: SiteItem }) {
           href: product.route
         };
       });
-    return <RallyCategoryPage item={item} design={{...design, products: liveProducts.length ? liveProducts : design.products}} />;
+    return <RallyCategoryPage item={item} page={page} query={query} design={{...design, products: liveProducts.length ? liveProducts : design.products}} />;
   }
 
   const products = catalog.filter((product) => {
@@ -602,11 +609,14 @@ async function CollectionPage({ item }: { item: SiteItem }) {
     return text.includes(slug.split(" ")[0]) || item.slug === "all-products";
   });
 
+  const pagedProducts = paginateItems(products.length ? products : catalog, page);
+
   return (
     <main className="precision-collection-page">
       <RallySiteNav />
       <PageHero item={item} label="Collection" />
-      <ProductGrid title={item.title} items={products.length ? products : catalog.slice(0, 12)} />
+      <ProductGrid title={item.title} items={pagedProducts.items} total={pagedProducts.total} />
+      <StorefrontPagination pathname={item.route} params={query} label={`${item.title} products`} {...pagedProducts} />
       <GeneratedContent item={item} compact />
       <RallyFooter />
     </main>
@@ -670,13 +680,14 @@ function PageHero({ item, label }: { item: SiteItem; label: string }) {
   );
 }
 
-function ProductGrid({ title, items }: { title: string; items: SiteItem[] }) {
+function ProductGrid({ title, items, total }: { title: string; items: SiteItem[]; total?: number }) {
   if (!items.length) return null;
 
   return (
     <section className="section">
       <div className="section-heading">
         <h2>{title}</h2>
+        {total && total > items.length ? <p>{total} products · paginated</p> : null}
       </div>
       <div className={`product-grid count-${Math.min(items.length, 4)}`}>
         {items.map((item) => {

@@ -10,7 +10,24 @@ import type {ProductPresentation} from '@/lib/productPresentation';
 type ProductDetailProps = {
   item: SiteItem;
   product: ProductPresentation;
+  activeSection: string;
 };
+
+const productSections = [
+  {id: 'overview', label: 'Overview'},
+  {id: 'specifications', label: 'Specifications'},
+  {id: 'included', label: 'In the box'},
+  {id: 'shipping', label: 'Shipping & returns'},
+  {id: 'support', label: 'Support & FAQ'},
+  {id: 'resources', label: 'Related resources'},
+  {id: 'reviews', label: 'Reviews'}
+] as const;
+
+type ProductSection = (typeof productSections)[number]['id'];
+
+function productSection(value: string): ProductSection {
+  return productSections.some((section) => section.id === value) ? value as ProductSection : 'overview';
+}
 
 function money(currency: string, value: string) {
   const amount = Number(String(value || '').replace(/[^0-9.]/g, ''));
@@ -31,13 +48,13 @@ function track(type: string, payload: Record<string, unknown>) {
   }).catch(() => {});
 }
 
-export default function ProductDetail({item, product}: ProductDetailProps) {
+export default function ProductDetail({item, product, activeSection: requestedSection}: ProductDetailProps) {
   const router = useRouter();
   const [activeImage, setActiveImage] = useState(0);
   const [quantity, setQuantity] = useState(1);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [cartState, setCartState] = useState<'idle' | 'loading' | 'added' | 'error'>('idle');
-  const [activeTab, setActiveTab] = useState('description');
+  const activeSection = productSection(requestedSection);
   const price = money(item.currency, item.price);
   const gallery = product.gallery;
   const currentImage = gallery[activeImage] || '';
@@ -81,13 +98,7 @@ export default function ProductDetail({item, product}: ProductDetailProps) {
     router.push(`/checkout?product=${encodeURIComponent(item.slug)}&qty=${quantity}`);
   }
 
-  const tabs = [
-    {id: 'description', label: 'Description'},
-    {id: 'specifications', label: 'Specifications'},
-    {id: 'shipping', label: 'Shipping & Returns'},
-    {id: 'reviews', label: 'Reviews'},
-    {id: 'faq', label: 'FAQ'}
-  ];
+  const sectionHref = (section: ProductSection) => section === 'overview' ? item.route : `${item.route}?section=${section}`;
 
   return (
     <>
@@ -155,22 +166,17 @@ export default function ProductDetail({item, product}: ProductDetailProps) {
       </section> : null}
 
       <section className="pdp-details" aria-label="Product details">
-        <div className="pdp-detail-tabs" role="tablist" aria-label="Product information">
-          {tabs.map((tab) => <button type="button" key={tab.id} role="tab" aria-selected={activeTab === tab.id} className={activeTab === tab.id ? 'is-active' : ''} onClick={() => setActiveTab(tab.id)}>{tab.label}</button>)}
-        </div>
-        <div className="pdp-detail-panel" role="tabpanel">
-          {activeTab === 'description' ? <DescriptionContent product={product} /> : null}
-          {activeTab === 'specifications' ? <Specifications product={product} /> : null}
-          {activeTab === 'shipping' ? <ShippingContent /> : null}
-          {activeTab === 'reviews' ? <ReviewsContent /> : null}
-          {activeTab === 'faq' ? <FaqContent product={product} /> : null}
-        </div>
-        <div className="pdp-mobile-details">
-          <details open><summary>Description</summary><DescriptionContent product={product} /></details>
-          <details><summary>Specifications</summary><Specifications product={product} /></details>
-          <details><summary>Shipping & returns</summary><ShippingContent /></details>
-          <details><summary>Reviews</summary><ReviewsContent /></details>
-          <details><summary>FAQ</summary><FaqContent product={product} /></details>
+        <nav className="pdp-detail-tabs" aria-label="Product information sections">
+          {productSections.map((section) => <Link key={section.id} href={sectionHref(section.id)} scroll={false} aria-current={activeSection === section.id ? 'page' : undefined} className={activeSection === section.id ? 'is-active' : ''}>{section.label}</Link>)}
+        </nav>
+        <div className="pdp-detail-panel" id={`product-section-${activeSection}`}>
+          {activeSection === 'overview' ? <DescriptionContent product={product} /> : null}
+          {activeSection === 'specifications' ? <Specifications product={product} /> : null}
+          {activeSection === 'included' ? <PackageContent product={product} /> : null}
+          {activeSection === 'shipping' ? <ShippingContent /> : null}
+          {activeSection === 'support' ? <SupportContent product={product} /> : null}
+          {activeSection === 'resources' ? <ResourcesContent /> : null}
+          {activeSection === 'reviews' ? <ReviewsContent /> : null}
         </div>
       </section>
 
@@ -191,21 +197,29 @@ export default function ProductDetail({item, product}: ProductDetailProps) {
 }
 
 function DescriptionContent({product}: {product: ProductPresentation}) {
-  return <div className="pdp-copy"><p>{product.description}</p>{product.featureImage ? <div className="pdp-feature-image"><Image src={product.featureImage} alt={`${product.displayName} product detail`} fill sizes="(max-width: 820px) 100vw, 900px" /></div> : null}{product.packageIncludes.length ? <><h3>Package includes</h3><ul>{product.packageIncludes.map((item) => <li key={item}>{item}</li>)}</ul></> : null}</div>;
+  return <div className="pdp-copy"><h2>Product overview</h2><p>{product.description}</p>{product.featureImage ? <div className="pdp-feature-image"><Image src={product.featureImage} alt={`${product.displayName} product detail`} fill sizes="(max-width: 820px) 100vw, 900px" /></div> : null}</div>;
 }
 
 function Specifications({product}: {product: ProductPresentation}) {
-  return <div className="pdp-specifications">{product.specifications.map((spec) => <div key={spec.label}><span>{spec.label}</span><strong>{spec.value}</strong></div>)}</div>;
+  return <div className="pdp-section-stack"><h2>Technical specifications</h2><div className="pdp-specifications">{product.specifications.map((spec) => <div key={spec.label}><span>{spec.label}</span><strong>{spec.value}</strong></div>)}</div></div>;
+}
+
+function PackageContent({product}: {product: ProductPresentation}) {
+  return <div className="pdp-copy"><h2>What is included</h2>{product.packageIncludes.length ? <ul>{product.packageIncludes.map((item) => <li key={item}>{item}</li>)}</ul> : <p>Package contents are confirmed with the selected configuration and delivery destination before dispatch.</p>}</div>;
 }
 
 function ShippingContent() {
-  return <div className="pdp-copy"><p>Shipping, delivery, and return options are confirmed according to the destination and order configuration. Review the current policy before ordering.</p><p><Link href="/shipping-returns">Read shipping & returns</Link> <Link href="/warranty">Read warranty support</Link></p></div>;
+  return <div className="pdp-copy"><h2>Shipping & returns</h2><p>Shipping, delivery, and return options are confirmed according to the destination and order configuration. Review the current policy before ordering.</p><p><Link href="/shipping-returns">Read shipping & returns</Link></p></div>;
 }
 
 function ReviewsContent() {
-  return <div className="pdp-copy"><p>Customer reviews will be available soon.</p></div>;
+  return <div className="pdp-copy"><h2>Customer reviews</h2><p>Verified customer reviews will be available here as they are collected.</p></div>;
 }
 
-function FaqContent({product}: {product: ProductPresentation}) {
-  return <div className="pdp-faq">{product.faq.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</div>;
+function SupportContent({product}: {product: ProductPresentation}) {
+  return <div className="pdp-section-stack"><div className="pdp-copy"><h2>Support & FAQ</h2><p>Use the matching product model, order number, serial information and delivery details when contacting the COWIN support team.</p><p><Link href="/warranty">Warranty support</Link> <Link href="/manuals">Product manuals</Link></p></div><div className="pdp-faq">{product.faq.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}</div></div>;
+}
+
+function ResourcesContent() {
+  return <div className="pdp-copy"><h2>Related resources</h2><p>Browse the news, buying guides and compatible products selected for this model. These resources are shown only in this section, so the product page stays focused on the information you are viewing.</p></div>;
 }

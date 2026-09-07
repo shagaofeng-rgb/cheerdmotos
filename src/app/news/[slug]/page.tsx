@@ -3,8 +3,9 @@ import {notFound} from 'next/navigation';
 import {ArticleDetailView} from '@/components/ArticleViews';
 import {getAllNewsSlugs, getNewsArticleBySlug} from '@/lib/newsFeed';
 import {siteUrl} from '@/lib/site';
+import {readParam, type SearchParams} from '@/lib/storefrontPagination';
 
-type Props = {params: Promise<{slug: string}>};
+type Props = {params: Promise<{slug: string}>; searchParams: Promise<SearchParams>};
 
 export const dynamic = 'force-dynamic';
 
@@ -32,9 +33,9 @@ export async function generateMetadata({params}: Props): Promise<Metadata> {
   };
 }
 
-export default async function NewsDetailPage({params}: Props) {
-  const {slug} = await params;
+export default async function NewsDetailPage({params, searchParams}: Props) {
+  const [{slug}, query] = await Promise.all([params, searchParams]);
   const article = await getNewsArticleBySlug(slug);
   if (!article) notFound();
-  return <ArticleDetailView article={article} basePath="/news" type="news" />;
+  return <ArticleDetailView article={article} basePath="/news" type="news" activeSection={readParam(query.section)} />;
 }

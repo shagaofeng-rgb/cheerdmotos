@@ -1,10 +1,14 @@
 import AdminShell from '@/components/AdminShell';
 import {listAdminMedia} from '@/lib/backendStore';
+import AdminPagination from '@/components/AdminPagination';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminMediaPage() {
-  const media = await listAdminMedia();
+export default async function AdminMediaPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
+  const [media, params] = await Promise.all([listAdminMedia(), searchParams]);
+  const {page, perPage} = parseAdminPagination(params);
+  const pagedMedia = paginate(media, page, perPage);
   return (
     <AdminShell active="媒体库">
       <div className="admin-title">
@@ -26,7 +30,7 @@ export default async function AdminMediaPage() {
       </section>
       <section className="admin-panel">
         <div className="admin-media-grid">
-          {media.length ? media.map((asset) => (
+          {pagedMedia.items.length ? pagedMedia.items.map((asset) => (
             <article key={asset.id}>
               <img src={asset.url} alt={asset.alt} />
               <strong>{asset.alt}</strong>
@@ -35,6 +39,7 @@ export default async function AdminMediaPage() {
             </article>
           )) : <article><strong>暂无媒体数据</strong><small>请先添加已有图片路径或接入上传接口。</small></article>}
         </div>
+        <AdminPagination basePath="/admin/media" params={params} page={pagedMedia.page} perPage={pagedMedia.perPage} total={pagedMedia.total} totalPages={pagedMedia.totalPages} />
       </section>
     </AdminShell>
   );

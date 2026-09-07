@@ -2,8 +2,8 @@ export const ADMIN_PAGE_SIZES = [10, 20, 50] as const;
 
 export function parseAdminPagination(params: Record<string, string | string[] | undefined>) {
   const rawPage = Number(Array.isArray(params.page) ? params.page[0] : params.page || 1);
-  const rawPerPage = Number(Array.isArray(params.perPage) ? params.perPage[0] : params.perPage || 10);
-  const perPage = ADMIN_PAGE_SIZES.includes(rawPerPage as (typeof ADMIN_PAGE_SIZES)[number]) ? rawPerPage : 10;
+  const rawPerPage = Number(Array.isArray(params.perPage) ? params.perPage[0] : params.perPage || 20);
+  const perPage = ADMIN_PAGE_SIZES.includes(rawPerPage as (typeof ADMIN_PAGE_SIZES)[number]) ? rawPerPage : 20;
   const page = Number.isFinite(rawPage) && rawPage > 0 ? Math.floor(rawPage) : 1;
   return {page, perPage};
 }
