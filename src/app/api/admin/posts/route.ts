@@ -23,6 +23,19 @@ function tags(value: string) {
   return value.split(',').map((item) => item.trim()).filter(Boolean).slice(0, 24);
 }
 
+function seoIndexing(value: string): ContentPost['seoIndexing'] {
+  return ['auto', 'index', 'noindex'].includes(value) ? value as ContentPost['seoIndexing'] : 'auto';
+}
+
+function firstUrl(value: string) {
+  return value.match(/https?:\/\/\S+/)?.[0]?.replace(/[),.;]+$/, '') || '';
+}
+
+function sourceName(value: string) {
+  const withoutUrl = value.replace(/https?:\/\/\S+/g, '').replace(/[|,:-]+$/g, '').trim();
+  return withoutUrl || (firstUrl(value) ? new URL(firstUrl(value)).hostname : '');
+}
+
 function safeSlug(value: string) {
   return value.toLowerCase().replace(/[^a-z0-9-]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 140);
 }
@@ -30,6 +43,8 @@ function safeSlug(value: string) {
 function postValues(formData: FormData, current: ContentPost | null, type: ContentType, now: string): ContentPost {
   const title = text(formData, 'title', 220);
   const requestedSlug = safeSlug(text(formData, 'slug', 140));
+  const source = text(formData, 'source', 600);
+  const publishDate = text(formData, 'publishDate', 20) || current?.publishDate || now.slice(0, 10);
   return {
     id: current?.id || `post-${Date.now()}`,
     type,
@@ -39,9 +54,9 @@ function postValues(formData: FormData, current: ContentPost | null, type: Conte
     coverImage: text(formData, 'coverImage', 1200) || current?.coverImage || '/homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png',
     category: text(formData, 'category', 120) || current?.category || (type === 'news' ? 'Industry News' : 'Product Knowledge'),
     content: text(formData, 'content', 50_000),
-    publishDate: text(formData, 'publishDate', 20) || current?.publishDate || now.slice(0, 10),
+    publishDate,
     author: text(formData, 'author', 120) || current?.author || 'COWIN Editorial Team',
-    source: text(formData, 'source', 600),
+    source,
     tags: tags(text(formData, 'tags', 300)),
     seoTitle: text(formData, 'seoTitle', 220) || `${title || current?.title || 'COWIN'} | COWIN`,
     seoDescription: text(formData, 'seoDescription', 260) || text(formData, 'excerpt', 240),
@@ -50,14 +65,14 @@ function postValues(formData: FormData, current: ContentPost | null, type: Conte
     updatedAt: now,
     sourceFingerprint: current?.sourceFingerprint,
     contentHash: current?.contentHash,
-    sourceName: current?.sourceName,
-    sourceUrl: current?.sourceUrl,
+    sourceName: current?.sourceName || (type === 'news' ? sourceName(source) : undefined),
+    sourceUrl: current?.sourceUrl || firstUrl(source),
     canonicalSourceUrl: current?.canonicalSourceUrl,
-    sourcePublishedAt: current?.sourcePublishedAt,
+    sourcePublishedAt: current?.sourcePublishedAt || (type === 'news' ? publishDate : undefined),
     collectedAt: current?.collectedAt,
     sourceFetchedAt: current?.sourceFetchedAt,
     sourceTimezone: current?.sourceTimezone,
-    originalTitle: current?.originalTitle,
+    originalTitle: current?.originalTitle || (type === 'news' ? title : undefined),
     originalLanguage: current?.originalLanguage,
     normalizedTitle: current?.normalizedTitle,
     eventFingerprint: current?.eventFingerprint,
@@ -69,7 +84,9 @@ function postValues(formData: FormData, current: ContentPost | null, type: Conte
     imageSourceUrl: current?.imageSourceUrl,
     imageCredit: current?.imageCredit,
     relevanceScore: current?.relevanceScore,
-    retryCount: current?.retryCount
+    retryCount: current?.retryCount,
+    seoIndexing: seoIndexing(text(formData, 'seoIndexing', 12)),
+    seoReviewNote: text(formData, 'seoReviewNote', 240) || current?.seoReviewNote
   };
 }
 

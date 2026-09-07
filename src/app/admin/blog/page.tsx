@@ -26,6 +26,8 @@ function BlogFields({post}: {post?: ContentPost}) {
     <textarea name="content" defaultValue={post?.content} placeholder="正文，支持 Markdown" required />
     <input name="seoTitle" defaultValue={post?.seoTitle} placeholder="SEO Title" />
     <textarea name="seoDescription" defaultValue={post?.seoDescription} placeholder="Meta Description" />
+    <select name="seoIndexing" defaultValue={post?.seoIndexing || 'auto'}><option value="auto">自动质量审核</option><option value="index">强制允许索引</option><option value="noindex">保留页面但不收录</option></select>
+    <input name="seoReviewNote" defaultValue={post?.seoReviewNote} placeholder="收录审核备注（可选）" />
   </>;
 }
 

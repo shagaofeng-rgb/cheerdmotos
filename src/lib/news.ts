@@ -21,6 +21,7 @@
   sourcePublishedAt?: string;
   originalTitle?: string;
   sourceFetchedAt?: string;
+  indexing?: {indexable: boolean; reason: string; wordCount: number};
 };
 
 const siteSource = 'https://www.cheerdmotos.com';

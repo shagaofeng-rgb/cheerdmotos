@@ -1,4 +1,5 @@
 import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
+import {getContentIndexingDecision} from '@/lib/contentIndexing';
 import {type NewsArticle} from '@/lib/news';
 import {resolveNewsDisplayImage} from '@/lib/newsImage';
 import {siteUrl} from '@/lib/site';
@@ -63,7 +64,8 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
     geoSummary: post.geoSummary,
     sourceName: post.sourceName,
     sourceUrl: post.sourceUrl,
-    sourcePublishedAt: post.sourcePublishedAt
+    sourcePublishedAt: post.sourcePublishedAt,
+    indexing: getContentIndexingDecision(post)
   };
 }
 
@@ -73,6 +75,10 @@ export async function getAllBlogArticles() {
     .filter((post) => isPostPublic(post))
     .map(postToBlogArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
+}
+
+export async function getIndexableBlogArticles() {
+  return (await getAllBlogArticles()).filter((article) => article.indexing?.indexable !== false);
 }
 
 export async function getAllBlogSlugs() {

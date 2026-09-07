@@ -1,5 +1,4 @@
 import path from 'node:path';
-import {newsArticles} from '@/lib/news';
 import {products, productSlugs, type ProductSlug} from '@/lib/site';
 import {readAnalyticsEvents, readStoreOrders, type AnalyticsEvent, type StoreOrder} from '@/lib/commerceStore';
 import {readStoreObject, withStoreLock, writeStoreObject} from '@/lib/durableStore';
@@ -108,6 +107,8 @@ export type ContentPost = {
   retryCount?: number;
   automationRunId?: string;
   automationTest?: boolean;
+  seoIndexing?: 'auto' | 'index' | 'noindex';
+  seoReviewNote?: string;
   status: PublishStatus | 'scheduled';
   createdAt: string;
   updatedAt: string;
@@ -426,30 +427,11 @@ function createSeedStore(): AdminStore {
     usage: [product.name],
     createdAt
   })));
-  const posts = newsArticles.map((article, index) => ({
-    id: `post-${article.slug}`,
-    type: index === 0 ? 'news' as const : 'blog' as const,
-    slug: article.slug,
-    title: article.title,
-    excerpt: article.excerpt,
-    coverImage: article.hero,
-    category: article.tags[0] || 'Water Sports',
-    content: article.body.map((section) => `## ${section.heading}\n\n${section.paragraphs.join('\n\n')}`).join('\n\n'),
-    publishDate: article.date,
-    author: 'COWIN Editorial Team',
-    source: article.sources.map((source) => `${source.name}: ${source.url}`).join('\n'),
-    tags: article.tags,
-    seoTitle: `${article.title} | COWIN`,
-    seoDescription: article.excerpt,
-    status: 'published' as const,
-    createdAt,
-    updatedAt: createdAt
-  }));
   return {
     categories,
     products: adminProducts,
     media,
-    posts,
+    posts: [],
     settings: {
       companyName: 'COWIN',
       adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || 'support@cheerdmotos.com',

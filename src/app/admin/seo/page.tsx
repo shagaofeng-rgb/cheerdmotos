@@ -1,7 +1,7 @@
 import {redirect} from 'next/navigation';
 import AdminShell from '@/components/AdminShell';
 import {requireAdminSession} from '@/lib/adminAuth';
-import {googleSeoConfigStatus, readGoogleSeoSnapshot, syncGoogleSeoSnapshot, type GoogleSeoMetricRow} from '@/lib/googleSeo';
+import {googleSeoConfigStatus, readGoogleSeoRuns, readGoogleSeoSnapshot, syncGoogleSeoSnapshot, type GoogleSeoMetricRow} from '@/lib/googleSeo';
 
 export const dynamic = 'force-dynamic';
 
@@ -43,7 +43,7 @@ function MetricTable({title, rows, keyLabel}: {title: string; rows: GoogleSeoMet
 
 export default async function AdminSeoPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
   const params = await searchParams;
-  const [snapshot, config] = await Promise.all([readGoogleSeoSnapshot(), googleSeoConfigStatus()]);
+  const [snapshot, config, runs] = await Promise.all([readGoogleSeoSnapshot(), googleSeoConfigStatus(), readGoogleSeoRuns(8)]);
   const sitemaps = snapshot.sitemaps || [];
   const submitted = sitemaps.reduce((total, item) => total + item.submitted, 0);
   const indexed = sitemaps.reduce((total, item) => total + item.indexed, 0);
@@ -61,7 +61,7 @@ export default async function AdminSeoPage({searchParams}: {searchParams: Promis
         <div>
           <p className="eyebrow">连接状态</p>
           <h2>{snapshot.status === 'ok' ? 'Google 数据已连接' : snapshot.status === 'not_configured' ? '等待配置 Google 凭据' : '同步需要处理'}</h2>
-          <p>站点资源：{config.siteUrl}</p>
+          <p>站点资源：{config.siteUrl}（{config.propertyType === 'domain' ? '域名属性' : '网址前缀属性'}）</p>
           <p>凭据状态：{config.configured ? `已配置（${config.credentialSource}）` : '未配置服务账号凭据'}</p>
           <p>数据范围：{snapshot.range.startDate} 至 {snapshot.range.endDate}</p>
           <p>最近同步：{snapshot.syncedAt ? snapshot.syncedAt.slice(0, 19).replace('T', ' ') : '-'}</p>
@@ -71,6 +71,20 @@ export default async function AdminSeoPage({searchParams}: {searchParams: Promis
         <form action={syncGoogleSeoAction} className="admin-actions">
           <button className="button primary small" type="submit">立即同步 Google 数据</button>
         </form>
+      </section>
+
+      <section className="admin-panel">
+        <div><p className="eyebrow">主动提交记录</p><h2>Google Sitemap 提交与握手</h2><p>系统每日检查，只有距离上次成功提交已满 72 小时才会向 Google 主动提交。</p></div>
+        <div className="admin-table-wrap">
+          <table>
+            <thead><tr><th>执行时间</th><th>触发方式</th><th>是否到期</th><th>提交结果</th><th>下次可提交</th><th>说明</th></tr></thead>
+            <tbody>
+              {runs.length ? runs.map((run) => (
+                <tr key={run.id}><td>{run.finishedAt.slice(0, 19).replace('T', ' ')}</td><td>{run.trigger}</td><td>{run.due ? '是' : '否'}</td><td>{run.submitted ? '已提交' : run.error ? '失败' : '等待周期'}</td><td>{run.nextDueAt.slice(0, 19).replace('T', ' ')}</td><td>{run.error || run.results.map((item) => item.message).join('；') || '-'}</td></tr>
+              )) : <tr><td colSpan={6}>尚无主动提交记录；首次生产任务执行后会在这里保留结果。</td></tr>}
+            </tbody>
+          </table>
+        </div>
       </section>
 
       <div className="admin-metrics">

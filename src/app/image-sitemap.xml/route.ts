@@ -1,5 +1,6 @@
 import {getAllBlogArticles} from '@/lib/blogFeed';
-import {getAllNewsArticles} from '@/lib/newsFeed';
+import {getIndexableBlogArticles} from '@/lib/blogFeed';
+import {getIndexableNewsArticles} from '@/lib/newsFeed';
 import {siteData, siteUrl} from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -14,7 +15,7 @@ function absoluteImage(url: string) {
 }
 
 export async function GET() {
-  const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
+  const [news, blogs] = await Promise.all([getIndexableNewsArticles(), getIndexableBlogArticles()]);
   const rows = [
     ...siteData.products.map((item) => ({loc: item.route, image: item.image, title: item.title})),
     ...news.map((item) => ({loc: `/news/${item.slug}`, image: item.hero, title: item.heroAlt || item.title})),

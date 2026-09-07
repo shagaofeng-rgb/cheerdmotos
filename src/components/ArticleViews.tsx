@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import type {NewsArticle} from '@/lib/news';
-import {productDetailedSpecs, products, type ProductSlug} from '@/lib/site';
+import {productDetailedSpecs, products, siteUrl, type ProductSlug} from '@/lib/site';
 import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from './PrecisionStorefrontChrome';
 
 export function ArticleListView({title, eyebrow, description, articles, basePath}: {
@@ -52,17 +52,21 @@ export function ArticleDetailView({article, basePath, type}: {
   const productSlugs = ((article.productSlugs?.length ? article.productSlugs : inferProductSlugs(article)) as ProductSlug[])
     .filter((slug) => Object.prototype.hasOwnProperty.call(productDetailedSpecs, slug));
   const source = article.sources[0];
+  const canonicalUrl = `${siteUrl}${basePath}/${article.slug}`;
+  const imageUrl = article.hero.startsWith('http') ? article.hero : `${siteUrl}${article.hero}`;
   const jsonLd = {
     '@context': 'https://schema.org',
     '@type': type === 'news' ? 'NewsArticle' : 'BlogPosting',
     headline: article.title,
     description: article.excerpt,
-    image: article.hero,
+    image: imageUrl,
     datePublished: article.date,
     dateModified: article.updatedAt,
     author: { '@type': 'Organization', name: 'COWIN Editorial Team' },
     publisher: { '@type': 'Organization', name: 'COWIN' },
-    mainEntityOfPage: `${basePath}/${article.slug}`
+    url: canonicalUrl,
+    mainEntityOfPage: {'@type': 'WebPage', '@id': canonicalUrl},
+    ...(type === 'news' && (article.sourceUrl || source?.url) ? {isBasedOn: article.sourceUrl || source?.url} : {})
   };
 
   return (

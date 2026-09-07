@@ -1,10 +1,10 @@
-import {getAllBlogArticles} from '@/lib/blogFeed';
 import {listAdminCategories, listAdminProducts, readAdminStore} from '@/lib/backendStore';
 import {listPublicProducts} from '@/lib/publicCatalog';
 import {readStoreLines, readStoreObject, writeStoreObject, appendStoreLine} from '@/lib/durableStore';
-import {getAllNewsArticles} from '@/lib/newsFeed';
+import {getIndexableBlogArticles} from '@/lib/blogFeed';
+import {getIndexableNewsArticles} from '@/lib/newsFeed';
 import {siteData, siteUrl} from '@/lib/site';
-import {submitSitemapToGoogle} from '@/lib/googleSeo';
+import {submitSitemapsToGoogle} from '@/lib/googleSeo';
 
 export type SitemapKind = 'products' | 'posts' | 'categories' | 'pages';
 
@@ -94,7 +94,7 @@ function maxLastmod(entries: SitemapEntry[]) {
 }
 
 export async function getSitemapGroups() {
-  const [news, blogs, products, categories] = await Promise.all([getAllNewsArticles(), getAllBlogArticles(), listPublicProducts(), listAdminCategories()]);
+  const [news, blogs, products, categories] = await Promise.all([getIndexableNewsArticles(), getIndexableBlogArticles(), listPublicProducts(), listAdminCategories()]);
   const listPagesLastmod = maxLastmod([...news, ...blogs].map((article) => ({loc: article.slug, lastmod: dateOnly(article.updatedAt || article.date)})));
   const productEntries = dedupe(products.map((item) => ({
     loc: absolute(item.route),
@@ -132,10 +132,15 @@ export async function getSitemapGroups() {
 
 export async function getSitemapIndexEntries() {
   const groups = await getSitemapGroups();
-  return (Object.keys(SITEMAP_FILES) as SitemapKind[]).map((kind) => ({
-    loc: absolute(`/${SITEMAP_FILES[kind]}`),
-    lastmod: maxLastmod(groups[kind])
-  }));
+  const contentLastmod = maxLastmod(groups.posts);
+  return [
+    ...(Object.keys(SITEMAP_FILES) as SitemapKind[]).map((kind) => ({
+      loc: absolute(`/${SITEMAP_FILES[kind]}`),
+      lastmod: maxLastmod(groups[kind])
+    })),
+    {loc: absolute('/news-sitemap.xml'), lastmod: contentLastmod},
+    {loc: absolute('/image-sitemap.xml'), lastmod: contentLastmod}
+  ];
 }
 
 export function sitemapXml(entries: SitemapEntry[]) {
@@ -195,10 +200,14 @@ export async function runSitemapMaintenance(options: {trigger: string; dryRun?: 
   let googleResult = 'not_requested';
 
   if (options.submit && !options.dryRun) {
-    const result = await submitSitemapToGoogle(absolute('/sitemap.xml'));
-    googleSubmitted = result.submitted;
-    googleResult = result.message;
-    if (!result.ok) errors.push(result.message);
+    const results = await submitSitemapsToGoogle([
+      absolute('/sitemap.xml'),
+      absolute('/news-sitemap.xml'),
+      absolute('/image-sitemap.xml')
+    ]);
+    googleSubmitted = results.length > 0 && results.every((result) => result.submitted);
+    googleResult = results.map((result) => result.message).join('; ');
+    errors.push(...results.filter((result) => !result.ok).map((result) => result.message));
   }
 
   if (!options.dryRun) {

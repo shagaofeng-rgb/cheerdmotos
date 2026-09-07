@@ -1,4 +1,4 @@
-import {getAllNewsArticles} from '@/lib/newsFeed';
+import {getIndexableNewsArticles} from '@/lib/newsFeed';
 import {siteUrl} from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
@@ -8,7 +8,7 @@ function escapeXml(value: string) {
 }
 
 export async function GET() {
-  const articles = await getAllNewsArticles();
+  const articles = await getIndexableNewsArticles();
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"
   xmlns:news="http://www.google.com/schemas/sitemap-news/0.9">

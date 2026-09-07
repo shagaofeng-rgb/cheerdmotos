@@ -1,10 +1,15 @@
 import crypto from 'node:crypto';
-import {readStoreObject, writeStoreObject} from '@/lib/durableStore';
+import {appendStoreLine, readStoreLines, readStoreObject, writeStoreObject} from '@/lib/durableStore';
 
 const STORE_FILE = 'google-seo-snapshot.json';
+const RUN_LOG_FILE = 'google-seo-runs.jsonl';
+const SUBMISSION_STATE_FILE = 'google-seo-submission-state.json';
 const TOKEN_URL = 'https://oauth2.googleapis.com/token';
 const WEBMASTERS_READONLY_SCOPE = 'https://www.googleapis.com/auth/webmasters.readonly';
 const WEBMASTERS_WRITE_SCOPE = 'https://www.googleapis.com/auth/webmasters';
+const DEFAULT_SITE_PROPERTY = 'sc-domain:cheerdmotos.com';
+
+export const GOOGLE_SITEMAP_PATHS = ['/sitemap.xml', '/news-sitemap.xml', '/image-sitemap.xml'] as const;
 
 export type GoogleSeoMetricRow = {
   key: string;
@@ -45,6 +50,25 @@ export type GoogleSeoSnapshot = {
   devices: GoogleSeoMetricRow[];
   sitemaps: GoogleSeoSitemap[];
   error: string;
+};
+
+export type GoogleSeoRun = {
+  id: string;
+  trigger: string;
+  startedAt: string;
+  finishedAt: string;
+  siteUrl: string;
+  due: boolean;
+  nextDueAt: string;
+  snapshotStatus: GoogleSeoSnapshot['status'];
+  submitted: boolean;
+  results: Array<{sitemapUrl: string; ok: boolean; submitted: boolean; message: string}>;
+  error: string;
+};
+
+type GoogleSeoSubmissionState = {
+  lastSuccessfulAt: string;
+  sitemapUrls: string[];
 };
 
 type SearchAnalyticsRow = {
@@ -99,8 +123,18 @@ function getConfiguredSiteUrl() {
     process.env.GSC_SITE_URL ||
     process.env.SITE_URL ||
     process.env.NEXT_PUBLIC_SITE_URL ||
-    'https://www.cheerdmotos.com/'
+    DEFAULT_SITE_PROPERTY
   ).trim();
+}
+
+function isValidSearchConsoleProperty(value: string) {
+  if (value.startsWith('sc-domain:')) return Boolean(value.slice('sc-domain:'.length));
+  try {
+    const parsed = new URL(value);
+    return parsed.protocol === 'https:' || parsed.protocol === 'http:';
+  } catch {
+    return false;
+  }
 }
 
 function readCredentials(): ServiceAccountCredentials | null {
@@ -212,9 +246,11 @@ function totalsFromRows(rows: SearchAnalyticsRow[]): GoogleSeoSnapshot['totals']
 
 export function googleSeoConfigStatus() {
   const credentials = readCredentials();
+  const siteUrl = getConfiguredSiteUrl();
   return {
-    configured: Boolean(credentials && getConfiguredSiteUrl()),
-    siteUrl: getConfiguredSiteUrl(),
+    configured: Boolean(credentials && isValidSearchConsoleProperty(siteUrl)),
+    siteUrl,
+    propertyType: siteUrl.startsWith('sc-domain:') ? 'domain' : 'url-prefix',
     credentialSource: process.env.GOOGLE_SEARCH_CONSOLE_SERVICE_ACCOUNT_JSON || process.env.GSC_SERVICE_ACCOUNT_JSON
       ? 'service_account_json'
       : credentials
@@ -256,8 +292,31 @@ async function querySitemaps(accessToken: string, siteUrl: string): Promise<Goog
   }));
 }
 
+function nextDueAt(lastSuccessfulAt: string, intervalHours = 72) {
+  const last = new Date(lastSuccessfulAt).getTime();
+  if (!last || Number.isNaN(last)) return new Date().toISOString();
+  return new Date(last + intervalHours * 60 * 60 * 1000).toISOString();
+}
+
+export async function readGoogleSeoRuns(limit = 20) {
+  return (await readStoreLines<GoogleSeoRun>(RUN_LOG_FILE)).slice(-limit).reverse();
+}
+
+async function submissionState() {
+  return (await readStoreObject<GoogleSeoSubmissionState>(SUBMISSION_STATE_FILE)) || {
+    lastSuccessfulAt: '',
+    sitemapUrls: []
+  };
+}
+
+async function submissionIsDue(intervalHours = 72) {
+  const state = await submissionState();
+  const dueAt = nextDueAt(state.lastSuccessfulAt, intervalHours);
+  return {state, due: Date.now() >= new Date(dueAt).getTime(), dueAt};
+}
+
 export async function submitSitemapToGoogle(sitemapUrl: string) {
-  const enabled = String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || '').toLowerCase() === 'true';
+  const enabled = String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || 'true').toLowerCase() !== 'false';
   if (!enabled) {
     return {ok: true, submitted: false, message: 'Google Search Console sitemap submission is disabled.'};
   }
@@ -268,8 +327,8 @@ export async function submitSitemapToGoogle(sitemapUrl: string) {
   }
 
   const siteUrl = getConfiguredSiteUrl();
-  const configuredSitemapUrl = (process.env.GOOGLE_SEARCH_CONSOLE_SITEMAP_URL || sitemapUrl).trim();
-  if (!siteUrl || !configuredSitemapUrl) {
+  const configuredSitemapUrl = sitemapUrl.trim();
+  if (!isValidSearchConsoleProperty(siteUrl) || !configuredSitemapUrl) {
     return {ok: false, submitted: false, message: 'Missing Google Search Console site URL or sitemap URL.'};
   }
 
@@ -295,6 +354,59 @@ export async function submitSitemapToGoogle(sitemapUrl: string) {
   } catch (error) {
     return {ok: false, submitted: false, message: error instanceof Error ? error.message : 'Unknown Google sitemap submit error'};
   }
+}
+
+export async function submitSitemapsToGoogle(sitemapUrls: readonly string[]) {
+  const results: Array<{sitemapUrl: string; ok: boolean; submitted: boolean; message: string}> = [];
+  for (const sitemapUrl of [...new Set(sitemapUrls)]) {
+    const result = await submitSitemapToGoogle(sitemapUrl);
+    results.push({sitemapUrl, ...result});
+  }
+  return results;
+}
+
+export async function runGoogleSeoMaintenance(options: {trigger: string; sitemapUrls: readonly string[]; force?: boolean; intervalHours?: number}) {
+  const startedAt = new Date().toISOString();
+  const intervalHours = options.intervalHours || 72;
+  const {due: automaticallyDue, dueAt} = await submissionIsDue(intervalHours);
+  const due = Boolean(options.force || automaticallyDue);
+  let snapshot = await syncGoogleSeoSnapshot();
+  let results: GoogleSeoRun['results'] = [];
+  let submitted = false;
+  let error = '';
+
+  if (due && snapshot.status === 'ok') {
+    results = await submitSitemapsToGoogle(options.sitemapUrls);
+    submitted = results.length > 0 && results.every((result) => result.ok && result.submitted);
+    if (submitted) {
+      await writeStoreObject(SUBMISSION_STATE_FILE, {
+        lastSuccessfulAt: new Date().toISOString(),
+        sitemapUrls: results.map((result) => result.sitemapUrl)
+      } satisfies GoogleSeoSubmissionState);
+      snapshot = await syncGoogleSeoSnapshot();
+    } else {
+      error = results.map((result) => `${result.sitemapUrl}: ${result.message}`).join('; ');
+    }
+  } else if (snapshot.status !== 'ok') {
+    error = snapshot.error || 'Google Search Console is not configured or could not be queried.';
+  }
+
+  const state = await submissionState();
+  const run: GoogleSeoRun = {
+    id: `google-seo-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
+    trigger: options.trigger,
+    startedAt,
+    finishedAt: new Date().toISOString(),
+    siteUrl: getConfiguredSiteUrl(),
+    due,
+    nextDueAt: nextDueAt(state.lastSuccessfulAt, intervalHours),
+    snapshotStatus: snapshot.status,
+    submitted,
+    results,
+    error
+  };
+  await appendStoreLine(RUN_LOG_FILE, run);
+  return {run, snapshot};
 }
 
 export async function readGoogleSeoSnapshot() {

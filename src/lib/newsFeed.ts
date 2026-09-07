@@ -114,6 +114,10 @@ export async function getAllNewsArticles() {
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
 }
 
+export async function getIndexableNewsArticles() {
+  return (await getAllNewsArticles()).filter((article) => article.indexing?.indexable !== false);
+}
+
 export async function getAllNewsSlugs() {
   return (await getAllNewsArticles()).map((article) => article.slug);
 }

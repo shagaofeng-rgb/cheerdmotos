@@ -39,6 +39,8 @@ export default async function AdminNewsPage() {
           <textarea name="content" placeholder="新闻正文，可用 Markdown：背景、事实、对水上娱乐采购的影响、COWIN 观点" />
           <input name="seoTitle" placeholder="SEO Title" />
           <textarea name="seoDescription" placeholder="Meta Description" />
+          <select name="seoIndexing" defaultValue="auto"><option value="auto">自动质量审核</option><option value="index">强制允许索引</option><option value="noindex">保留页面但不收录</option></select>
+          <input name="seoReviewNote" placeholder="收录审核备注（可选）" />
           <button type="submit">保存新闻</button>
         </form>
       </section>

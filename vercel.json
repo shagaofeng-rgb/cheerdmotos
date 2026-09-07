@@ -18,7 +18,7 @@
     },
     {
       "path": "/api/cron/sync-google-seo",
-      "schedule": "30 2 */3 * *"
+      "schedule": "30 2 * * *"
     },
     {
       "path": "/api/cron/sitemap",

@@ -1,5 +1,6 @@
-import {syncGoogleSeoSnapshot} from '@/lib/googleSeo';
+import {GOOGLE_SITEMAP_PATHS, runGoogleSeoMaintenance} from '@/lib/googleSeo';
 import {runSitemapMaintenance} from '@/lib/sitemapManager';
+import {siteUrl} from '@/lib/site';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,11 +16,12 @@ export async function GET(request: Request) {
   if (!authorized(request)) {
     return Response.json({ok: false, error: 'Unauthorized'}, {status: 401});
   }
-  // This is the only scheduled Google submission path. Daily sitemap maintenance
-  // remains local so sitemap freshness does not consume Search Console quota.
-  const sitemap = await runSitemapMaintenance({trigger: 'google_seo_cron', submit: true});
-  const snapshot = await syncGoogleSeoSnapshot();
-  const acceptable = snapshot.status === 'ok' || snapshot.status === 'not_configured';
+  const sitemap = await runSitemapMaintenance({trigger: 'google_seo_cron'});
+  const {run, snapshot} = await runGoogleSeoMaintenance({
+    trigger: 'google_seo_cron',
+    sitemapUrls: GOOGLE_SITEMAP_PATHS.map((path) => `${siteUrl}${path}`)
+  });
+  const acceptable = snapshot.status === 'ok' && !run.error;
   return Response.json({
     ok: acceptable && sitemap.errorCount === 0,
     status: snapshot.status,
@@ -28,11 +30,8 @@ export async function GET(request: Request) {
     range: snapshot.range,
     totals: snapshot.totals,
     sitemaps: snapshot.sitemaps,
-    sitemapSubmission: {
-      submitted: sitemap.googleSubmitted,
-      result: sitemap.googleResult,
-      errors: sitemap.errors
-    },
-    error: snapshot.error
+    sitemapMaintenance: {urlCount: sitemap.urlCount, errors: sitemap.errors},
+    submission: run,
+    error: run.error || snapshot.error
   }, {status: acceptable && sitemap.errorCount === 0 ? 200 : 500});
 }

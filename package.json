@@ -12,7 +12,8 @@
     "site:audit": "node scripts/site-runtime-audit.mjs",
     "seo:index-audit": "node scripts/seo-index-audit.mjs",
     "sitemap:generate": "node scripts/sitemap-generate.mjs",
-    "sitemap:test": "node scripts/sitemap-test.mjs"
+    "sitemap:test": "node scripts/sitemap-test.mjs",
+    "seo:indexing:test": "node scripts/seo-indexing-regression.mjs"
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.2",
