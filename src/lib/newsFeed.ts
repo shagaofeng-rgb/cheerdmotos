@@ -1,4 +1,5 @@
 import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
+import {getContentIndexingDecision} from '@/lib/contentIndexing';
 import {type NewsArticle} from '@/lib/news';
 import {newsDisplayImagePool, resolveNewsDisplayImage} from '@/lib/newsImage';
 import {siteUrl} from '@/lib/site';
@@ -77,7 +78,8 @@ function postToArticle(post: ContentPost): NewsArticle {
     sourceUrl: post.sourceUrl,
     sourcePublishedAt: post.sourcePublishedAt,
     originalTitle: post.originalTitle,
-    sourceFetchedAt: post.sourceFetchedAt || post.collectedAt
+    sourceFetchedAt: post.sourceFetchedAt || post.collectedAt,
+    indexing: getContentIndexingDecision(post)
   };
 }
 

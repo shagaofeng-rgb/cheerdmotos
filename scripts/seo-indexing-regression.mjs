@@ -2,8 +2,7 @@ import assert from 'node:assert/strict';
 
 const baseUrl = (process.env.SEO_INDEXING_BASE_URL || 'https://www.cheerdmotos.com').replace(/\/$/, '');
 const legacyPaths = [
-  '/blog/auto-blog-20260710-1-electric-dirt-bike-checklist',
-  '/news/hyundai-reveals-ioniq-3-prices-start-at-30-000-and-it-already-looks-like-a-hit-20260729-1'
+  '/blog/auto-blog-20260710-1-electric-dirt-bike-checklist'
 ];
 
 async function text(path) {
