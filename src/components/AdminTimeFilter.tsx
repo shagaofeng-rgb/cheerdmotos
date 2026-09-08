@@ -14,8 +14,7 @@ type AdminTimeFilterProps = {
 const quickRanges = [
   {value: 'day', label: '今天'},
   {value: 'week', label: '本周'},
-  {value: 'month', label: '本月'},
-  {value: 'year', label: '今年'}
+  {value: 'month', label: '本月'}
 ];
 
 export default function AdminTimeFilter({action, range, start, end, label, summary}: AdminTimeFilterProps) {
@@ -65,7 +64,6 @@ export default function AdminTimeFilter({action, range, start, end, label, summa
           <option value="day">今天</option>
           <option value="week">本周</option>
           <option value="month">本月</option>
-          <option value="year">今年</option>
           <option value="custom">自定义</option>
         </select>
       </label>

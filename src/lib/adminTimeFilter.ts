@@ -1,4 +1,4 @@
-export type AdminTimeRange = 'day' | 'week' | 'month' | 'year' | 'custom';
+export type AdminTimeRange = 'day' | 'week' | 'month' | 'custom';
 
 const SHANGHAI_OFFSET_MS = 8 * 60 * 60 * 1000;
 
@@ -6,7 +6,6 @@ const rangeLabels: Record<AdminTimeRange, string> = {
   day: '今天',
   week: '本周',
   month: '本月',
-  year: '今年',
   custom: '自定义'
 };
 
@@ -52,7 +51,7 @@ export function parseAdminTimeFilter(searchParams: Record<string, string | strin
   const day = now.getUTCDate();
   const dayOfWeek = now.getUTCDay() || 7;
   const rangeParam = Array.isArray(searchParams.range) ? searchParams.range[0] : searchParams.range;
-  const range = (['day', 'week', 'month', 'year', 'custom'].includes(rangeParam || '') ? rangeParam : 'month') as AdminTimeRange;
+  const range = (['day', 'week', 'month', 'custom'].includes(rangeParam || '') ? rangeParam : 'month') as AdminTimeRange;
   const earliestCustomStart = toUtcFromShanghai(year - 2, month, day);
   let from = toUtcFromShanghai(year, month, day);
   let to = toUtcFromShanghai(year, month, day, 23, 59, 59, 999);
@@ -60,7 +59,6 @@ export function parseAdminTimeFilter(searchParams: Record<string, string | strin
 
   if (range === 'week') from = toUtcFromShanghai(year, month, day - dayOfWeek + 1);
   if (range === 'month') from = toUtcFromShanghai(year, month, 1);
-  if (range === 'year') from = toUtcFromShanghai(year, 0, 1);
   if (range === 'custom') {
     const startParam = Array.isArray(searchParams.start) ? searchParams.start[0] : searchParams.start;
     const endParam = Array.isArray(searchParams.end) ? searchParams.end[0] : searchParams.end;

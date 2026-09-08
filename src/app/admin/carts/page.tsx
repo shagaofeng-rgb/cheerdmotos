@@ -1,19 +1,26 @@
+import AdminPagination from '@/components/AdminPagination';
 import AdminShell from '@/components/AdminShell';
+import AdminTimeFilter from '@/components/AdminTimeFilter';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
+import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
+import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
 import {readAnalyticsEvents, readStoreOrders} from '@/lib/commerceStore';
 import {zhEventType} from '@/lib/adminZh';
-import AdminPagination from '@/components/AdminPagination';
-import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
-export default async function AdminCartsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
-  const [events, orders, params] = await Promise.all([readAnalyticsEvents(), readStoreOrders(), searchParams]);
+export default async function AdminCartsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>;}) {
+  const params = await searchParams;
+  const timeFilter = parseAdminTimeFilter(params);
   const {page, perPage} = parseAdminPagination(params);
-  const checkoutEvents = events.filter((event) => ['checkout_start', 'checkout_submit', 'begin_checkout'].includes(event.type));
-  const pagedEvents = paginate(checkoutEvents.slice().reverse(), page, perPage);
-  const orderSessions = new Set(orders.map((order) => order.attribution?.sessionId).filter(Boolean));
+  const [events, orders] = await Promise.all([readAnalyticsEvents(), readStoreOrders()]);
+  const inRange = (value: string) => { const time = new Date(value).getTime(); return time >= timeFilter.from.getTime() && time <= timeFilter.to.getTime(); };
+  const realEvents = events.filter((event) => inRange(event.timestamp) && classifyTrafficQuality(event).include);
+  const checkoutEvents = realEvents.filter((event) => ['checkout_start', 'checkout_submit', 'begin_checkout'].includes(event.type)).sort((a, b) => b.timestamp.localeCompare(a.timestamp));
+  const orderSessions = new Set(orders.filter((order) => inRange(order.createdAt)).map((order) => order.attribution?.sessionId).filter(Boolean));
   const abandonedSessions = new Set(checkoutEvents.filter((event) => !orderSessions.has(event.sessionId)).map((event) => event.sessionId));
-  const productClicks = events.filter((event) => event.type === 'commerce_click' || event.type === 'product_view');
+  const productClicks = realEvents.filter((event) => event.type === 'commerce_click' || event.type === 'product_view');
+  const pagedEvents = paginate(checkoutEvents, page, perPage);
 
   return (
     <AdminShell active="carts">
@@ -21,6 +28,7 @@ export default async function AdminCartsPage({searchParams}: {searchParams: Prom
         <p className="eyebrow">购物车与弃购</p>
         <h1>购物车与弃购</h1>
         <p>用前台结账事件和订单会话估算弃购情况，帮助判断哪些客户进入结账但没有完成支付。</p>
+        <AdminTimeFilter action="/admin/carts" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="购物车行为时间" summary={timeFilter.summary} />
       </div>
 
       <div className="admin-metrics">
@@ -50,7 +58,7 @@ export default async function AdminCartsPage({searchParams}: {searchParams: Prom
                   <td>{event.sessionId}</td>
                   <td>{event.country || '-'}</td>
                 </tr>
-              )) : <tr><td colSpan={6}>暂无结账事件。</td></tr>}
+              )) : <tr><td colSpan={6}>所选时间暂无真实结账事件。</td></tr>}
             </tbody>
           </table>
         </div>

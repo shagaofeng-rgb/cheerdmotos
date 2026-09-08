@@ -1,6 +1,8 @@
 import AdminPagination from '@/components/AdminPagination';
 import AdminShell from '@/components/AdminShell';
+import AdminTimeFilter from '@/components/AdminTimeFilter';
 import {paginate, parseAdminPagination} from '@/lib/adminPagination';
+import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {zhLeadStatus} from '@/lib/adminZh';
 import {buildCustomerLeads} from '@/lib/backendStore';
 import {readAnalyticsEvents, readStoreOrders} from '@/lib/commerceStore';
@@ -13,9 +15,11 @@ export default async function AdminCustomersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const timeFilter = parseAdminTimeFilter(params);
   const {page, perPage} = parseAdminPagination(params);
   const [orders, events] = await Promise.all([readStoreOrders(), readAnalyticsEvents()]);
-  const customers = buildCustomerLeads(orders, events).filter((lead) => lead.email || lead.phone);
+  const inRange = (value: string) => { const time = new Date(value).getTime(); return time >= timeFilter.from.getTime() && time <= timeFilter.to.getTime(); };
+  const customers = buildCustomerLeads(orders.filter((order) => inRange(order.createdAt)), events.filter((event) => inRange(event.timestamp))).filter((lead) => lead.email || lead.phone);
   const pagedCustomers = paginate(customers, page, perPage);
 
   return (
@@ -24,6 +28,7 @@ export default async function AdminCustomersPage({
         <p className="eyebrow">CRM</p>
         <h1>客户管理</h1>
         <p>这里显示客户真实提交结账或询盘后留下联系方式的数据。</p>
+        <AdminTimeFilter action="/admin/customers" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="客户活跃时间" summary={timeFilter.summary} />
       </div>
       <section className="admin-panel">
         <div className="admin-table-wrap">

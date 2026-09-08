@@ -53,7 +53,7 @@ export default async function AdminVisitorsPage({
       <div className="admin-title">
         <p className="eyebrow">访客记录</p>
         <h1>访客记录</h1>
-        <p>按真实前台访客事件记录客户编号、国家、设备、浏览器、来源、访问页面、客户标签、访问次数和脱敏 IP。测试、采集器、支付回调与后台操作不会混入记录。</p>
+        <p>按稳定客户编号归并真实前台访问。测试、Collects、采集器、支付回调与后台操作不会混入经营数据。</p>
         <AdminTimeFilter action="/admin/visitors" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="访客记录时间" summary={timeFilter.summary} />
       </div>
 
@@ -61,14 +61,14 @@ export default async function AdminVisitorsPage({
         <div>
           <p className="eyebrow">数据源</p>
           <h2>{report.store.configured ? 'Analytics 数据库已连接' : 'Analytics 当前不是稳定存储'}</h2>
-          <p>当前数据源：{report.store.provider}；记录数：{report.total}；生成时间：{dateTime(report.generatedAt)}</p>
+          <p>当前数据源：{report.store.provider}；客户数：{report.total}；生成时间：{dateTime(report.generatedAt)}</p>
         </div>
       </section>
 
       <section className="admin-panel">
         <div>
-          <p className="eyebrow">最近访客</p>
-          <h2>最近访客记录</h2>
+          <p className="eyebrow">客户归属</p>
+          <h2>访客客户列表</h2>
         </div>
         <form className="admin-time-filter" action="/admin/visitors" method="get">
           <input name="range" type="hidden" value={timeFilter.range} />
@@ -115,39 +115,39 @@ export default async function AdminVisitorsPage({
           <table>
             <thead>
               <tr>
-                <th>时间</th>
                 <th>客户编号</th>
+                <th>首次 / 最近访问</th>
                 <th>国家</th>
                 <th>设备</th>
                 <th>浏览器</th>
                 <th>来源</th>
                 <th>来源平台</th>
                 <th>来源详情</th>
-                <th>页面</th>
+                <th>最近页面</th>
                 <th>客户标签</th>
-                <th>第几次访问</th>
-                <th>访问日</th>
+                <th>会话 / 浏览</th>
                 <th>IP</th>
+                <th>详情</th>
               </tr>
             </thead>
             <tbody>
               {report.records.length ? report.records.map((record) => (
-                <tr key={`${record.time}-${record.customerNo}-${record.page}`}>
-                  <td>{dateTime(record.time)}</td>
-                  <td>{record.customerNo}</td>
+                <tr key={record.customerNo}>
+                  <td><strong>{record.customerNo}</strong></td>
+                  <td>{dateTime(record.firstSeen)}<br /><small>{dateTime(record.lastSeen)}</small></td>
                   <td>{zhCountry(record.country)}</td>
                   <td>{zhDeviceName(record.device)}</td>
                   <td>{zhBrowser(record.browser)}</td>
                   <td>{zhTrafficSource(record.source)}</td>
                   <td>{zhTrafficPlatform(record.sourcePlatform)}</td>
                   <td>{zhSourceDetail(record.sourceDetail)}</td>
-                  <td>{record.page}</td>
+                  <td>{record.lastPage}</td>
                   <td>{record.customerTag}</td>
-                  <td>第 {record.visitNumber} 次</td>
-                  <td>{record.visitDay}</td>
+                  <td>{record.sessions} 次 / {record.pageViews} PV<br /><small>{record.visitDays} 个访问日</small></td>
                   <td>{record.ip || '-'}</td>
+                  <td><Link className="button secondary small" href={`/admin/visitors/${record.customerNo}?range=${timeFilter.range}&start=${timeFilter.start}&end=${timeFilter.end}`}>访问详情</Link></td>
                 </tr>
-              )) : <tr><td colSpan={13}>暂无访客记录。前台产生真实访问后会自动进入这里。</td></tr>}
+              )) : <tr><td colSpan={14}>暂无真实访客记录。前台产生真实访问后会自动进入这里。</td></tr>}
             </tbody>
           </table>
         </div>
@@ -156,3 +156,4 @@ export default async function AdminVisitorsPage({
     </AdminShell>
   );
 }
+import Link from 'next/link';

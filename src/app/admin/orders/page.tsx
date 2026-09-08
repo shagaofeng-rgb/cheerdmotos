@@ -1,7 +1,9 @@
 import Link from 'next/link';
 import AdminPagination from '@/components/AdminPagination';
 import AdminShell from '@/components/AdminShell';
+import AdminTimeFilter from '@/components/AdminTimeFilter';
 import {paginate, parseAdminPagination} from '@/lib/adminPagination';
+import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {zhOrderStatus, zhPaymentMethod, zhPaymentStatus} from '@/lib/adminZh';
 import {readStoreOrders} from '@/lib/commerceStore';
 
@@ -17,8 +19,12 @@ export default async function AdminOrdersPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   const params = await searchParams;
+  const timeFilter = parseAdminTimeFilter(params);
   const {page, perPage} = parseAdminPagination(params);
-  const orders = (await readStoreOrders()).slice().reverse();
+  const orders = (await readStoreOrders()).filter((order) => {
+    const time = new Date(order.createdAt).getTime();
+    return time >= timeFilter.from.getTime() && time <= timeFilter.to.getTime();
+  }).slice().reverse();
   const pagedOrders = paginate(orders, page, perPage);
 
   return (
@@ -27,6 +33,7 @@ export default async function AdminOrdersPage({
         <p className="eyebrow">订单管理</p>
         <h1>订单管理</h1>
         <p>前台结账、Oceanpayment 通知、物流、退款和客户账号绑定都会同步到这里。</p>
+        <AdminTimeFilter action="/admin/orders" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="订单创建时间" summary={timeFilter.summary} />
       </div>
       <section className="admin-panel">
         <div className="admin-table-wrap">

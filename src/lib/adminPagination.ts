@@ -1,4 +1,4 @@
-export const ADMIN_PAGE_SIZES = [10, 20, 50] as const;
+export const ADMIN_PAGE_SIZES = [20, 50, 100] as const;
 
 export function parseAdminPagination(params: Record<string, string | string[] | undefined>) {
   const rawPage = Number(Array.isArray(params.page) ? params.page[0] : params.page || 1);

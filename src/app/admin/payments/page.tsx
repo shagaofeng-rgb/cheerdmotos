@@ -1,12 +1,14 @@
+import AdminPagination from '@/components/AdminPagination';
 import AdminShell from '@/components/AdminShell';
+import AdminTimeFilter from '@/components/AdminTimeFilter';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
+import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {
   getCommerceSnapshot,
   readAuthorizationRecords,
   readPaymentNotifications,
   readRefundRecords
 } from '@/lib/commerceStore';
-import AdminPagination from '@/components/AdminPagination';
-import {paginate, parseAdminPagination} from '@/lib/adminPagination';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,18 +16,23 @@ function money(value: number) {
   return `USD ${value.toLocaleString()}`;
 }
 
-export default async function AdminPaymentsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
-  const [snapshot, refunds, notifications, authorizations, params] = await Promise.all([
-    getCommerceSnapshot(),
+export default async function AdminPaymentsPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>;}) {
+  const params = await searchParams;
+  const timeFilter = parseAdminTimeFilter(params);
+  const {page, perPage} = parseAdminPagination(params);
+  const [snapshot, refunds, notifications, authorizations] = await Promise.all([
+    getCommerceSnapshot({from: timeFilter.from, to: timeFilter.to}),
     readRefundRecords(),
     readPaymentNotifications(),
-    readAuthorizationRecords(),
-    searchParams
+    readAuthorizationRecords()
   ]);
-  const {page, perPage} = parseAdminPagination(params);
-  const pagedRefunds = paginate(refunds.slice().reverse(), page, perPage);
-  const verifiedNotifications = notifications.filter((item) => item.verified);
-  const refundAmount = refunds.reduce((sum, refund) => sum + refund.amount, 0);
+  const inRange = (value: string) => { const time = new Date(value).getTime(); return time >= timeFilter.from.getTime() && time <= timeFilter.to.getTime(); };
+  const filteredRefunds = refunds.filter((item) => inRange(item.createdAt)).slice().reverse();
+  const filteredNotifications = notifications.filter((item) => inRange(item.createdAt));
+  const filteredAuthorizations = authorizations.filter((item) => inRange(item.createdAt));
+  const verifiedNotifications = filteredNotifications.filter((item) => item.verified);
+  const refundAmount = filteredRefunds.reduce((sum, refund) => sum + refund.amount, 0);
+  const pagedRefunds = paginate(filteredRefunds, page, perPage);
 
   return (
     <AdminShell active="payments">
@@ -33,13 +40,14 @@ export default async function AdminPaymentsPage({searchParams}: {searchParams: P
         <p className="eyebrow">支付与退款</p>
         <h1>支付与退款</h1>
         <p>集中查看 Oceanpayment 配置状态、支付回调、退款记录和预授权操作。系统不会保存银行卡号、CVV 等敏感卡信息。</p>
+        <AdminTimeFilter action="/admin/payments" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="支付处理时间" summary={timeFilter.summary} />
       </div>
 
       <div className="admin-metrics">
         <article><span>网关状态</span><strong>{snapshot.paymentGateway.status === 'env_ready' ? '已配置' : '待配置'}</strong><small>{snapshot.paymentGateway.provider}</small></article>
-        <article><span>回调通知</span><strong>{notifications.length}</strong><small>已验证 {verifiedNotifications.length} 条</small></article>
-        <article><span>退款笔数</span><strong>{refunds.length}</strong><small>退款合计 {money(refundAmount)}</small></article>
-        <article><span>预授权记录</span><strong>{authorizations.length}</strong><small>授权/捕获/取消记录</small></article>
+        <article><span>回调通知</span><strong>{filteredNotifications.length}</strong><small>已验证 {verifiedNotifications.length} 条</small></article>
+        <article><span>退款笔数</span><strong>{filteredRefunds.length}</strong><small>退款合计 {money(refundAmount)}</small></article>
+        <article><span>预授权记录</span><strong>{filteredAuthorizations.length}</strong><small>授权/捕获/取消记录</small></article>
       </div>
 
       <section className="admin-panel">
@@ -75,7 +83,7 @@ export default async function AdminPaymentsPage({searchParams}: {searchParams: P
                   <td>{refund.reason || '-'}</td>
                   <td>{refund.createdAt.slice(0, 10)}</td>
                 </tr>
-              )) : <tr><td colSpan={6}>暂无退款记录。</td></tr>}
+              )) : <tr><td colSpan={6}>所选时间暂无退款记录。</td></tr>}
             </tbody>
           </table>
         </div>

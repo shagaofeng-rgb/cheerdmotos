@@ -1,4 +1,8 @@
+import AdminPagination from '@/components/AdminPagination';
 import AdminShell from '@/components/AdminShell';
+import AdminTimeFilter from '@/components/AdminTimeFilter';
+import {paginate, parseAdminPagination} from '@/lib/adminPagination';
+import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {getCommerceSnapshot, readStoreOrders} from '@/lib/commerceStore';
 import {zhOrderStatus, zhPaymentStatus} from '@/lib/adminZh';
 
@@ -8,11 +12,15 @@ function money(value: number) {
   return `USD ${value.toLocaleString()}`;
 }
 
-export default async function AdminSalesPage() {
-  const [snapshot, orders] = await Promise.all([getCommerceSnapshot(), readStoreOrders()]);
-  const paidOrders = orders.filter((order) => ['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(order.status));
+export default async function AdminSalesPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>;}) {
+  const params = await searchParams;
+  const timeFilter = parseAdminTimeFilter(params);
+  const {page, perPage} = parseAdminPagination(params);
+  const [snapshot, orders] = await Promise.all([getCommerceSnapshot({from: timeFilter.from, to: timeFilter.to}), readStoreOrders()]);
+  const paidOrders = orders.filter((order) => ['paid', 'processing', 'shipped', 'delivered', 'completed'].includes(order.status) && new Date(order.createdAt).getTime() >= timeFilter.from.getTime() && new Date(order.createdAt).getTime() <= timeFilter.to.getTime());
   const units = paidOrders.reduce((sum, order) => sum + order.quantity, 0);
   const averageOrder = paidOrders.length ? snapshot.metrics.revenue / paidOrders.length : 0;
+  const pagedOrders = paginate(paidOrders.slice().reverse(), page, perPage);
 
   return (
     <AdminShell active="sales">
@@ -20,6 +28,7 @@ export default async function AdminSalesPage() {
         <p className="eyebrow">销售分析</p>
         <h1>销售分析</h1>
         <p>从真实订单中统计销售额、件数、客单价、热销产品和国家地区需求，帮助判断当前销售质量。</p>
+        <AdminTimeFilter action="/admin/sales" range={timeFilter.range} start={timeFilter.start} end={timeFilter.end} label="销售创建时间" summary={timeFilter.summary} />
       </div>
 
       <div className="admin-metrics">
@@ -55,7 +64,7 @@ export default async function AdminSalesPage() {
               <tr><th>订单号</th><th>商品</th><th>客户</th><th>金额</th><th>订单状态</th><th>支付状态</th><th>日期</th></tr>
             </thead>
             <tbody>
-              {snapshot.recentOrders.length ? snapshot.recentOrders.map((order) => (
+              {pagedOrders.items.length ? pagedOrders.items.map((order) => (
                 <tr key={order.id}>
                   <td>{order.id}</td>
                   <td>{order.productName} x {order.quantity}</td>
@@ -65,10 +74,11 @@ export default async function AdminSalesPage() {
                   <td>{zhPaymentStatus(order.gatewayStatus)}</td>
                   <td>{order.createdAt.slice(0, 10)}</td>
                 </tr>
-              )) : <tr><td colSpan={7}>暂无真实订单数据。</td></tr>}
+              )) : <tr><td colSpan={7}>所选时间暂无真实订单数据。</td></tr>}
             </tbody>
           </table>
         </div>
+        <AdminPagination basePath="/admin/sales" params={params} page={pagedOrders.page} perPage={pagedOrders.perPage} total={pagedOrders.total} totalPages={pagedOrders.totalPages} />
       </section>
     </AdminShell>
   );
