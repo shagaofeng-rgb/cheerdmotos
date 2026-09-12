@@ -34,12 +34,14 @@ export async function GET(request: Request) {
     return json(result, result.ok ? 200 : 500);
   }
 
-  const targetValue = Number(url.searchParams.get('target') || 1);
+  const isVercelCron = (request.headers.get('user-agent') || '').includes('vercel-cron');
+  const scheduledTarget = Number(process.env.NEWS_CRON_TARGET || 1);
+  const targetValue = Number(url.searchParams.get('target') || (isVercelCron ? scheduledTarget : 1));
   const result = await publishDailyAutomatedNews({
     target: Number.isFinite(targetValue) ? targetValue : 1,
     dryRun: url.searchParams.get('dryRun') === '1',
     deliveryBaseUrl,
-    trigger: (request.headers.get('user-agent') || '').includes('vercel-cron') ? 'cron' : 'manual'
+    trigger: isVercelCron ? 'cron' : 'manual'
   });
   return json(result, result.ok ? 200 : 503);
 }

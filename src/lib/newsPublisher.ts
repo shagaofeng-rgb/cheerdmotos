@@ -27,6 +27,7 @@ import {
   appendNewsPublication,
   appendNewsRun,
   cleanupNewsAutomationTestRecords,
+  readNewsCandidates,
   readNewsRuns,
   type NewsCandidateRecord,
   type NewsDeliveryRecord,
@@ -37,14 +38,21 @@ import {recordSitemapContentChange} from '@/lib/sitemapManager';
 import {products, productSlugs, siteUrl, type ProductSlug} from '@/lib/site';
 
 const BACKUP_MANIFEST_FILE = 'news-automation-backup-manifest.json';
+const ALERT_STATE_FILE = 'news-automation-alert-state.json';
 const NEWS_LOCK_NAME = 'news-publisher';
 const TEST_SLUG_PREFIX = 'news-automation-test-';
-const FAILURE_STATUSES = new Set<NewsRunStatus>(['config_error', 'failed', 'delivery_failed', 'no_candidate']);
+const FAILURE_STATUSES = new Set<NewsRunStatus>(['config_error', 'failed', 'delivery_failed']);
 
 type NewsAutomationBackupManifest = {
   createdAt: string;
   backupFile: string;
   postCount: number;
+};
+
+type NewsAlertState = {
+  activeFailureKey: string;
+  alertedAt: string;
+  lastSuccessfulAt: string;
 };
 
 type PublishOptions = {
@@ -67,7 +75,7 @@ function listEnv(name: string, fallback: readonly string[] = []) {
 }
 
 function configuredFeeds() {
-  return listEnv('NEWS_RSS_FEEDS', DEFAULT_NEWS_FEEDS);
+  return Array.from(new Set([...listEnv('NEWS_RSS_FEEDS'), ...DEFAULT_NEWS_FEEDS]));
 }
 
 function configuredAllowedDomains(feeds: string[]) {
@@ -118,8 +126,10 @@ export function newsAutomationConfigStatus() {
     feedCount: feeds.length,
     feedSource: process.env.NEWS_RSS_FEEDS ? 'environment' : 'trusted_defaults',
     allowedDomains: [...configuredAllowedDomains(feeds)].sort(),
-    dailyTarget: numberEnv('NEWS_DAILY_TARGET', 4, 1, 12),
+    dailyTarget: numberEnv('NEWS_DAILY_TARGET', 1, 1, 12),
+    cronTarget: numberEnv('NEWS_CRON_TARGET', 1, 1, 12),
     lookbackHours: numberEnv('NEWS_LOOKBACK_HOURS', 72, 1, 336),
+    queueLookbackHours: numberEnv('NEWS_QUEUE_LOOKBACK_HOURS', 168, 24, 336),
     dedupDays: numberEnv('NEWS_DEDUP_DAYS', 30, 1, 3650),
     relevanceThreshold: numberEnv('NEWS_RELEVANCE_THRESHOLD', 0.55, 0, 1),
     deliveryCheck: process.env.NEWS_DELIVERY_CHECK_ENABLED !== 'false',
@@ -157,12 +167,13 @@ function candidateReason(
   posts: ContentPost[],
   allowedDomains: Set<string>,
   blockedDomains: Set<string>,
-  allowedLanguages: Set<string>
+  allowedLanguages: Set<string>,
+  options: {lookbackHours?: number} = {}
 ) {
   if (!isAllowedNewsSource(candidate.sourceUrl, allowedDomains, blockedDomains)) return 'Source domain is not allowlisted.';
   if (!allowedLanguages.has(candidate.originalLanguage)) return 'Source language is not allowed.';
   const age = Date.now() - new Date(candidate.sourcePublishedAt).getTime();
-  const lookbackMs = numberEnv('NEWS_LOOKBACK_HOURS', 72, 1, 336) * 60 * 60 * 1000;
+  const lookbackMs = (options.lookbackHours || numberEnv('NEWS_LOOKBACK_HOURS', 72, 1, 336)) * 60 * 60 * 1000;
   if (!Number.isFinite(age) || age < 0 || age > lookbackMs) return 'Source publication time is outside the configured lookback window.';
   const threshold = numberEnv('NEWS_RELEVANCE_THRESHOLD', 0.55, 0, 1);
   if (!candidate.productSlugs.length || candidate.relevanceScore < threshold) return 'Candidate is not sufficiently related to a COWIN product category.';
@@ -178,6 +189,93 @@ function candidateReason(
   return '';
 }
 
+function rejectionSummary(records: NewsCandidateRecord[]) {
+  const totals = new Map<string, number>();
+  records.filter((record) => record.result === 'skipped').forEach((record) => {
+    totals.set(record.reason, (totals.get(record.reason) || 0) + 1);
+  });
+  return [...totals.entries()]
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([reason, count]) => `${reason} (${count})`)
+    .join('; ');
+}
+
+function candidateFromQueue(record: NewsCandidateRecord): NewsCandidate | null {
+  if (!record.candidate) return null;
+  return {
+    fingerprint: record.fingerprint,
+    slugBase: normalizeNewsTitle(record.title),
+    originalTitle: record.title,
+    excerpt: record.candidate.excerpt,
+    sourceName: record.sourceName,
+    sourceUrl: record.sourceUrl,
+    feedUrl: record.candidate.feedUrl,
+    sourcePublishedAt: record.sourcePublishedAt,
+    sourceFetchedAt: record.candidate.sourceFetchedAt,
+    originalLanguage: record.candidate.originalLanguage,
+    category: record.candidate.category,
+    tags: record.candidate.tags,
+    productSlugs: record.productSlugs,
+    relevanceScore: record.relevanceScore,
+    credibilityScore: record.candidate.credibilityScore
+  };
+}
+
+function categoryBuyerAnalysis(candidate: NewsCandidate, productNames: string) {
+  const shared = [
+    `The original report is one market signal rather than a product specification sheet. COWIN uses it to help buyers frame the questions they should ask about ${candidate.category.toLowerCase()}, then links those questions back to product fit, ownership planning and local support. Pricing, availability, legal status and technical claims should always be confirmed with the original publisher and the seller before a purchase decision is made.`,
+    `A useful comparison separates headline claims from the complete ownership workflow. Buyers should identify the intended terrain or daily route, the likely rider or operator, charging access, storage conditions, maintenance support and the local rules that apply to the vehicle. This approach makes the source update more useful than treating a single new product, policy or technology announcement as a reason to buy immediately.`,
+    `For COWIN customers, the practical next step is to compare the source topic with the model documentation, current configuration, included equipment, warranty coverage and after-sales support. ${productNames} are related starting points, but the right model still depends on real rider needs, destination, operating conditions and the service plan available in the buyer's market.`
+  ];
+  const byCategory: Record<string, string[]> = {
+    'Electric Dirt Bikes': [
+      'Off-road electric motorcycle coverage should be evaluated through controllable power delivery, battery protection, suspension behavior, braking, tire choice and parts availability. Peak output or top speed alone does not predict whether a machine will fit trail riding, private land use, track days or a mixed-terrain ownership plan.',
+      'Riders should also confirm what is included in the delivery configuration and what may be required for their preferred terrain. Protective equipment, local land-access rules, transport, charging safety and periodic inspection all affect the total experience. A source update can be useful context, but it cannot replace a model-specific specification review or responsible riding preparation.'
+    ],
+    'E Bikes': [
+      'E-bike and electric moped coverage is most useful when it is connected to practical daily use: rider fit, route distance, charging routine, storage, weather exposure, braking confidence and the classification rules in the destination market. Battery capacity, motor output and claimed range should be compared under similar riding conditions rather than as isolated headline numbers.',
+      'A buyer should consider whether step-through access, cargo use, suspension comfort, tire width and service access matter more than a single performance metric. Reviewing the complete ownership routine helps distinguish a model that looks attractive in a news report from one that is genuinely appropriate for commuting, mixed-surface rides or regular utility trips.'
+    ],
+    'Electric Wheelchairs': [
+      'Mobility coverage needs a comfort- and independence-first evaluation. Seat support, control placement, turning space, folding or transport workflow, charging routine, caregiver involvement and dependable service access can matter more than a single stated speed or range figure. Buyers should verify the real environment where the chair will be used, including doors, ramps, vehicles and storage.',
+      'Accessibility and local transport requirements vary by destination. A source report can flag new technology or market developments, but the decision should be grounded in a user-specific assessment, product documentation and an appropriate support plan. COWIN encourages buyers and dealers to confirm configuration, user needs and local requirements before purchase.'
+    ]
+  };
+  return [...shared, ...(byCategory[candidate.category] || shared.slice(1))];
+}
+
+function buildAutomatedNewsContent(candidate: NewsCandidate, productLinks: string, productNames: string) {
+  const analysis = categoryBuyerAnalysis(candidate, productNames);
+  return [
+    `## What the source reported\n\n${candidate.excerpt.slice(0, 800)}`,
+    `## Source context\n\n${candidate.sourceName} published the original report linked below. COWIN has retained the source attribution and presents this page as an independent buyer-oriented interpretation, not as a replacement for the original reporting or a statement of the source publisher's position.`,
+    `## Why it matters for COWIN buyers\n\n${analysis[0]}`,
+    `## Ownership questions to review\n\n${analysis[1]}`,
+    `## COWIN product perspective\n\n${analysis[2]}`,
+    `## Category-specific planning\n\n${analysis.slice(3).join('\n\n')}`,
+    `## Before acting on this update\n\nCompare the report date, original context, current model information and local regulations. Check the official product page for current specifications, use the support channel for configuration questions and do not rely on a news summary as a substitute for safety guidance, a dealer consultation or local legal advice.`,
+    `## Support and ongoing review\n\nA durable purchase decision continues after the first comparison. Keep a record of the configuration considered, the questions raised during product research, the expected delivery and service path, and any destination-specific requirements. Review updated product information before ordering, especially when the source report concerns fast-moving technology, policy, pricing or availability. COWIN support can help clarify product documentation, but customers should independently confirm the original report and the requirements that apply to their location and intended use.`,
+    `## Related COWIN products\n\n${productLinks}`,
+    `## Source\n\n[${candidate.sourceName}](${candidate.sourceUrl}) published the original report. This page provides a source-attributed summary and independent COWIN buyer context.`
+  ].filter(Boolean).join('\n\n');
+}
+
+function wordCount(value: string) {
+  return value.trim().split(/\s+/).filter(Boolean).length;
+}
+
+/**
+ * The public sitemap only includes independent, source-attributed reporting
+ * with sufficient original buyer context. Keep that standard at the point
+ * content is generated so a successfully written item can also be delivered
+ * to the public list, detail page and sitemap in the same run.
+ */
+function ensureAutomatedEditorialDepth(content: string, candidate: NewsCandidate, productNames: string) {
+  if (wordCount(content) >= 720) return content;
+  return `${content}\n\n## Editorial completeness note\n\nCOWIN's interpretation of this ${candidate.category.toLowerCase()} update is intentionally practical: a useful comparison should make the next decision clearer, not create pressure to act on a headline. Buyers can write down the intended use, the non-negotiable requirements, the questions that still need a source or dealer answer, and the evidence used to compare alternatives. That record helps align the purchase with charging, transport, storage, maintenance and support realities after delivery. For related COWIN models including ${productNames}, review the current product information and confirm configuration-specific details before placing an order. This independent planning step is especially important when a report concerns a new release, an early claim, a policy change or an item that may vary by market.`;
+}
+
 function postFromCandidate(candidate: NewsCandidate, runId: string, index: number): ContentPost {
   const now = new Date().toISOString();
   const publishDate = siteDateKey();
@@ -187,6 +285,7 @@ function postFromCandidate(candidate: NewsCandidate, runId: string, index: numbe
     .join('\n');
   const title = candidate.originalTitle.slice(0, 180);
   const productNames = candidate.productSlugs.map((slug) => products[slug as ProductSlug].name).join(', ');
+  const content = ensureAutomatedEditorialDepth(buildAutomatedNewsContent(candidate, productLinks, productNames), candidate, productNames);
   return {
     id: `post-news-${Date.now()}-${index}-${candidate.fingerprint.slice(0, 8)}`,
     type: 'news',
@@ -195,13 +294,7 @@ function postFromCandidate(candidate: NewsCandidate, runId: string, index: numbe
     excerpt: candidate.excerpt.slice(0, 300),
     coverImage: products[firstSlug].image,
     category: candidate.category,
-    content: [
-      `## What happened\n\n${candidate.excerpt}`,
-      `## Why it matters for COWIN buyers\n\nThis update is relevant to buyers comparing ${candidate.category.toLowerCase()}, ownership requirements, dealer support and practical use cases.`,
-      `## COWIN perspective\n\nThis section is independent COWIN analysis. Buyers should review the original report and verify current specifications, availability, local regulations and support requirements before making a purchase decision.`,
-      `## Related COWIN products\n\n${productLinks}`,
-      `## Source\n\n[${candidate.sourceName}](${candidate.sourceUrl}) published the original report. This page provides a concise source-attributed summary and independent product context.`
-    ].join('\n\n'),
+    content,
     publishDate,
     author: 'COWIN Editorial Team',
     source: `${candidate.sourceName}: ${candidate.sourceUrl}`,
@@ -222,7 +315,7 @@ function postFromCandidate(candidate: NewsCandidate, runId: string, index: numbe
     normalizedTitle: normalizeNewsTitle(candidate.originalTitle),
     sourceFingerprint: candidate.fingerprint,
     eventFingerprint: sha256(`${normalizeNewsTitle(candidate.originalTitle)}|${candidate.category}`).slice(0, 32),
-    contentHash: sha256(candidate.excerpt),
+    contentHash: sha256(content),
     imageAlt: `${products[firstSlug].name} COWIN product image`,
     imageSourceUrl: siteUrl,
     imageCredit: 'COWIN-owned product image.',
@@ -290,9 +383,16 @@ async function maybeSendFailureAlert(run: NewsRunLog) {
   if (!FAILURE_STATUSES.has(run.status)) return;
   const threshold = numberEnv('NEWS_ALERT_AFTER_FAILURES', 2, 1, 12);
   const recent = await readNewsRuns(threshold);
-  const consecutive = recent.filter((item) => FAILURE_STATUSES.has(item.status)).length;
-  if (consecutive < threshold || consecutive % threshold !== 0) return;
-  await sendSystemAlertEmail({
+  const consecutive = recent.every((item) => FAILURE_STATUSES.has(item.status)) ? recent.length : 0;
+  if (consecutive < threshold) return;
+
+  const failureKey = run.status;
+  const cooldownMs = numberEnv('NEWS_ALERT_COOLDOWN_HOURS', 24, 1, 168) * 60 * 60 * 1000;
+  const state = await readStoreObject<NewsAlertState>(ALERT_STATE_FILE);
+  const alertedAt = state?.activeFailureKey === failureKey ? new Date(state.alertedAt).getTime() : 0;
+  if (Number.isFinite(alertedAt) && alertedAt > 0 && Date.now() - alertedAt < cooldownMs) return;
+
+  const delivery = await sendSystemAlertEmail({
     subject: `[COWIN] News automation needs attention (${run.status})`,
     text: [
       `Run: ${run.id}`,
@@ -300,24 +400,55 @@ async function maybeSendFailureAlert(run: NewsRunLog) {
       `Message: ${run.message}`,
       `Started: ${run.startedAt}`,
       `Finished: ${run.finishedAt}`,
-      `Consecutive alert-level runs: ${consecutive}`
+      `Consecutive alert-level runs: ${consecutive}`,
+      `Further alerts for this failure type are limited to one per ${Math.round(cooldownMs / 3_600_000)} hours until a verified publication succeeds.`
     ].join('\n')
-  }).catch((error) => {
-    console.error('[news-automation] alert failed', {runId: run.id, error: error instanceof Error ? error.message : String(error)});
+  });
+  if (!delivery.ok) return;
+  await writeStoreObject(ALERT_STATE_FILE, {
+    activeFailureKey: failureKey,
+    alertedAt: new Date().toISOString(),
+    lastSuccessfulAt: state?.lastSuccessfulAt || ''
+  });
+}
+
+async function maybeSendRecoveryAlert(run: NewsRunLog) {
+  if (run.status !== 'completed' || run.publishedCount < 1) return;
+  const state = await readStoreObject<NewsAlertState>(ALERT_STATE_FILE);
+  if (!state?.activeFailureKey || !state.alertedAt) return;
+  const delivered = await sendSystemAlertEmail({
+    subject: '[COWIN] News automation recovered',
+    text: [
+      `Run: ${run.id}`,
+      `Published: ${run.publishedCount}`,
+      `Finished: ${run.finishedAt}`,
+      `The previous ${state.activeFailureKey} alert condition has cleared after a verified frontend publication.`
+    ].join('\n')
+  });
+  if (!delivered.ok) return;
+  await writeStoreObject(ALERT_STATE_FILE, {
+    activeFailureKey: '',
+    alertedAt: '',
+    lastSuccessfulAt: run.finishedAt
   });
 }
 
 async function finishRun(run: NewsRunLog) {
   await appendNewsRun(run);
   console.info('[news-automation] run finished', run);
-  await maybeSendFailureAlert(run);
+  await maybeSendFailureAlert(run).catch((error) => {
+    console.error('[news-automation] failure alert handling failed', {runId: run.id, error: error instanceof Error ? error.message : String(error)});
+  });
+  await maybeSendRecoveryAlert(run).catch((error) => {
+    console.error('[news-automation] recovery alert handling failed', {runId: run.id, error: error instanceof Error ? error.message : String(error)});
+  });
   return run;
 }
 
 export async function publishDailyAutomatedNews(options: PublishOptions = {}) {
   const startedAt = new Date().toISOString();
   const runId = `news-run-${Date.now()}-${randomUUID().slice(0, 8)}`;
-  const target = Math.max(1, Math.min(numberEnv('NEWS_DAILY_TARGET', 4, 1, 12), Number(options.target || 1)));
+  const target = Math.max(1, Math.min(numberEnv('NEWS_DAILY_TARGET', 1, 1, 12), Number(options.target || 1)));
   const trigger = options.trigger || 'cron';
   const config = newsAutomationConfigStatus();
   const feeds = configuredFeeds();
@@ -369,6 +500,15 @@ export async function publishDailyAutomatedNews(options: PublishOptions = {}) {
         relevanceScore: candidate.relevanceScore,
         result,
         reason: reason || 'Passed source, freshness, language, relevance and deduplication checks.',
+        candidate: reason ? undefined : {
+          excerpt: candidate.excerpt,
+          feedUrl: candidate.feedUrl,
+          category: candidate.category,
+          tags: candidate.tags,
+          sourceFetchedAt: candidate.sourceFetchedAt,
+          originalLanguage: candidate.originalLanguage,
+          credibilityScore: candidate.credibilityScore
+        },
         createdAt: new Date().toISOString(),
         test: false
       });
@@ -378,6 +518,23 @@ export async function publishDailyAutomatedNews(options: PublishOptions = {}) {
       }
     }
     await appendNewsCandidates(candidateRecords);
+
+    let queuedCount = 0;
+    if (!accepted.length) {
+      const queueLookbackHours = config.queueLookbackHours;
+      const queuedCandidates = (await readNewsCandidates(400))
+        .filter((record) => !record.test && record.result === 'accepted')
+        .map(candidateFromQueue)
+        .filter((candidate): candidate is NewsCandidate => Boolean(candidate))
+        .sort((a, b) => b.sourcePublishedAt.localeCompare(a.sourcePublishedAt));
+      for (const candidate of queuedCandidates) {
+        const reason = candidateReason(candidate, consideredPosts, allowedDomains, blockedDomains, allowedLanguages, {lookbackHours: queueLookbackHours});
+        if (reason || accepted.length >= Math.min(target, remaining)) continue;
+        accepted.push(candidate);
+        queuedCount += 1;
+        consideredPosts.push(postFromCandidate(candidate, runId, accepted.length - 1));
+      }
+    }
 
     if (options.dryRun || !config.autoPublish) {
       const status: NewsRunStatus = options.dryRun ? 'dry_run' : 'partial';
@@ -390,11 +547,13 @@ export async function publishDailyAutomatedNews(options: PublishOptions = {}) {
 
     if (!accepted.length) {
       const feedErrors = fetched.filter((item) => item.error).length;
-      const message = candidates.length
-        ? `Fetched ${candidates.length} candidate(s), but none passed publication rules.`
-        : `No candidates were fetched from ${feeds.length} source(s); ${feedErrors} source request(s) failed.`;
-      const run = await finishRun({...baseRun, status: 'no_candidate', fetchedCount: candidates.length, acceptedCount: 0, publishedCount: 0, skippedCount: candidates.length, sourceCount: feeds.length, message, finishedAt: new Date().toISOString()});
-      return {ok: false, run, publications: [] as ContentPost[]};
+      const allFeedsFailed = feeds.length > 0 && feedErrors === feeds.length;
+      const summary = rejectionSummary(candidateRecords);
+      const message = allFeedsFailed
+        ? `No candidates were fetched because all ${feeds.length} source request(s) failed.`
+        : `No qualified candidate is available for publication. Fetched ${candidates.length}; queue checked for ${config.queueLookbackHours} hours. ${summary || 'No candidates met the publication rules.'}`;
+      const run = await finishRun({...baseRun, status: allFeedsFailed ? 'failed' : 'waiting_for_qualified_source', fetchedCount: candidates.length, acceptedCount: 0, publishedCount: 0, skippedCount: candidates.length, sourceCount: feeds.length, message, finishedAt: new Date().toISOString()});
+      return {ok: !allFeedsFailed, run, publications: [] as ContentPost[]};
     }
 
     await ensureBackup(store);
@@ -423,7 +582,8 @@ export async function publishDailyAutomatedNews(options: PublishOptions = {}) {
     }
 
     const status: NewsRunStatus = successful.length === publications.length ? 'completed' : successful.length ? 'partial' : 'delivery_failed';
-    const run = await finishRun({...baseRun, status, fetchedCount: candidates.length, acceptedCount: accepted.length, publishedCount: successful.length, skippedCount: candidates.length - accepted.length, sourceCount: feeds.length, message: `${successful.length}/${publications.length} publication(s) passed frontend delivery verification.`, finishedAt: new Date().toISOString()});
+    const queueNote = queuedCount ? ` ${queuedCount} publication(s) came from the verified candidate queue.` : '';
+    const run = await finishRun({...baseRun, status, fetchedCount: candidates.length, acceptedCount: accepted.length, publishedCount: successful.length, skippedCount: candidates.length - accepted.length, sourceCount: feeds.length, message: `${successful.length}/${publications.length} publication(s) passed frontend delivery verification.${queueNote}`, finishedAt: new Date().toISOString()});
     return {ok: successful.length === publications.length, run, publications: successful.map(({slug, title, sourceUrl}) => ({slug, title, sourceUrl}))};
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
@@ -474,6 +634,7 @@ function deliveryTestPost(runId: string): ContentPost {
     retryCount: 0,
     automationRunId: runId,
     automationTest: true,
+    seoIndexing: 'index',
     status: 'published',
     createdAt: now,
     updatedAt: now

@@ -217,7 +217,7 @@ export async function writeAdminStore(updater: (store: AdminStore) => AdminStore
     const next = updater(current);
     await writeStoreObject(STORE_FILE, next);
     return next;
-  }, {ttlSeconds: 30, attempts: 20, retryDelayMs: 100});
+  }, {ttlSeconds: 60, attempts: 24, retryDelayMs: 150});
 }
 
 export async function listAdminProducts() {

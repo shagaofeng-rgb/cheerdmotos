@@ -5,7 +5,7 @@ const NEWS_RUN_FILE = 'news-runs.jsonl';
 const NEWS_PUBLICATION_FILE = 'news-publications.jsonl';
 const NEWS_DELIVERY_FILE = 'news-deliveries.jsonl';
 
-export type NewsRunStatus = 'running' | 'completed' | 'partial' | 'dry_run' | 'no_candidate' | 'locked' | 'config_error' | 'failed' | 'delivery_failed';
+export type NewsRunStatus = 'running' | 'completed' | 'partial' | 'dry_run' | 'waiting_for_qualified_source' | 'no_candidate' | 'locked' | 'config_error' | 'failed' | 'delivery_failed';
 
 export type NewsRunLog = {
   id: string;
@@ -35,6 +35,15 @@ export type NewsCandidateRecord = {
   relevanceScore: number;
   result: 'accepted' | 'skipped';
   reason: string;
+  candidate?: {
+    excerpt: string;
+    feedUrl: string;
+    category: string;
+    tags: string[];
+    sourceFetchedAt: string;
+    originalLanguage: string;
+    credibilityScore: number;
+  };
   createdAt: string;
   test: boolean;
 };

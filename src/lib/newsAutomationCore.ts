@@ -2,7 +2,8 @@ import {createHash} from 'node:crypto';
 
 export const DEFAULT_NEWS_FEEDS = [
   'https://electrek.co/feed/',
-  'https://cleantechnica.com/feed/'
+  'https://cleantechnica.com/feed/',
+  'https://electricbikereport.com/feed/'
 ] as const;
 
 export type NewsProductReference = {
@@ -36,19 +37,19 @@ const CATEGORY_RULES = [
     category: 'Electric Dirt Bikes',
     tags: ['Electric Dirt Bike', 'Off-Road Mobility'],
     productCategory: /dirt|motorcycle/i,
-    phrases: ['electric dirt bike', 'electric motorbike', 'electric motorcycle', 'e-moto', 'emoto', 'motocross', 'off-road bike', 'off road bike', 'sur ron', 'surron']
+    phrases: ['electric dirt bike', 'electric motorbike', 'electric motorcycle', 'electric enduro', 'electric trail motorcycle', 'e-moto', 'emoto', 'motocross', 'off-road bike', 'off road bike', 'sur ron', 'surron']
   },
   {
     category: 'E Bikes',
     tags: ['E Bike', 'Micromobility'],
     productCategory: /e.?bike|bicycle/i,
-    phrases: ['e-bike', 'ebike', 'electric bike', 'electric bicycle', 'fat tire bike', 'cargo bike', 'pedal assist', 'micromobility']
+    phrases: ['e-bike', 'ebike', 'electric bike', 'electric bicycle', 'e bicycle', 'electric moped', 'electric moped bike', 'fat tire bike', 'cargo bike', 'pedal assist', 'micromobility']
   },
   {
     category: 'Electric Wheelchairs',
     tags: ['Electric Wheelchair', 'Accessible Mobility'],
     productCategory: /wheelchair|mobility/i,
-    phrases: ['electric wheelchair', 'power wheelchair', 'powered wheelchair', 'mobility chair', 'mobility scooter', 'accessible mobility']
+    phrases: ['electric wheelchair', 'power wheelchair', 'powered wheelchair', 'mobility chair', 'mobility scooter', 'mobility device', 'accessible mobility']
   }
 ] as const;
 

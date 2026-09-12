@@ -8,6 +8,21 @@ function time(value: string) {
   return value ? value.slice(0, 19).replace('T', ' ') : '-';
 }
 
+function statusLabel(status?: string) {
+  const labels: Record<string, string> = {
+    completed: '已完成',
+    partial: '部分完成',
+    dry_run: '演练完成',
+    waiting_for_qualified_source: '等待合格来源',
+    no_candidate: '无候选（历史状态）',
+    locked: '任务已占用',
+    config_error: '配置错误',
+    failed: '执行失败',
+    delivery_failed: '前台交付失败'
+  };
+  return labels[status || ''] || status || '暂无';
+}
+
 export default async function AdminNewsAutomationPage() {
   const [config, runs, candidates, publications, deliveries] = await Promise.all([
     Promise.resolve(newsAutomationConfigStatus()),
@@ -19,6 +34,14 @@ export default async function AdminNewsAutomationPage() {
   const latestRun = runs[0];
   const latestSuccess = publications.find((item) => item.result === 'published' && !item.test);
   const latestDelivery = deliveries.find((item) => !item.test);
+  const latestRejections = latestRun ? candidates
+    .filter((candidate) => candidate.runId === latestRun.id && candidate.result === 'skipped')
+    .reduce<Record<string, number>>((summary, candidate) => ({...summary, [candidate.reason]: (summary[candidate.reason] || 0) + 1}), {}) : {};
+  const rejectionSummary = Object.entries(latestRejections)
+    .sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]))
+    .slice(0, 3)
+    .map(([reason, count]) => `${reason} (${count})`)
+    .join('；');
 
   return (
     <AdminShell active="news-automation">
@@ -30,8 +53,8 @@ export default async function AdminNewsAutomationPage() {
 
       <div className="admin-metrics">
         <article><span>运行状态</span><strong>{config.ready ? '已就绪' : '待配置'}</strong><small>{config.store.provider}</small></article>
-        <article><span>每日目标</span><strong>{config.dailyTarget}</strong><small>每个窗口最多发布 1 篇</small></article>
-        <article><span>最近任务</span><strong>{latestRun?.status || '暂无'}</strong><small>{time(latestRun?.finishedAt || '')}</small></article>
+        <article><span>每日计划</span><strong>{config.cronTarget}</strong><small>北京时间 09:00 单次发布</small></article>
+        <article><span>最近任务</span><strong>{statusLabel(latestRun?.status)}</strong><small>{time(latestRun?.finishedAt || '')}</small></article>
         <article><span>最近发布</span><strong>{latestSuccess ? '已交付' : '暂无记录'}</strong><small>{time(latestSuccess?.createdAt || '')}</small></article>
       </div>
 
@@ -42,6 +65,8 @@ export default async function AdminNewsAutomationPage() {
           <div><dt>允许域名</dt><dd>{config.allowedDomains.join(', ') || '未配置'}</dd></div>
           <div><dt>自动发布</dt><dd>{config.autoPublish ? '已启用' : '已关闭，仅记录候选'}</dd></div>
           <div><dt>筛选规则</dt><dd>{config.lookbackHours} 小时新鲜度；相关性阈值 {config.relevanceThreshold}；去重窗口 {config.dedupDays} 天</dd></div>
+          <div><dt>候选缓冲</dt><dd>无当天合格来源时，复核近 {config.queueLookbackHours} 小时内的已验证候选；不会发布不相关或已去重内容。</dd></div>
+          <div><dt>最近淘汰原因</dt><dd>{rejectionSummary || '最近任务没有可汇总的淘汰记录。'}</dd></div>
           <div><dt>前端交付检查</dt><dd>{config.deliveryCheck ? '已启用：列表、详情页、News Sitemap 必须全部通过' : '已关闭'}</dd></div>
           <div><dt>最近交付</dt><dd>{latestDelivery ? `${latestDelivery.result}；尝试 ${latestDelivery.attempts} 次；${latestDelivery.error || latestDelivery.detailUrl}` : '暂无交付记录'}</dd></div>
         </dl>
@@ -55,7 +80,7 @@ export default async function AdminNewsAutomationPage() {
             <tbody>
               {runs.length ? runs.map((run) => (
                 <tr key={`${run.id}-${run.finishedAt}`}>
-                  <td>{time(run.finishedAt)}</td><td>{run.trigger}</td><td>{run.status}</td><td>{run.sourceCount}</td>
+                  <td>{time(run.finishedAt)}</td><td>{run.trigger}</td><td>{statusLabel(run.status)}</td><td>{run.sourceCount}</td>
                   <td>{run.acceptedCount}/{run.fetchedCount}</td><td>{run.publishedCount}</td><td>{run.message}</td>
                 </tr>
               )) : <tr><td colSpan={7}>暂无任务日志，生产 Cron 首次执行后会显示。</td></tr>}

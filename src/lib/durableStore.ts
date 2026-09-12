@@ -299,10 +299,12 @@ export async function withStoreLock<T>(
     lock = await acquireStoreLock(name, options.ttlSeconds || 60);
     if (lock) break;
     if (attempt + 1 < attempts) {
-      await new Promise((resolve) => setTimeout(resolve, options.retryDelayMs || 100));
+      const baseDelay = options.retryDelayMs || 100;
+      const delay = Math.min(2_000, baseDelay * (2 ** Math.min(attempt, 3))) + Math.floor(Math.random() * baseDelay);
+      await new Promise((resolve) => setTimeout(resolve, delay));
     }
   }
-  if (!lock) throw new Error(`Could not acquire durable lock: ${name}`);
+  if (!lock) throw new Error(`Could not acquire durable lock after ${attempts} attempts: ${name}`);
   try {
     return await task();
   } finally {
