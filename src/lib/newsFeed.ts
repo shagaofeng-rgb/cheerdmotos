@@ -1,6 +1,6 @@
 import {isPostPublic, listAdminPosts, type ContentPost} from '@/lib/backendStore';
 import {getContentIndexingDecision} from '@/lib/contentIndexing';
-import {type NewsArticle} from '@/lib/news';
+import {getNewsArticle as getLegacyNewsArticle, type NewsArticle} from '@/lib/news';
 import {newsDisplayImagePool, resolveNewsDisplayImage} from '@/lib/newsImage';
 import {siteUrl} from '@/lib/site';
 
@@ -125,7 +125,15 @@ export async function getAllNewsSlugs() {
 }
 
 export async function getNewsArticleBySlug(slug: string) {
-  return (await getAllNewsArticles()).find((article) => article.slug === slug);
+  const published = (await getAllNewsArticles()).find((article) => article.slug === slug);
+  if (published) return published;
+
+  // This editorial page predates the durable CMS migration. Keep its stable
+  // canonical URL available for the historical redirect without exposing the
+  // dated legacy URL in public listings or sitemaps.
+  return slug === 'smart-mobility-support-planning'
+    ? getLegacyNewsArticle(slug)
+    : null;
 }
 
 export async function getNewsCategories() {
