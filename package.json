@@ -13,6 +13,7 @@
     "seo:index-audit": "node scripts/seo-index-audit.mjs",
     "sitemap:generate": "node scripts/sitemap-generate.mjs",
     "sitemap:test": "node scripts/sitemap-test.mjs",
+    "sitemap:regression": "node scripts/sitemap-regression.mjs",
     "seo:indexing:test": "node scripts/seo-indexing-regression.mjs"
   },
   "dependencies": {

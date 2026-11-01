@@ -1,7 +1,7 @@
-import {getAllBlogArticles} from '@/lib/blogFeed';
 import {getIndexableBlogArticles} from '@/lib/blogFeed';
 import {getIndexableNewsArticles} from '@/lib/newsFeed';
-import {siteData, siteUrl} from '@/lib/site';
+import {listPublicProducts} from '@/lib/publicCatalog';
+import {siteUrl} from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -15,9 +15,16 @@ function absoluteImage(url: string) {
 }
 
 export async function GET() {
-  const [news, blogs] = await Promise.all([getIndexableNewsArticles(), getIndexableBlogArticles()]);
+  // Keep image entries attached only to the same published resources exposed by
+  // the public page sitemaps.  `siteData.products` is a presentation fallback
+  // and can outlive an unpublished product in the durable admin catalogue.
+  const [products, news, blogs] = await Promise.all([
+    listPublicProducts(),
+    getIndexableNewsArticles(),
+    getIndexableBlogArticles()
+  ]);
   const rows = [
-    ...siteData.products.map((item) => ({loc: item.route, image: item.image, title: item.title})),
+    ...products.map((item) => ({loc: item.route, image: item.image, title: item.title})),
     ...news.map((item) => ({loc: `/news/${item.slug}`, image: item.hero, title: item.heroAlt || item.title})),
     ...blogs.map((item) => ({loc: `/blog/${item.slug}`, image: item.hero, title: item.heroAlt || item.title}))
   ].filter((row) => row.image);
