@@ -1,14 +1,9 @@
-import Link from "next/link";
+import {StorefrontV1, StoreLink, StoreState} from '@/components/StorefrontV1';
 
 export default function NotFound() {
-  return (
-    <main className="not-found">
-      <p className="eyebrow">404</p>
-      <h1>Page not found</h1>
-      <p>We could not find that COWIN page. Use the homepage, search, or support links to continue.</p>
-      <Link className="button primary" href="/">
-        Back to home
-      </Link>
-    </main>
-  );
+  return <StorefrontV1><main>
+    <StoreState eyebrow="404" title="Page not found" description="The page may have moved or the link may be out of date. Search the site or browse the COWIN lineup." icon="signpost">
+      <div className="actions"><StoreLink href="/search" primary arrow>Search COWIN</StoreLink><StoreLink href="/products">Browse products</StoreLink></div>
+    </StoreState>
+  </main></StorefrontV1>;
 }

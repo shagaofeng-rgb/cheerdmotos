@@ -18,6 +18,7 @@ export function publicProductItem(product: AdminProduct): SiteItem {
     image: product.coverImage || product.galleryImages[0] || '',
     price: price(product),
     currency: product.currency,
+    categorySlug: product.categorySlug,
     availability: product.stock > 0 ? 'InStock' : 'OutOfStock',
     publishedAt: product.updatedAt || product.createdAt,
     html: ''

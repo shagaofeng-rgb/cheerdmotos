@@ -11,6 +11,7 @@ export type SiteItem = {
   price: string;
   currency: string;
   availability: string;
+  categorySlug?: string;
   publishedAt: string;
   html: string;
 };

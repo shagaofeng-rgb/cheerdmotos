@@ -4,6 +4,7 @@ import {useState} from 'react';
 import {classifyTraffic, isMeaningfulMarketingTouch, type TrafficTouch} from '@/lib/trafficAttribution';
 
 type ContactInquiryFormProps = {
+  variant: 'support' | 'dealer' | 'registration';
   copy: {
     fields: {
       name: string;
@@ -61,7 +62,7 @@ function attributionSnapshot(visitorId: string, sessionId: string) {
   };
 }
 
-export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
+export default function ContactInquiryForm({copy, variant}: ContactInquiryFormProps) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
 
@@ -73,6 +74,15 @@ export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const body = Object.fromEntries(formData.entries());
+    if (variant === 'registration') {
+      body.message = [
+        `Serial number: ${formData.get('serial')}`,
+        `Purchase date: ${formData.get('purchaseDate')}`,
+        formData.get('orderNumber') ? `Order number: ${formData.get('orderNumber')}` : ''
+      ].filter(Boolean).join('\n');
+    } else if (variant === 'support' && formData.get('orderNumber')) {
+      body.message = `Order number: ${formData.get('orderNumber')}\n\n${formData.get('message')}`;
+    }
 
     try {
       const response = await fetch('/api/contact/inquiry', {
@@ -98,7 +108,7 @@ export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
       form.reset();
       setStatus(result.message || 'Thank you. We received your request.');
     } catch {
-      setStatus('Network error. Please try again or email support@cheerdmotos.com.');
+      setStatus('Network error. Please try again or email info@cheerdmotos.com.');
     } finally {
       setBusy(false);
     }
@@ -125,13 +135,16 @@ export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
         <span>{copy.fields.country}</span>
         <input name="country" required placeholder="UAE, United States, Spain..." autoComplete="country-name" />
       </label>
-      <label>
-        <span>{copy.fields.buyerType}</span>
-        <select name="buyerType" required defaultValue="">
-          <option value="" disabled>Select buyer type</option>
-          {copy.buyerTypes.map((item) => <option value={item} key={item}>{item}</option>)}
-        </select>
-      </label>
+      {variant === 'dealer' || variant === 'registration' ? <input type="hidden" name="buyerType" value={variant === 'dealer' ? 'Dealer / distributor' : 'Product registration'} /> : (
+        <label>
+          <span>{copy.fields.buyerType}</span>
+          <select name="buyerType" required defaultValue="">
+            <option value="" disabled>Select a topic</option>
+            {copy.buyerTypes.map((item) => <option value={item} key={item}>{item}</option>)}
+          </select>
+        </label>
+      )}
+      {variant === 'dealer' && <label><span>{copy.fields.company}</span><input name="company" required autoComplete="organization" /></label>}
       <label>
         <span>{copy.fields.product}</span>
         <select name="product" required defaultValue="">
@@ -139,21 +152,28 @@ export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
           {copy.productOptions.map((item) => <option value={item} key={item}>{item}</option>)}
         </select>
       </label>
+      {variant === 'registration' && <>
+        <label><span>Serial number</span><input name="serial" required maxLength={120} /></label>
+        <label><span>Purchase date</span><input name="purchaseDate" type="date" required /></label>
+      </>}
+      {(variant === 'support' || variant === 'registration') && <label><span>Order number (optional)</span><input name="orderNumber" maxLength={100} /></label>}
+      {variant === 'dealer' && <label><span>Estimated quantity (optional)</span><input name="quantity" /></label>}
+      {variant !== 'registration' && <>
       <label className="full">
         <span>{copy.fields.message}</span>
-        <textarea name="message" required rows={5} placeholder="Quantity, application scenario, shipment plan, branding needs..." />
+        <textarea name="message" required rows={5} placeholder={variant === 'support' ? 'How can we help?' : 'Products, sales channels or requirements'} />
       </label>
       <details className="form-more full">
-        <summary>More Project Details</summary>
+        <summary>More project details (optional)</summary>
         <div className="advanced-fields">
-          <label>
+          {variant === 'support' && <><label>
             <span>{copy.fields.company}</span>
             <input name="company" placeholder="Company name" autoComplete="organization" />
           </label>
           <label>
             <span>{copy.fields.quantity}</span>
             <input name="quantity" placeholder="1 sample / 5 units / 20 units..." />
-          </label>
+          </label></>}
           <label>
             <span>{copy.fields.market}</span>
             <input name="targetMarket" placeholder="USA, Canada, Europe, dealer region..." />
@@ -172,6 +192,7 @@ export default function ContactInquiryForm({copy}: ContactInquiryFormProps) {
           </label>
         </div>
       </details>
+      </>}
       <input name="website" tabIndex={-1} autoComplete="off" className="form-trap" aria-hidden="true" />
       <button className="button primary" disabled={busy} type="submit">
         {busy ? 'Sending...' : copy.fields.submit}

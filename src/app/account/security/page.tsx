@@ -1,3 +1,4 @@
+import {StoreAccountContent} from '@/components/StorefrontAccount';
 import {redirect} from 'next/navigation';
 import AccountSecurityForm from '@/components/AccountSecurityForm';
 import {getCustomerSession} from '@/lib/customerAuth';
@@ -9,13 +10,13 @@ export default async function AccountSecurityPage() {
   if (!session) redirect('/account/login');
 
   return (
-    <main className="account-page">
+    <StoreAccountContent active="/account/security">
       <section className="account-card">
-        <p className="eyebrow">Customer center</p>
+        <p className="kicker">Customer center</p>
         <h1>Account security</h1>
         <p>Change your password with your current password.</p>
         <AccountSecurityForm />
       </section>
-    </main>
+    </StoreAccountContent>
   );
 }

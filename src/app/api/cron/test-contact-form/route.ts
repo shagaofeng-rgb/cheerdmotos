@@ -15,7 +15,7 @@ export async function GET(request: Request) {
 
   const origin = new URL(request.url).origin;
   const checkedAt = new Date().toISOString();
-  const notificationEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_FROM || 'support@cheerdmotos.com';
+  const notificationEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_FROM || 'info@cheerdmotos.com';
   const payload = {
     name: 'COWIN Semi-Monthly Contact Form Health Check',
     email: 'semi-monthly-form-check@cheerdmotos.com',

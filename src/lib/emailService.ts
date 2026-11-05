@@ -9,8 +9,8 @@ type MailPayload = {
 };
 
 const DEFAULT_SMTP_HOST = 'smtp.exmail.qq.com';
-const DEFAULT_SENDER_EMAIL = 'support@cheerdmotos.com';
-const DEFAULT_ADMIN_NOTIFICATION_EMAIL = 'support@cheerdmotos.com';
+const DEFAULT_SENDER_EMAIL = 'info@cheerdmotos.com';
+const DEFAULT_ADMIN_NOTIFICATION_EMAIL = 'info@cheerdmotos.com';
 
 function smtpConfig() {
   return {
@@ -353,14 +353,14 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
     `Use this link within 60 minutes: ${resetUrl}`,
     '',
     'If you did not request this, you can ignore this email.',
-    'Support: support@cheerdmotos.com'
+    `Support: ${DEFAULT_SENDER_EMAIL}`
   ].join('\n');
   const html = `
     <p>Hello,</p>
     <p>We received a request to reset your COWIN customer account password.</p>
     <p><a href="${escapeHtml(resetUrl)}">Set a new password</a></p>
     <p>This link is valid for 60 minutes. If you did not request this, you can ignore this email.</p>
-    <p>Support: support@cheerdmotos.com</p>
+    <p>Support: ${DEFAULT_SENDER_EMAIL}</p>
   `;
   try {
     const result = await sendSmtpMail({to: email, subject, text, html});
@@ -397,7 +397,7 @@ export async function sendRegistrationWelcomeEmail(email: string, name: string) 
     'You can now view your orders, payment status and shipment updates from the account center.',
     '',
     `Account center: ${siteUrl}/account/orders`,
-    'Support: support@cheerdmotos.com'
+    `Support: ${DEFAULT_SENDER_EMAIL}`
   ].join('\n');
   const html = `
     <div style="font-family:Arial,sans-serif;color:#111318;line-height:1.6;background:#f6f8f5;padding:24px">
@@ -406,7 +406,7 @@ export async function sendRegistrationWelcomeEmail(email: string, name: string) 
         <h2 style="margin:0 0 14px;color:#111318">Welcome, ${escapeHtml(customerName)}</h2>
         <p>Your customer account has been created. You can now view order history, payment status and shipment updates in one place.</p>
         <p><a href="${siteUrl}/account/orders" style="display:inline-block;background:#ee2f2f;color:#ffffff;padding:12px 18px;border-radius:6px;text-decoration:none;font-weight:700">Open account center</a></p>
-        <p style="margin-top:24px;color:#5e6470;font-size:14px">If this was not you, please contact support@cheerdmotos.com.</p>
+        <p style="margin-top:24px;color:#5e6470;font-size:14px">If this was not you, please contact ${DEFAULT_SENDER_EMAIL}.</p>
       </div>
     </div>
   `;
@@ -489,13 +489,15 @@ export async function sendContactInquiryEmail(input: {
     });
     return result;
   } catch (error) {
+    const errorMessage = error instanceof Error ? error.message.slice(0, 500) : 'Unknown SMTP error';
+    console.error('Contact inquiry email delivery failed', {errorMessage});
     await appendEmailLog({
       orderId: 'contact',
       customerEmail: input.email,
       templateType: 'contact_inquiry',
       status: 'failed',
       providerMessageId: '',
-      errorMessage: error instanceof Error ? error.message.slice(0, 500) : 'Unknown SMTP error',
+      errorMessage,
       sentAt: ''
     });
     throw error;

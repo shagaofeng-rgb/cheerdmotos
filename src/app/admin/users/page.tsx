@@ -17,7 +17,7 @@ const roles = [
 
 export default async function AdminUsersPage() {
   const logs = await readAuditLogs(20);
-  const adminEmail = process.env.ADMIN_EMAIL || 'support@cheerdmotos.com';
+  const adminEmail = process.env.ADMIN_EMAIL || 'info@cheerdmotos.com';
   const hasHash = Boolean(process.env.ADMIN_PASSWORD_HASH);
 
   return (

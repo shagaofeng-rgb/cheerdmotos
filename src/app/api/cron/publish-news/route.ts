@@ -16,12 +16,23 @@ function authorized(request: Request) {
   return request.headers.get('authorization') === `Bearer ${secret}`;
 }
 
+function automationEnabled() {
+  return process.env.NEWS_AUTOMATION_ENABLED !== 'false';
+}
+
 function json(value: unknown, status = 200) {
   return Response.json(value, {status, headers: {'Cache-Control': 'no-store, no-cache, must-revalidate'}});
 }
 
 export async function GET(request: Request) {
   if (!authorized(request)) return json({ok: false, error: 'Unauthorized'}, 401);
+  if (!automationEnabled()) {
+    return json({
+      ok: true,
+      status: 'disabled',
+      message: 'News crawl, generation, summary and publication automation is disabled.'
+    });
+  }
 
   const url = new URL(request.url);
   const deliveryBaseUrl = newsDeliveryBaseUrl(request.url, siteUrl);

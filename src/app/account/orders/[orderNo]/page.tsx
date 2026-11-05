@@ -1,3 +1,4 @@
+import {StoreAccountContent} from '@/components/StorefrontAccount';
 import Link from 'next/link';
 import Image from 'next/image';
 import {notFound, redirect} from 'next/navigation';
@@ -23,10 +24,10 @@ export default async function AccountOrderDetailPage({params}: {params: Promise<
   const customerVisibleNote = shipment?.customerVisibleNote || order.customerVisibleNote;
 
   return (
-    <main className="account-page wide">
+    <StoreAccountContent active="/account/orders">
       <section className="account-header">
         <div>
-          <p className="eyebrow">Order detail</p>
+          <p className="kicker">Order detail</p>
           <h1>{order.id}</h1>
           <p>{order.createdAt.slice(0, 10)} · {order.status.replace(/_/g, ' ')}</p>
         </div>
@@ -85,6 +86,6 @@ export default async function AccountOrderDetailPage({params}: {params: Promise<
           </dl>
         </article>
       </section>
-    </main>
+    </StoreAccountContent>
   );
 }

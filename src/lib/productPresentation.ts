@@ -58,8 +58,7 @@ const productOverrides: Record<string, ProductOverrides> = {
     model: 'XCEED 72V',
     gallery: [
       `${assetBase}/assets/products/xceed_transparent.png`,
-      `${assetBase}/assets/source/xceed_product.webp`,
-      `${assetBase}/slices/04_xceed_feature_story.webp`
+      `${assetBase}/assets/source/xceed_product.webp`
     ],
     featureImage: `${assetBase}/slices/04_xceed_feature_story.webp`,
     description: 'XCEED is a 72V electric dirt bike platform built for riders who want responsive electric power, trail-ready handling, and a clear upgrade path for their riding setup.',
@@ -90,8 +89,7 @@ const productOverrides: Record<string, ProductOverrides> = {
     model: 'SMART B02',
     gallery: [
       `${assetBase}/assets/products/smart_b02_transparent.png`,
-      `${assetBase}/assets/source/smart_b02_product.webp`,
-      `${assetBase}/slices/06_smart_b02_mobility_banner.webp`
+      `${assetBase}/assets/source/smart_b02_product.webp`
     ],
     featureImage: `${assetBase}/slices/06_smart_b02_mobility_banner.webp`,
     description: 'SMART B02 is a folding electric wheelchair designed for practical everyday movement, with dual-motor drive, compact storage, and indoor-outdoor usability.',
@@ -194,9 +192,9 @@ function usableProductImage(value: string) {
 }
 
 function genericCategory(item: SiteItem) {
-  if (item.route.includes('wheelchair')) return {category: 'Electric Wheelchairs', categoryRoute: '/electric-wheelchairs'};
-  if (/helmet|kit|battery|display/.test(item.slug)) return {category: 'Accessories', categoryRoute: '/accessories'};
-  if (item.route.includes('bike') && !item.route.includes('dirt')) return {category: 'E Bikes', categoryRoute: '/e-bikes'};
+  if (item.categorySlug === 'electric-wheelchairs' || item.route.includes('wheelchair')) return {category: 'Electric Wheelchairs', categoryRoute: '/electric-wheelchairs'};
+  if (item.categorySlug === 'accessories' || /helmet|kit|battery|display/.test(item.slug)) return {category: 'Accessories', categoryRoute: '/accessories'};
+  if (item.categorySlug === 'e-bikes' || (item.route.includes('bike') && !item.route.includes('dirt'))) return {category: 'E Bikes', categoryRoute: '/e-bikes'};
   return {category: 'Electric Dirt Bikes', categoryRoute: '/electric-dirt-bikes'};
 }
 

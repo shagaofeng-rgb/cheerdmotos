@@ -120,8 +120,10 @@ export function newsAutomationConfigStatus() {
   const feeds = configuredFeeds();
   const store = durableStoreStatus();
   const persistentForRuntime = store.configured || store.provider === 'local_file';
+  const enabled = process.env.NEWS_AUTOMATION_ENABLED !== 'false';
   return {
-    ready: persistentForRuntime && feeds.length > 0,
+    enabled,
+    ready: enabled && persistentForRuntime && feeds.length > 0,
     autoPublish: process.env.NEWS_AUTO_PUBLISH !== 'false',
     feedCount: feeds.length,
     feedSource: process.env.NEWS_RSS_FEEDS ? 'environment' : 'trusted_defaults',

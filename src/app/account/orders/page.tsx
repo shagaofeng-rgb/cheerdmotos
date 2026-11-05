@@ -1,67 +1,35 @@
-import Link from 'next/link';
-import Image from 'next/image';
+import {StoreAccountContent, StoreOrderRows} from '@/components/StorefrontAccount';
 import {redirect} from 'next/navigation';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
 import {readStoreOrders} from '@/lib/commerceStore';
-import {products} from '@/lib/site';
 import StorefrontPagination from '@/components/StorefrontPagination';
 import {paginateItems, readPage, type SearchParams} from '@/lib/storefrontPagination';
 
 export const dynamic = 'force-dynamic';
 
-function money(value: number, currency = 'USD') {
-  return `${currency} ${value.toLocaleString()}`;
-}
-
 export default async function AccountOrdersPage({searchParams}: {searchParams: Promise<SearchParams>}) {
   const session = await getCustomerSession();
   if (!session) redirect('/account/login');
   const query = await searchParams;
-  const email = session.email || '';
   const orders = (await readStoreOrders())
     .filter((order) => customerOwnsOrder(order, session))
     .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   const pagedOrders = paginateItems(orders, readPage(query.page));
 
   return (
-    <main className="account-page wide">
+    <StoreAccountContent active="/account/orders">
       <section className="account-header">
         <div>
-          <p className="eyebrow">Customer center</p>
+          <p className="kicker">Customer center</p>
           <h1>Your orders</h1>
-          <p>{email}</p>
+          <p>Track orders and review purchase details.</p>
         </div>
         <form action="/api/account/logout" method="post">
           <button className="button secondary" type="submit">Log out</button>
         </form>
       </section>
-      <section className="account-order-list">
-        {pagedOrders.items.length ? pagedOrders.items.map((order) => (
-          <article className="account-order-card" key={order.id}>
-            <Image className="account-order-thumb" src={products[order.productSlug]?.thumbnail || '/assets/cowin-placeholder.svg'} alt={order.productName} width={110} height={90} sizes="110px" />
-            <div>
-              <small>{order.id}</small>
-              <h2>{order.productName}</h2>
-              <p>{order.quantity} unit(s) · {money(order.total, order.currency)}</p>
-            </div>
-            <dl>
-              <div><dt>Order status</dt><dd>{order.status.replace(/_/g, ' ')}</dd></div>
-              <div><dt>Payment</dt><dd>{order.gatewayStatus.replace(/_/g, ' ')}</dd></div>
-              <div><dt>Shipment</dt><dd>{order.shipmentStatus.replace(/_/g, ' ')}</dd></div>
-              <div><dt>Tracking</dt><dd>{order.trackingNumber || 'Waiting for shipment'}</dd></div>
-            </dl>
-            <Link className="button secondary small" href={`/account/orders/${order.id}`}>View detail</Link>
-          </article>
-        )) : (
-          <article className="account-order-card empty">
-            <span className="account-empty-mark">0</span>
-            <h2>No orders yet</h2>
-            <p>Orders placed with this email will appear here after checkout.</p>
-            <Link className="button primary" href="/products">Browse products</Link>
-          </article>
-        )}
-      </section>
+      <StoreOrderRows title="Order history" orders={pagedOrders.items} />
       <StorefrontPagination pathname="/account/orders" params={query} label="Order history" {...pagedOrders} />
-    </main>
+    </StoreAccountContent>
   );
 }

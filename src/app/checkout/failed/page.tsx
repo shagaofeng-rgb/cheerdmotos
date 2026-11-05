@@ -1,3 +1,4 @@
+import {StoreIcon} from "@/components/StorefrontV1";
 import { findStoreOrder } from "@/lib/commerceStore";
 
 export default async function CheckoutFailedPage({
@@ -16,10 +17,10 @@ export default async function CheckoutFailedPage({
 
   return (
     <main>
-      <section className="checkout-hero">
-        <div>
-          <p className="eyebrow">payment result</p>
-          <h1>payment failed</h1>
+      <section className="shell section">
+        <div className="state">
+          <span className="state-symbol"><StoreIcon name="circle-alert" /></span><p className="kicker">Payment result</p>
+          <h1>Payment unsuccessful</h1>
           {order ? (
             <div className="checkout-success-summary">
               <p>Order number: <strong>{order.id}</strong></p>
@@ -31,10 +32,10 @@ export default async function CheckoutFailedPage({
           ) : (
             <p>{reason} Please contact COWIN if you need help confirming this payment attempt.</p>
           )}
-          <div className="checkout-success-actions">
-            <a className="button primary" href={order ? `/checkout?product=${encodeURIComponent(order.productSlug)}&qty=${order.quantity}` : "/checkout"}>try again</a>
-            <a className="button secondary" href="/account/orders">view orders</a>
-            <a className="button secondary" href="/support">contact support</a>
+          <div className="actions">
+            <a className="button primary" href={order ? `/checkout?product=${encodeURIComponent(order.productSlug)}&qty=${order.quantity}` : "/checkout"}>Try again</a>
+            <a className="button secondary" href="/account/orders">View orders</a>
+            <a className="button secondary" href="/support">Contact support</a>
           </div>
         </div>
       </section>

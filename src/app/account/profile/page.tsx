@@ -1,3 +1,4 @@
+import {StoreAccountContent} from '@/components/StorefrontAccount';
 import {redirect} from 'next/navigation';
 import AccountProfileForm from '@/components/AccountProfileForm';
 import {findCustomerUserById, getCustomerSession} from '@/lib/customerAuth';
@@ -13,13 +14,13 @@ export default async function AccountProfilePage() {
   if (!user) redirect('/account/login');
 
   return (
-    <main className="account-page">
+    <StoreAccountContent active="/account/profile">
       <section className="account-card">
-        <p className="eyebrow">Customer center</p>
+        <p className="kicker">Customer center</p>
         <h1>Profile</h1>
         <p>{user.email}</p>
         <AccountProfileForm firstName={user.firstName} lastName={user.lastName} country={user.country} />
       </section>
-    </main>
+    </StoreAccountContent>
   );
 }

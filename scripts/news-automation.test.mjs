@@ -69,8 +69,10 @@ test('source allowlist accepts subdomains and rejects unrelated domains', () => 
   assert.equal(isAllowedNewsSource('https://example.com/story', allowed, blocked), false);
 });
 
-test('production news publishing has one predictable daily cron window', () => {
+test('production News publishing is disabled and Google sync runs every Monday', () => {
   const config = JSON.parse(fs.readFileSync(new URL('../vercel.json', import.meta.url), 'utf8'));
   const newsCrons = config.crons.filter((cron) => cron.path === '/api/cron/publish-news');
-  assert.deepEqual(newsCrons, [{path: '/api/cron/publish-news', schedule: '0 1 * * *'}]);
+  const googleCrons = config.crons.filter((cron) => cron.path === '/api/cron/sync-google-seo');
+  assert.deepEqual(newsCrons, []);
+  assert.deepEqual(googleCrons, [{path: '/api/cron/sync-google-seo', schedule: '0 1 * * 1'}]);
 });

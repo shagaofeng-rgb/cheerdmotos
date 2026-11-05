@@ -4,6 +4,8 @@ import CheckoutForm from "@/components/CheckoutForm";
 import { isOneTimePaymentUnavailable } from "@/lib/commerceStore";
 import { checkoutProductSlugs, products, type CheckoutProductSlug } from "@/lib/site";
 import { shippingEstimateFor } from "@/lib/shipping";
+import {modelLayout} from "@/lib/storefrontModels";
+import {StoreIntro, StoreLink, StoreState} from "@/components/StorefrontV1";
 
 export const metadata: Metadata = {
   title: "Checkout",
@@ -22,40 +24,22 @@ export default async function CheckoutPage({
 
   const product = products[productSlug];
   const isOneTimePayment = productSlug === "one-time-35";
-  const quantity = isOneTimePayment ? 1 : Math.max(1, Math.min(99, Number(query.qty || 1)));
+  const requestedQuantity = Number(query.qty || 1);
+  const quantity = isOneTimePayment || !Number.isFinite(requestedQuantity) ? 1 : Math.max(1, Math.min(99, Math.trunc(requestedQuantity)));
   const shippingEstimate = shippingEstimateFor(productSlug, query.country || "");
 
   if (await isOneTimePaymentUnavailable(productSlug)) {
-    return (
-      <main>
-        <section className="checkout-hero">
-          <div>
-            <p className="eyebrow">payment link closed</p>
-            <h1>this one-time payment link is no longer available.</h1>
-            <p>The USD 35 one-time payment has already been reserved or completed. Please contact COWIN for a new payment link.</p>
-          </div>
-        </section>
-      </main>
-    );
+    return <main><StoreState eyebrow="Payment link" title="This payment link is no longer available." description="Contact COWIN if you need help completing a payment." icon="lock-keyhole"><div className="actions"><StoreLink href="/support#contact" primary arrow>Contact COWIN</StoreLink><StoreLink href="/products">Browse products</StoreLink></div></StoreState></main>;
   }
 
   return (
     <main>
-      <section className="checkout-hero">
-        <div>
-          <p className="eyebrow">COWIN order</p>
-          <h1>confirm buyer details and payment preparation</h1>
-          <p>
-            Submit buyer, delivery and payment preference details. Final quotation, logistics cost and payment collection
-            are confirmed by the COWIN sales team.
-          </p>
-        </div>
-      </section>
-      <section className="checkout-section">
+      <StoreIntro eyebrow="COWIN / Secure checkout" title="Checkout">Enter your delivery details and choose a payment method.</StoreIntro>
+      <section className="shell section">
         <CheckoutForm
           locale=""
           productSlug={productSlug}
-          productName={product.name}
+          productName={modelLayout(productSlug)?.title || product.name}
           productImage={product.image}
           unitPrice={product.priceAmount}
           quantity={quantity}

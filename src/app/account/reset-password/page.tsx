@@ -1,22 +1,13 @@
-import Link from 'next/link';
-import AccountAuthForm from '@/components/AccountAuthForm';
+import {StoreAuthPage} from '@/components/StorefrontAccount';
+import {StoreLink, StoreState} from '@/components/StorefrontV1';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AccountResetPasswordPage({searchParams}: {searchParams: Promise<{token?: string}>}) {
-  const params = await searchParams;
-  const token = params.token || '';
-  return (
-    <main className="account-page">
-      <section className="account-card">
-        <p className="eyebrow">Customer account</p>
-        <h1>{token ? 'Set your password' : 'Reset your password'}</h1>
-        <p>{token ? 'Create a password to activate your customer order center.' : 'Enter your email and we will send a password reset link if the account exists.'}</p>
-        <AccountAuthForm mode={token ? 'reset' : 'forgot'} token={token} />
-        <div className="account-links">
-          <Link href="/account/login">Back to login</Link>
-        </div>
-      </section>
-    </main>
-  );
+  const {token} = await searchParams;
+  return token ? <StoreAuthPage mode="reset" token={token} /> : <main>
+    <StoreState eyebrow="Account security" title="Reset link unavailable" description="Request a new password reset link to continue." icon="lock-keyhole">
+      <div className="actions"><StoreLink href="/account/forgot-password" primary arrow>Request new link</StoreLink><StoreLink href="/account/login">Back to sign in</StoreLink></div>
+    </StoreState>
+  </main>;
 }

@@ -23,7 +23,7 @@ function sign(value: string) {
 }
 
 export function verifyAdminCredentials(email: string, password: string) {
-  const adminEmail = (process.env.ADMIN_EMAIL || 'support@cheerdmotos.com').trim().toLowerCase();
+  const adminEmail = (process.env.ADMIN_EMAIL || 'info@cheerdmotos.com').trim().toLowerCase();
   const normalizedEmail = String(email || '').trim().toLowerCase();
   if (!normalizedEmail || normalizedEmail !== adminEmail || !password) return false;
   if (process.env.ADMIN_PASSWORD_HASH) return verifyPasswordHash(password, process.env.ADMIN_PASSWORD_HASH);

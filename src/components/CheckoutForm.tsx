@@ -102,6 +102,8 @@ export default function CheckoutForm({locale, productSlug, productName, productI
   const total = unitPrice * quantity + activeShippingEstimate;
   const discount = useMemo(() => (!isOneTimePayment && ['COWIN', 'CHEERDMOTO'].includes(coupon.trim().toUpperCase()) ? Math.round(total * 0.03) : 0), [coupon, isOneTimePayment, total]);
   const finalTotal = total - discount;
+  const showDeliveryEstimate = Boolean(country) || isOneTimePayment;
+  const displayedTotal = showDeliveryEstimate ? finalTotal : unitPrice * quantity;
 
   useEffect(() => {
     const storageKey = `cheerdmoto-checkout-idem-${productSlug}-${quantity}`;
@@ -406,6 +408,11 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       />
       <Script src="https://secure.oceanpayment.com/gateway/js/googlepay_ec.js" strategy="afterInteractive" />
       <Script src="https://secure.oceanpayment.com/gateway/js/applepay_ec.js" strategy="afterInteractive" />
+      <details className="checkout-mobile-summary panel">
+        <summary><span>Order summary</span><strong>USD {displayedTotal.toLocaleString()}</strong></summary>
+        <div className="order-product"><Image src={productImage} alt="" width={80} height={62} sizes="80px" /><div><strong>{productName}</strong><p className="small">Quantity {quantity}</p></div></div>
+        <dl className="speclist"><div><dt>Subtotal</dt><dd>USD {(unitPrice * quantity).toLocaleString()}</dd></div><div><dt>Estimated shipping</dt><dd>{showDeliveryEstimate ? `USD ${activeShippingEstimate.toLocaleString()}` : 'Confirm delivery address'}</dd></div></dl>
+      </details>
       <div className="checkout-left">
         <section className="checkout-block">
           <div className="checkout-block-title">
@@ -582,6 +589,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       </div>
 
       <aside className="checkout-summary">
+        <h2 className="sf-checkout-summary-title">Order summary</h2>
         <div className="summary-product">
           <div className="summary-image-wrap">
             <Image src={productImage} alt={`${productName} checkout thumbnail`} width={70} height={70} sizes="70px" />
@@ -601,9 +609,9 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         ) : null}
         <dl className="summary-totals">
           <div><dt>Subtotal</dt><dd>USD {(unitPrice * quantity).toLocaleString()}</dd></div>
-          <div><dt>Shipping</dt><dd>USD {activeShippingEstimate.toLocaleString()}</dd></div>
+          <div><dt>Shipping</dt><dd>{showDeliveryEstimate ? `USD ${activeShippingEstimate.toLocaleString()}` : 'Confirm delivery address'}</dd></div>
           {discount ? <div><dt>Discount</dt><dd>- USD {discount.toLocaleString()}</dd></div> : null}
-          <div className="summary-total"><dt>Estimated total</dt><dd><small>USD</small> {finalTotal.toLocaleString()}</dd></div>
+          <div className="summary-total"><dt>Estimated total</dt><dd>{showDeliveryEstimate ? <><small>USD</small> {finalTotal.toLocaleString()}</> : <small>After delivery is confirmed</small>}</dd></div>
         </dl>
         <button className="button primary checkout-pay-button" type="submit" disabled={isSubmitting}>
           {isSubmitting ? 'Processing...' : 'Pay now'}

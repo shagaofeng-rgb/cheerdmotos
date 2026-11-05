@@ -1,16 +1,15 @@
 import type {Metadata} from 'next';
 import Link from 'next/link';
-import {getAllBlogArticles} from '@/lib/blogFeed';
-import {getAllNewsArticles} from '@/lib/newsFeed';
 import {siteData, siteUrl} from '@/lib/site';
-import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
+import {listPublicProducts} from '@/lib/publicCatalog';
+import {modelLayout} from '@/lib/storefrontModels';
+import {getAllNewsArticles} from '@/lib/newsFeed';
+import {getAllBlogArticles} from '@/lib/blogFeed';
+import {StorefrontV1, StoreIcon, StoreIntro, StoreLink} from '@/components/StorefrontV1';
 import StorefrontPagination from '@/components/StorefrontPagination';
-import {paginateItems, readPage, type SearchParams} from '@/lib/storefrontPagination';
-
-type Props = {searchParams: Promise<SearchParams>};
+import {paginateItems, readPage, readParam, storefrontHref, type SearchParams} from '@/lib/storefrontPagination';
 
 export const dynamic = 'force-dynamic';
-
 export const metadata: Metadata = {
   title: 'Search COWIN',
   description: 'Search COWIN products, news, buying guides and support pages.',
@@ -18,43 +17,35 @@ export const metadata: Metadata = {
   robots: {index: false, follow: true}
 };
 
-export default async function SearchPage({searchParams}: Props) {
-  const queryParams = await searchParams;
-  const q = Array.isArray(queryParams.q) ? queryParams.q[0] || '' : queryParams.q || '';
-  const query = q.trim().toLowerCase();
-  const [news, blogs] = await Promise.all([getAllNewsArticles(), getAllBlogArticles()]);
-  const rows = [
-    ...siteData.items.map((item) => ({title: item.title, excerpt: item.description, href: item.route, type: item.kind})),
-    ...news.map((item) => ({title: item.title, excerpt: item.excerpt, href: `/news/${item.slug}`, type: 'news'})),
-    ...blogs.map((item) => ({title: item.title, excerpt: item.excerpt, href: `/blog/${item.slug}`, type: 'blog'}))
-  ];
-  const results = query ? rows.filter((row) => `${row.title} ${row.excerpt} ${row.type}`.toLowerCase().includes(query)) : rows;
-  const pagedResults = paginateItems(results, readPage(queryParams.page));
+const filters = [['All', ''], ['Products', 'product'], ['Articles', 'article'], ['Support', 'support']] as const;
 
-  return (
-    <main className="search-page precision-page">
-      <PrecisionStorefrontHeader />
-      <section className="article-hero">
-        <p className="eyebrow">Search</p>
-        <h1>Search COWIN</h1>
-        <p>Find products, News, Blog guides and support pages.</p>
-        <form className="search-form" action="/search">
-          <input name="q" defaultValue={q} placeholder="Search electric dirt bikes, XCEED, shipping..." />
-          <button className="button primary" type="submit">Search</button>
-        </form>
-      </section>
-      <section className="search-results">
-        {pagedResults.items.map((row) => (
-          <Link href={row.href} key={`${row.type}-${row.href}`}>
-            <span>{row.type}</span>
-            <strong>{row.title}</strong>
-            <p>{row.excerpt}</p>
-          </Link>
-        ))}
-        {!results.length ? <p>No matching results.</p> : null}
-      </section>
-      <StorefrontPagination pathname="/search" params={queryParams} label="Search results" {...pagedResults} />
-      <PrecisionStorefrontFooter />
-    </main>
-  );
+export default async function SearchPage({searchParams}: {searchParams: Promise<SearchParams>}) {
+  const params = await searchParams;
+  const q = readParam(params.q);
+  const query = q.toLowerCase();
+  const group = readParam(params.type);
+  const [products, news, blogs] = await Promise.all([listPublicProducts(), getAllNewsArticles(), getAllBlogArticles()]);
+  const rows = [
+    ...products.map((item) => ({title: modelLayout(item.slug)?.title || item.title, excerpt: modelLayout(item.slug)?.intro || item.description, href: item.route, group: 'product', label: 'Product'})),
+    ...news.map((item) => ({title: item.title, excerpt: item.excerpt, href: `/news/${item.slug}`, group: 'article', label: 'News'})),
+    ...blogs.map((item) => ({title: item.title, excerpt: item.excerpt, href: `/blog/${item.slug}`, group: 'article', label: 'Blog'})),
+    ...siteData.pages.map((item) => ({title: item.title, excerpt: item.description, href: item.route, group: 'support', label: 'Support'}))
+  ];
+  const results = rows.filter((row) => (!group || row.group === group) && (!query || `${row.title} ${row.excerpt} ${row.label}`.toLowerCase().includes(query)));
+  const paged = paginateItems(results, readPage(params.page));
+
+  return <StorefrontV1><main>
+    <StoreIntro eyebrow="Explore COWIN" title="Search">Find products, articles and owner resources.</StoreIntro>
+    <section className="shell section">
+      <form className="searchfield" action="/search">
+        <input type="search" aria-label="Search COWIN" name="q" defaultValue={q} placeholder="Search models, news or help" />
+        {group && <input type="hidden" name="type" value={group} />}
+        <button className="button primary" type="submit">Search</button>
+      </form>
+      <nav className="chips sf-spaced" aria-label="Search result types">{filters.map(([label, value]) => <Link key={label} className="chip" href={storefrontHref('/search', params, {type: value})} aria-current={group === value ? 'true' : undefined}>{label}</Link>)}</nav>
+      <div className="resultlist sf-spaced">{paged.items.map((row) => <Link className="result" key={row.href} href={row.href}><div><p className="kicker">{row.label}</p><strong>{row.title}</strong><p>{row.excerpt}</p></div><StoreIcon name="arrow-right" /></Link>)}</div>
+      {results.length === 0 && <div className="empty"><span className="state-symbol"><StoreIcon name="search" /></span><h2>No results found</h2><p>Try a model name such as XCEED, or browse the catalog.</p><StoreLink href="/products" primary arrow>Browse products</StoreLink></div>}
+      <StorefrontPagination pathname="/search" params={params} label="Search results" {...paged} />
+    </section>
+  </main></StorefrontV1>;
 }

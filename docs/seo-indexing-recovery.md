@@ -30,7 +30,7 @@ changed together.
 
 ## Scheduled behavior
 
-Vercel invokes `/api/cron/sync-google-seo` every day at 02:30 UTC. The route
+Vercel invokes `/api/cron/sync-google-seo` every Monday at 01:00 UTC (09:00 Beijing time). The route
 refreshes sitemap data and Search Console metrics on each run, but submits the
 three public sitemaps only after 72 hours have elapsed since the last successful
 submission. Every attempt is stored without credentials in `google-seo-runs.jsonl`.

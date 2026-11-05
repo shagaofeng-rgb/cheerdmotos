@@ -1,3 +1,4 @@
+import {StoreIcon} from "@/components/StorefrontV1";
 import { findStoreOrder } from "@/lib/commerceStore";
 
 export default async function CheckoutSuccessPage({
@@ -20,10 +21,10 @@ export default async function CheckoutSuccessPage({
 
   return (
     <main>
-      <section className="checkout-hero">
-        <div>
-          <p className="eyebrow">order received</p>
-          <h1>{statusCopy}</h1>
+      <section className="shell section">
+        <div className="state">
+          <span className="state-symbol"><StoreIcon name={order?.status === "paid" ? "circle-check" : "circle-alert"} /></span><p className="kicker">Order status</p>
+          <h1>{statusCopy[0].toUpperCase() + statusCopy.slice(1)}</h1>
           {order ? (
             <div className="checkout-success-summary">
               <p>Order number: <strong>{order.id}</strong></p>
@@ -38,10 +39,10 @@ export default async function CheckoutSuccessPage({
               Please contact COWIN with the order number shown here.
             </p>
           )}
-          <div className="checkout-success-actions">
-            <a className="button primary" href="/products">continue shopping</a>
-            <a className="button secondary" href="/account/orders">view orders</a>
-            <a className="button secondary" href="/support">contact support</a>
+          <div className="actions">
+            <a className="button primary" href="/products">Continue shopping</a>
+            <a className="button secondary" href="/account/orders">View orders</a>
+            <a className="button secondary" href="/support">Contact support</a>
           </div>
         </div>
       </section>

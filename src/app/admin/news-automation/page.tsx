@@ -52,8 +52,8 @@ export default async function AdminNewsAutomationPage() {
       </div>
 
       <div className="admin-metrics">
-        <article><span>运行状态</span><strong>{config.ready ? '已就绪' : '待配置'}</strong><small>{config.store.provider}</small></article>
-        <article><span>每日计划</span><strong>{config.cronTarget}</strong><small>北京时间 09:00 单次发布</small></article>
+        <article><span>运行状态</span><strong>{config.enabled ? (config.ready ? '已就绪' : '待配置') : '已停用'}</strong><small>{config.enabled ? config.store.provider : '新闻自动化总开关已关闭'}</small></article>
+        <article><span>自动计划</span><strong>{config.enabled ? config.cronTarget : '已停止'}</strong><small>{config.enabled ? '由 Vercel Cron 配置决定' : '不会抓取、撰写、总结或发布'}</small></article>
         <article><span>最近任务</span><strong>{statusLabel(latestRun?.status)}</strong><small>{time(latestRun?.finishedAt || '')}</small></article>
         <article><span>最近发布</span><strong>{latestSuccess ? '已交付' : '暂无记录'}</strong><small>{time(latestSuccess?.createdAt || '')}</small></article>
       </div>
@@ -63,7 +63,7 @@ export default async function AdminNewsAutomationPage() {
         <dl className="admin-config-list">
           <div><dt>可信来源</dt><dd>{config.feedCount} 个 RSS；配置来源：{config.feedSource === 'environment' ? '环境变量' : '内置可信默认值'}</dd></div>
           <div><dt>允许域名</dt><dd>{config.allowedDomains.join(', ') || '未配置'}</dd></div>
-          <div><dt>自动发布</dt><dd>{config.autoPublish ? '已启用' : '已关闭，仅记录候选'}</dd></div>
+          <div><dt>自动发布</dt><dd>{config.enabled ? (config.autoPublish ? '已启用' : '已关闭，仅记录候选') : '新闻自动化已停用'}</dd></div>
           <div><dt>筛选规则</dt><dd>{config.lookbackHours} 小时新鲜度；相关性阈值 {config.relevanceThreshold}；去重窗口 {config.dedupDays} 天</dd></div>
           <div><dt>候选缓冲</dt><dd>无当天合格来源时，复核近 {config.queueLookbackHours} 小时内的已验证候选；不会发布不相关或已去重内容。</dd></div>
           <div><dt>最近淘汰原因</dt><dd>{rejectionSummary || '最近任务没有可汇总的淘汰记录。'}</dd></div>

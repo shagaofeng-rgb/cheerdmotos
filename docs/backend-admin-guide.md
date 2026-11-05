@@ -20,7 +20,7 @@ The site now has a real Next.js backend foundation:
 Set these environment variables in local `.env.local` and Vercel:
 
 ```bash
-ADMIN_EMAIL=support@cheerdmotos.com
+ADMIN_EMAIL=info@cheerdmotos.com
 ADMIN_PASSWORD_HASH=pbkdf2_sha256$...
 ADMIN_JWT_SECRET=replace-with-long-random-secret
 ```
@@ -99,10 +99,10 @@ Do not store full card numbers or CVV in this app. Card data should be tokenized
 SMTP_HOST=smtp.exmail.qq.com
 SMTP_PORT=465
 SMTP_SECURE=true
-SMTP_USER=support@cheerdmotos.com
+SMTP_USER=info@cheerdmotos.com
 SMTP_PASS=
-SMTP_FROM=support@cheerdmotos.com
-ADMIN_NOTIFICATION_EMAIL=support@cheerdmotos.com
+SMTP_FROM=info@cheerdmotos.com
+ADMIN_NOTIFICATION_EMAIL=info@cheerdmotos.com
 ```
 
 ## Privacy Notes

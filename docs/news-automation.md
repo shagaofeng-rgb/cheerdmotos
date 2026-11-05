@@ -1,8 +1,12 @@
 # COWIN News automation
 
-## Production flow
+## Current production status
 
-Vercel Cron calls `GET /api/cron/publish-news` once daily at `01:00 UTC` (09:00 Beijing time). The route requires the Vercel-provided `Authorization: Bearer $CRON_SECRET` header and runs on the Node.js runtime.
+The automated News crawl, generation, summary and publication workflow is disabled in production. There is no Vercel Cron entry for `/api/cron/publish-news`, and `NEWS_AUTOMATION_ENABLED=false` prevents an authorized request from running the worker.
+
+Blog publication remains isolated in `/api/webhook/send_article` and is not affected by this setting.
+
+## Historical flow
 
 Each run performs the following steps:
 
@@ -14,7 +18,7 @@ Each run performs the following steps:
 6. Verify the new slug on `/news`, `/news/{slug}` and `/news-sitemap.xml`.
 7. Keep the post published only when all delivery checks pass. A failed delivery is changed to `unpublished` and recorded.
 
-Blog publication remains isolated in `/api/webhook/send_article` and cannot create News records.
+Blog publication cannot create News records.
 
 ## Durability and recovery
 
@@ -26,7 +30,7 @@ Blog publication remains isolated in `/api/webhook/send_article` and cannot crea
 
 ## Authorized checks
 
-All requests below require the Cron bearer token in production.
+All requests below require the Cron bearer token in production and are unavailable while News automation is disabled.
 
 - Dry run: `/api/cron/publish-news?dryRun=1`
 - Marked end-to-end delivery test: `/api/cron/publish-news?deliveryTest=1`
@@ -34,4 +38,4 @@ All requests below require the Cron bearer token in production.
 
 ## Acceptance checks
 
-Run `npm run test:news`, `npm run typecheck` and `npm run build`. After production deployment, confirm an unauthorized request returns `401`, the Vercel deployment is `READY`, and the next authorized Cron run records a successful delivery in the Chinese admin monitor.
+Run `npm run test:news`, `npm run typecheck` and `npm run build`. After production deployment, confirm an unauthorized request returns `401`, an authorized request reports `status: disabled`, and the Vercel deployment is `READY`.

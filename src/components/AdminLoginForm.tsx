@@ -32,7 +32,7 @@ export default function AdminLoginForm({hasError, hasResetNotice}: Props) {
 
       <label>
         管理员邮箱
-        <input name="email" type="email" defaultValue="support@cheerdmotos.com" autoComplete="username" required />
+        <input name="email" type="email" defaultValue="info@cheerdmotos.com" autoComplete="username" required />
       </label>
 
       <label className="admin-password-field">

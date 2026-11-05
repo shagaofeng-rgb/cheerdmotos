@@ -1,5 +1,5 @@
-import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from '@/components/PrecisionStorefrontChrome';
+import {StorefrontV1} from '@/components/StorefrontV1';
 
 export default function CheckoutLayout({children}: {children: React.ReactNode}) {
-  return <div className="precision-checkout-frame"><PrecisionStorefrontHeader />{children}<PrecisionStorefrontFooter /></div>;
+  return <StorefrontV1 className="sf-checkout">{children}</StorefrontV1>;
 }

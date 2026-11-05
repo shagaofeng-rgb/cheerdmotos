@@ -434,8 +434,8 @@ function createSeedStore(): AdminStore {
     posts: [],
     settings: {
       companyName: 'COWIN',
-      adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || 'support@cheerdmotos.com',
-      contactEmail: 'support@cheerdmotos.com',
+      adminNotificationEmail: process.env.ADMIN_NOTIFICATION_EMAIL || 'info@cheerdmotos.com',
+      contactEmail: 'info@cheerdmotos.com',
       whatsapp: '+86 17621485205',
       address: 'COWIN sales office',
       paymentCurrency: 'USD',

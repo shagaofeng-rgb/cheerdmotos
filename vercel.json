@@ -1,12 +1,8 @@
 {
   "crons": [
     {
-      "path": "/api/cron/publish-news",
-      "schedule": "0 1 * * *"
-    },
-    {
       "path": "/api/cron/sync-google-seo",
-      "schedule": "30 2 * * *"
+      "schedule": "0 1 * * 1"
     },
     {
       "path": "/api/cron/sitemap",
