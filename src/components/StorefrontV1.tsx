@@ -13,8 +13,8 @@ const navigation = [
   ['Support', '/support']
 ] as const;
 
-export function StoreIcon({name}: {name: string}) {
-  return <Image className="sf-icon" src={`/storefront-icons/${name}.svg`} alt="" width={24} height={24} aria-hidden="true" unoptimized />;
+export function StoreIcon({name, loading}: {name: string; loading?: 'eager' | 'lazy'}) {
+  return <Image className="sf-icon" src={`/storefront-icons/${name}.svg`} alt="" width={24} height={24} loading={loading} aria-hidden="true" unoptimized />;
 }
 
 export function StoreLink({href, children, primary = false, arrow = false}: {

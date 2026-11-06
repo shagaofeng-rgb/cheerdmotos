@@ -151,7 +151,7 @@ export default function ProductDetail({item, product, activeSection: requestedSe
               <button type="button" className="zoom" onClick={() => {
                 dialog.current?.showModal();
                 setExpanded(true);
-              }} aria-label={`Expand ${product.displayName} image`}><StoreIcon name="maximize2" /></button>
+              }} aria-label={`Expand ${product.displayName} image`}><StoreIcon name="maximize2" loading="eager" /></button>
             </div>
             {gallery.length > 1 && <div className="thumbs" aria-label="Product images">
               <button type="button" className="arrow" onClick={() => switchImage(-1)} aria-label="Previous product image"><StoreIcon name="chevron-left" /></button>

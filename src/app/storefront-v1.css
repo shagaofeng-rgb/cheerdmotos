@@ -61,11 +61,11 @@
 .storefront-v1 .pdp-grid{display:grid;grid-template-columns:minmax(0,58.5fr) minmax(0,41.5fr);background:#f2f4f5;border-bottom:1px solid var(--line)}
 .storefront-v1 .pdp-visual{min-width:0;background:#e1e5e7}
 .storefront-v1 .stage{position:relative;display:grid;place-items:center;width:100%;height:var(--gallery-h);padding:32px 36px;background:url(/homepage-precision/precision-studio-hero.webp) 53% center/cover;overflow:hidden;text-align:center}
-.storefront-v1 .stage img{height:100%;width:100%;object-fit:contain;min-height:0;filter:drop-shadow(0 15px 12px #1115)}
-.storefront-v1 .stage.photo img{filter:none}
+.storefront-v1 .stage > img{height:100%;width:100%;object-fit:contain;min-height:0;filter:drop-shadow(0 15px 12px #1115)}
+.storefront-v1 .stage.photo > img{filter:none}
 .storefront-v1 .stage.photo{padding:18px;background:#dbe1e4}
-.storefront-v1 .zoom{position:absolute;bottom:16px;right:16px;display:grid;place-items:center;width:42px;height:42px;border:1px solid #abb5bb;background:#f6f8f8}
-.storefront-v1 .zoom .sf-icon{width:18px}
+.storefront-v1 .zoom{position:absolute;bottom:16px;right:16px;display:grid;place-items:center;width:44px;height:44px;border:1px solid #abb5bb;background:#f6f8f8}
+.storefront-v1 .zoom .sf-icon{width:18px;height:18px}
 .storefront-v1 .thumbs{display:flex;align-items:center;justify-content:center;gap:10px;padding:13px 16px;border-top:1px solid #bbc2c6;min-height:97px}
 .storefront-v1 .thumbs button{width:106px;height:68px;display:grid;place-items:center;padding:3px;border:1px solid #aeb8be;background:#eef0f1}
 .storefront-v1 .thumbs img{width:100%;height:60px;object-fit:contain}
