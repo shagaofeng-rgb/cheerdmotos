@@ -1,4 +1,5 @@
 import {clearTestInquiry} from '@/lib/contactInquiries';
+import {siteUrl} from '@/lib/site';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -15,7 +16,7 @@ export async function GET(request: Request) {
     return Response.json({ok: false, error: 'Unauthorized'}, {status: 401});
   }
 
-  const origin = new URL(request.url).origin;
+  const origin = process.env.VERCEL_ENV === 'production' ? siteUrl : new URL(request.url).origin;
   const checkedAt = new Date().toISOString();
   const notificationEmail = 'info@cheerdmotos.com';
   const payload = {
@@ -56,7 +57,7 @@ export async function GET(request: Request) {
     const emailStatus = typeof result.emailStatus === 'string' ? result.emailStatus : 'unknown';
     const ok = response.ok && emailStatus === 'sent';
     if (typeof result.id === 'string' && result.id.startsWith('contact-test-')) await clearTestInquiry(result.id);
-    console.info('[contact-form-health-check]', {ok, emailStatus, checkedAt});
+    console.info('[contact-form-health-check]', {ok, endpointStatus: response.status, emailStatus, checkedAt});
 
     return Response.json(
       {

@@ -1,7 +1,7 @@
 import fs from 'node:fs/promises';
 import path from 'node:path';
 import {randomUUID} from 'node:crypto';
-import {BlobNotFoundError, BlobPreconditionFailedError, del, get, put} from '@vercel/blob';
+import {BlobNotFoundError, BlobPreconditionFailedError, del, get, head, put} from '@vercel/blob';
 
 type RedisResult<T> = {
   result?: T;
@@ -22,6 +22,7 @@ type StoreLockValue = {
 export type StoreLock = StoreLockValue & {
   name: string;
   provider: 'kv_rest' | 'vercel_blob' | 'local_file';
+  etag?: string;
 };
 
 export function durableStoreConfigured() {
@@ -93,27 +94,23 @@ async function readLocalLines<T>(fileName: string) {
   }
 }
 
-async function readBlobVersion(fileName: string) {
+async function readBlobText(fileName: string) {
   try {
     const result = await get(blobPath(fileName), {
       access: 'private',
       token: BLOB_TOKEN,
       useCache: false
     });
-    if (!result || result.statusCode !== 200) return null;
-    return {text: await new Response(result.stream).text(), etag: result.blob.etag};
+    if (!result || result.statusCode !== 200) return '';
+    return await new Response(result.stream).text();
   } catch (error) {
-    if (error instanceof BlobNotFoundError) return null;
+    if (error instanceof BlobNotFoundError) return '';
     throw error;
   }
 }
 
-async function readBlobText(fileName: string) {
-  return (await readBlobVersion(fileName))?.text || '';
-}
-
 async function writeBlobText(fileName: string, text: string, contentType = 'text/plain; charset=utf-8', expected?: {etag: string} | null) {
-  await put(blobPath(fileName), text, {
+  return put(blobPath(fileName), text, {
     access: 'private',
     addRandomSuffix: false,
     allowOverwrite: expected !== null,
@@ -147,18 +144,11 @@ export async function appendStoreLines(fileName: string, values: unknown[]) {
       await kvPipeline([['RPUSH', storeKey(fileName), ...lines]]);
       return;
     }
-    for (let attempt = 0; attempt < 8; attempt += 1) {
-      const current = await readBlobVersion(fileName);
-      const existing = current?.text ? `${current.text.trimEnd()}\n` : '';
-      try {
-        await writeBlobText(fileName, `${existing}${lines.join('\n')}\n`, undefined, current);
-        return;
-      } catch (error) {
-        if (!(error instanceof BlobPreconditionFailedError) && !(!current && error instanceof Error && /already exists/i.test(error.message))) throw error;
-        await new Promise((resolve) => setTimeout(resolve, 35 * (attempt + 1) + Math.random() * 55));
-      }
-    }
-    throw new Error(`Concurrent storage updates prevented appending to ${fileName}`);
+    return withStoreLock(`append-${fileName}`, async () => {
+      const current = (await readBlobText(fileName)).trimEnd();
+      const prefix = current ? `${current}\n` : '';
+      await writeBlobText(fileName, `${prefix}${lines.join('\n')}\n`);
+    }, {ttlSeconds: 45, attempts: 12});
   }
   await ensureLocalParent(fileName);
   await fs.appendFile(localFile(fileName), `${lines.join('\n')}\n`, 'utf8');
@@ -233,6 +223,10 @@ function lockActive(value: StoreLockValue | null) {
   return Boolean(value?.token && new Date(value.expiresAt).getTime() > Date.now());
 }
 
+function blobWriteConflict(error: unknown) {
+  return error instanceof BlobPreconditionFailedError || (error instanceof Error && /already exists/i.test(error.message));
+}
+
 export async function acquireStoreLock(name: string, ttlSeconds = 60): Promise<StoreLock | null> {
   const fileName = lockFileName(name);
   const value = lockValue(ttlSeconds);
@@ -246,13 +240,20 @@ export async function acquireStoreLock(name: string, ttlSeconds = 60): Promise<S
   }
 
   if (BLOB_TOKEN) {
-    const current = await readBlobVersion(fileName);
-    if (lockActive(safeJson<StoreLockValue>(current?.text))) return null;
     try {
-      await writeBlobText(fileName, serialized, 'application/json; charset=utf-8', current);
-      return {...value, name, provider: 'vercel_blob'};
+      const blob = await writeBlobText(fileName, serialized, 'application/json; charset=utf-8', null);
+      return {...value, name, provider: 'vercel_blob', etag: blob.etag};
     } catch (error) {
-      if (error instanceof BlobPreconditionFailedError || (!current && error instanceof Error && /already exists/i.test(error.message))) return null;
+      if (!blobWriteConflict(error)) throw error;
+    }
+    try {
+      // The Blob API's metadata version is authoritative for replacing an expired lease.
+      const current = await head(blobPath(fileName), {token: BLOB_TOKEN});
+      if (lockActive(safeJson<StoreLockValue>(await readBlobText(fileName)))) return null;
+      const blob = await writeBlobText(fileName, serialized, 'application/json; charset=utf-8', {etag: current.etag});
+      return {...value, name, provider: 'vercel_blob', etag: blob.etag};
+    } catch (error) {
+      if (error instanceof BlobNotFoundError || blobWriteConflict(error)) return null;
       throw error;
     }
   }
@@ -289,10 +290,7 @@ export async function releaseStoreLock(lock: StoreLock) {
     return;
   }
   if (lock.provider === 'vercel_blob') {
-    const current = await readBlobVersion(fileName);
-    if (current && safeJson<StoreLockValue>(current.text)?.token === lock.token) {
-      await del(blobPath(fileName), {token: BLOB_TOKEN, ifMatch: current.etag});
-    }
+    if (lock.etag) await del(blobPath(fileName), {token: BLOB_TOKEN, ifMatch: lock.etag});
     return;
   }
   const filePath = localFile(fileName.replaceAll('/', '-'));
