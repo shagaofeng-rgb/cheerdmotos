@@ -1,13 +1,16 @@
-import {appendStoreLine, readStoreLines, writeStoreLines} from '@/lib/durableStore';
+import {createHash, randomInt} from 'node:crypto';
+import {appendStoreLine, readStoreLines, withStoreLock, writeStoreLines} from '@/lib/durableStore';
+import {getPurchaseOffer, isSpecialPayment, type PurchaseSource} from '@/lib/purchaseCatalog';
+import {checkoutQuote} from '@/lib/checkoutQuote';
+import {INVENTORY_HOLD_MS, ORDER_WRITE_LOCK, ORDER_WRITE_OPTIONS} from '@/lib/inventory';
 import {shippingEstimateFor} from '@/lib/shipping';
-import {oneTimePaymentSlug, products, type CheckoutProductSlug} from '@/lib/site';
+import {checkoutProductSlugs, oneTimePaymentSlug, products, type CheckoutProductSlug} from '@/lib/site';
 import type {AttributionSnapshot} from '@/lib/trafficAttribution';
 import {classifyTrafficQuality} from '@/lib/analyticsGovernance';
 import {normalizeBrandValue} from '@/lib/brand';
 
 const ORDERS_FILE = 'orders.jsonl';
 const EVENTS_FILE = 'analytics-events.jsonl';
-const IDEMPOTENCY_FILE = 'idempotency-keys.jsonl';
 const EMAIL_LOGS_FILE = 'email-logs.jsonl';
 const REFUNDS_FILE = 'refunds.jsonl';
 const SHIPMENTS_FILE = 'shipments.jsonl';
@@ -39,19 +42,24 @@ export type PaymentMethod =
 
 export type StoreOrder = {
   id: string;
-  productSlug: CheckoutProductSlug;
+  productSlug: string;
   productName: string;
+  productImage?: string;
   quantity: number;
   unitPrice: number;
   currency: 'USD';
   subtotal: number;
   shippingEstimate: number;
+  discount?: number;
   total: number;
   status: OrderStatus;
   paymentMethod: PaymentMethod;
   paymentGateway: string;
   gatewayStatus: GatewayStatus;
   idempotencyKey: string;
+  requestFingerprint?: string;
+  paymentHoldUntil?: string;
+  inventory?: {productId: string; reservedUntil: string; committedAt?: string};
   paymentId: string;
   transactionId: string;
   refundStatus: string;
@@ -118,15 +126,6 @@ export type AnalyticsEvent = {
   attribution?: AttributionSnapshot | null;
 };
 
-export type IdempotencyRecord = {
-  id: string;
-  key: string;
-  orderId: string;
-  fingerprint: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
 export type EmailLog = {
   id: string;
   orderId: string;
@@ -154,6 +153,7 @@ export type PaymentNotification = {
   paymentStatus: string;
   paymentId: string;
   raw: Record<string, string>;
+  eventKey?: string;
   createdAt: string;
 };
 
@@ -240,83 +240,96 @@ function compactTimestamp(date: Date) {
   ].join('');
 }
 
-async function generateStoreOrderId() {
-  const existing = new Set((await readStoreOrders()).map((order) => order.id));
+function generateStoreOrderId(orders: StoreOrder[]) {
+  const existing = new Set(orders.map((order) => order.id));
   for (let attempt = 0; attempt < 5; attempt += 1) {
-    const random = Math.floor(100000 + Math.random() * 900000);
+    const random = randomInt(100000, 1000000);
     const candidate = `CM${compactTimestamp(new Date())}${random}`;
     if (!existing.has(candidate)) return candidate;
   }
-  return `CM${compactTimestamp(new Date())}${Date.now().toString().slice(-6)}`;
+  throw new Error('Could not allocate a unique order number');
 }
 
+export const paymentMethods = ['qianhai_card', 'bank_transfer', 'manual_quote', 'oceanpayment_card', 'oceanpayment_google_pay', 'oceanpayment_apple_pay'] as const satisfies readonly PaymentMethod[];
+
 export async function createStoreOrder(input: {
-  productSlug: CheckoutProductSlug;
+  productSlug: string;
   quantity: number;
-  paymentMethod?: StoreOrder['paymentMethod'];
+  paymentMethod: PaymentMethod;
+  purchaseSource: PurchaseSource;
+  cartAuthorized: boolean;
+  expectedPriceCents?: number;
+  expectedShippingCents?: number;
   customer: StoreOrder['customer'];
   checkout?: Partial<StoreOrder['checkout']>;
   idempotencyKey?: string;
   userId?: string;
   attribution?: AttributionSnapshot | null;
-}) {
-  const quantity = input.productSlug === oneTimePaymentSlug ? 1 : Math.max(1, Math.min(99, Number(input.quantity || 1)));
-  const idempotencyKey = String(input.idempotencyKey || '').trim().slice(0, 120);
-  const fingerprint = [
-    input.customer.email.toLowerCase(),
-    input.productSlug,
-    quantity,
-    input.paymentMethod || 'qianhai_card'
-  ].join('|');
-
-  if (idempotencyKey) {
-    const existingRecord = (await readIdempotencyRecords()).find((record) => record.key === idempotencyKey);
-    if (existingRecord) {
-      const existingOrder = await findStoreOrder(existingRecord.orderId);
-      if (existingOrder) {
-        await appendAnalyticsEvent({
-          id: `${Date.now()}-checkout-idempotent-replay`,
-          type: 'checkout_duplicate_submit',
-          visitorId: 'checkout',
-          sessionId: existingOrder.id,
-          page: '/checkout',
-          pageTitle: 'Duplicate checkout submit',
-          referrer: '',
-          country: existingOrder.customer.country,
-          city: '',
-          device: 'Unknown',
-          browser: 'Unknown',
-          os: 'Unknown',
-          timestamp: new Date().toISOString(),
-          payload: {orderId: existingOrder.id, idempotencyKey, fingerprint}
-        });
-        return existingOrder;
+}): Promise<{order: StoreOrder; created: boolean}> {
+  const quantity = input.productSlug === oneTimePaymentSlug ? 1 : input.quantity;
+  if (!Number.isSafeInteger(quantity) || quantity < 1 || quantity > 99) throw new Error('INVALID_QUANTITY');
+  const idempotencyKey = input.idempotencyKey || '';
+  const requestFingerprint = createHash('sha256').update(JSON.stringify([
+    input.productSlug, quantity, input.paymentMethod, input.purchaseSource,
+    input.customer, input.checkout, input.expectedPriceCents, input.expectedShippingCents
+  ])).digest('hex');
+  return withStoreLock(ORDER_WRITE_LOCK, async () => {
+    const orders = await readStoreOrders();
+    if (idempotencyKey) {
+      const prior = orders.find((order) => order.idempotencyKey === idempotencyKey);
+      if (prior) {
+        // Legacy keys lacked a matching payload digest. Their receipts remain available through ownership.
+        if (prior.requestFingerprint !== requestFingerprint) throw new Error('IDEMPOTENCY_CONFLICT');
+        return {order: prior, created: false};
       }
     }
-  }
-  if (await isOneTimePaymentUnavailable(input.productSlug)) {
-    throw new Error('ONE_TIME_PAYMENT_UNAVAILABLE');
-  }
+    if (input.productSlug === oneTimePaymentSlug && oneTimePaymentUnavailable(orders)) throw new Error('ONE_TIME_PAYMENT_UNAVAILABLE');
+    const product = await getPurchaseOffer(input.productSlug, orders);
+    if (!product || !(input.purchaseSource === 'cart' ? product.canCart && input.cartAuthorized : product.canDirectOrder)) {
+      throw new Error('PRODUCT_UNAVAILABLE');
+    }
+    if (quantity > product.available) throw new Error('INSUFFICIENT_STOCK');
+    const shippingEstimate = shippingEstimateFor(input.productSlug, input.customer.country, input.checkout?.state);
+    if (
+      (input.expectedPriceCents !== undefined && input.expectedPriceCents !== product.priceCents) ||
+      (input.expectedShippingCents !== undefined && input.expectedShippingCents !== Math.round(shippingEstimate * 100))
+    ) throw new Error('QUOTE_CHANGED');
+    const quote = checkoutQuote(product.priceCents, quantity, shippingEstimate, input.checkout?.couponCode || '', isSpecialPayment(input.productSlug));
+    const order = await persistNewOrder({input, product, orders, quantity, idempotencyKey, requestFingerprint, quote});
+    return {order, created: true};
+  }, ORDER_WRITE_OPTIONS);
+}
 
-  const product = products[input.productSlug];
-  const subtotal = product.priceAmount * quantity;
-  const shippingEstimate = shippingEstimateFor(input.productSlug, input.customer.country);
+async function persistNewOrder({input, product, orders, quantity, idempotencyKey, requestFingerprint, quote}: {
+  input: Parameters<typeof createStoreOrder>[0];
+  product: NonNullable<Awaited<ReturnType<typeof getPurchaseOffer>>>;
+  orders: StoreOrder[];
+  quantity: number;
+  idempotencyKey: string;
+  requestFingerprint: string;
+  quote: ReturnType<typeof checkoutQuote>;
+}) {
   const now = new Date().toISOString();
   const order: StoreOrder = {
-    id: await generateStoreOrderId(),
+    id: generateStoreOrderId(orders),
     productSlug: input.productSlug,
     productName: product.name,
+    productImage: product.image,
     quantity,
-    unitPrice: product.priceAmount,
+    unitPrice: product.priceCents / 100,
     currency: 'USD',
-    subtotal,
-    shippingEstimate,
-    total: subtotal + shippingEstimate,
+    subtotal: quote.subtotalCents / 100,
+    shippingEstimate: quote.shippingCents / 100,
+    discount: quote.discountCents / 100,
+    total: quote.totalCents / 100,
     status: 'pending_payment',
-    paymentMethod: input.paymentMethod || 'qianhai_card',
-    paymentGateway: input.paymentMethod?.startsWith('oceanpayment') ? 'oceanpayment' : input.paymentMethod === 'qianhai_card' ? 'qianhai' : 'manual',
+    paymentMethod: input.paymentMethod,
+    paymentGateway: input.paymentMethod.startsWith('oceanpayment') ? 'oceanpayment' : input.paymentMethod === 'qianhai_card' ? 'qianhai' : 'manual',
     gatewayStatus: 'not_submitted',
     idempotencyKey,
+    requestFingerprint,
+    ...(input.productSlug === oneTimePaymentSlug ? {paymentHoldUntil: new Date(Date.now() + INVENTORY_HOLD_MS).toISOString()} : {}),
+    ...(product.id ? {inventory: {productId: product.id, reservedUntil: new Date(Date.now() + INVENTORY_HOLD_MS).toISOString()}} : {}),
     paymentId: '',
     transactionId: '',
     refundStatus: '',
@@ -353,16 +366,6 @@ export async function createStoreOrder(input: {
     attribution: input.attribution || null
   };
   await appendStoreLine(ORDERS_FILE, order);
-  if (idempotencyKey) {
-    await appendStoreLine(IDEMPOTENCY_FILE, {
-      id: `idem-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
-      key: idempotencyKey,
-      orderId: order.id,
-      fingerprint,
-      createdAt: now,
-      updatedAt: now
-    } satisfies IdempotencyRecord);
-  }
   return order;
 }
 
@@ -370,14 +373,21 @@ export async function readStoreOrders() {
   return (await readStoreLines<StoreOrder>(ORDERS_FILE)).map((order) => normalizeBrandValue(withOrderDefaults(order)));
 }
 
-export async function isOneTimePaymentUnavailable(productSlug: CheckoutProductSlug) {
-  if (productSlug !== oneTimePaymentSlug) return false;
+function oneTimePaymentUnavailable(orders: StoreOrder[]) {
   const unavailableStatuses = new Set<OrderStatus>(['paid', 'processing', 'shipped', 'delivered', 'completed']);
-  return (await readStoreOrders()).some((order) => (
+  return orders.some((order) => (
     order.productSlug === oneTimePaymentSlug &&
-    unavailableStatuses.has(order.status) &&
+    (unavailableStatuses.has(order.status) || (order.status === 'pending_payment' && Date.parse(order.paymentHoldUntil || '') > Date.now())) &&
     order.gatewayStatus !== 'failed'
   ));
+}
+
+export async function isOneTimePaymentUnavailable(productSlug: string) {
+  return productSlug === oneTimePaymentSlug && oneTimePaymentUnavailable(await readStoreOrders());
+}
+
+export function orderImage(order: StoreOrder) {
+  return order.productImage || (checkoutProductSlugs.includes(order.productSlug as CheckoutProductSlug) ? products[order.productSlug as CheckoutProductSlug].image : '');
 }
 
 export async function findStoreOrder(orderId: string) {
@@ -385,52 +395,65 @@ export async function findStoreOrder(orderId: string) {
   return orders.find((order) => order.id === orderId) || null;
 }
 
-export async function readIdempotencyRecords() {
-  return readStoreLines<IdempotencyRecord>(IDEMPOTENCY_FILE);
-}
-
 export async function updateStoreOrderPayment(
   orderId: string,
   patch: Partial<Pick<StoreOrder, 'status' | 'paymentMethod' | 'paymentGateway' | 'gatewayStatus' | 'logisticsStatus' | 'paymentId' | 'transactionId' | 'refundStatus' | 'trackingNumber' | 'trackingUrl' | 'shipmentStatus' | 'logisticsProvider' | 'shippedAt' | 'estimatedDeliveryAt' | 'deliveredAt' | 'customerVisibleNote' | 'userId'>> & {
     checkout?: Partial<StoreOrder['checkout']>;
-  }
+  },
+  options: {preparePayment?: boolean; browserReturn?: boolean} = {}
 ): Promise<StoreOrder | null> {
-  const orders = await readStoreOrders();
-  let updated: StoreOrder | null = null;
-  const now = new Date().toISOString();
-  const next = orders.map((order) => {
-    if (order.id !== orderId) return order;
+  return withStoreLock(ORDER_WRITE_LOCK, async () => {
+    const orders = await readStoreOrders();
+    const index = orders.findIndex((order) => order.id === orderId);
+    if (index === -1) return null;
+    const order = orders[index];
+    if (options.preparePayment) {
+      if (order.status !== 'pending_payment' || !['not_submitted', 'pending'].includes(order.gatewayStatus)) throw new Error('PAYMENT_STATE_CHANGED');
+      const holdUntil = order.inventory?.reservedUntil || order.paymentHoldUntil;
+      if (holdUntil && Date.parse(holdUntil) <= Date.now()) throw new Error('PAYMENT_HOLD_EXPIRED');
+    }
+    if (options.browserReturn && (order.status !== 'pending_payment' || order.gatewayStatus !== 'pending')) return order;
     const protectedPatch = protectFinalPaymentState(order, patch);
-    updated = {
+    const reference = protectedPatch.paymentId || protectedPatch.transactionId;
+    if (reference && orders.some((candidate) => candidate.id !== order.id && (candidate.paymentId === reference || candidate.transactionId === reference))) {
+      throw new Error('DUPLICATE_PAYMENT_ID');
+    }
+    const now = new Date().toISOString();
+    const inventory = order.inventory && !order.inventory.committedAt && protectedPatch.status === 'paid'
+      ? {...order.inventory, committedAt: now}
+      : order.inventory;
+    const updated = {
       ...order,
       ...protectedPatch,
+      inventory,
       checkout: {...order.checkout, ...(patch.checkout || {})},
       updatedAt: now
     };
+    orders[index] = updated;
+    await writeStoreLines(ORDERS_FILE, orders);
     return updated;
-  });
-  if (!updated) return null;
-  await writeStoreLines(ORDERS_FILE, next);
-  return updated;
+  }, ORDER_WRITE_OPTIONS);
 }
 
 function protectFinalPaymentState(
   order: StoreOrder,
-  patch: Partial<Pick<StoreOrder, 'status' | 'gatewayStatus' | 'logisticsStatus'>>
+  patch: Partial<Pick<StoreOrder, 'status' | 'gatewayStatus' | 'logisticsStatus' | 'paymentId' | 'transactionId'>>
 ) {
   const next = {...patch};
   const paidLike = new Set<OrderStatus>(['paid', 'processing', 'shipped', 'delivered', 'completed']);
   const refundLike = new Set<OrderStatus>(['refunded', 'partial_refunded']);
   const downgradeLike = new Set<OrderStatus>(['pending_payment', 'failed']);
-  if (refundLike.has(order.status) && next.status && paidLike.has(next.status)) {
+  const paid = order.gatewayStatus === 'success' || paidLike.has(order.status) && order.status !== 'processing';
+  if (next.status && (
+    refundLike.has(order.status) && (paidLike.has(next.status) || downgradeLike.has(next.status)) ||
+    paid && (downgradeLike.has(next.status) || next.status === 'processing' && next.gatewayStatus === 'processing' ||
+      ['shipped', 'delivered', 'completed'].includes(order.status) && next.status === 'paid')
+  )) {
     delete next.status;
     delete next.gatewayStatus;
     delete next.logisticsStatus;
-  }
-  if (paidLike.has(order.status) && next.status && downgradeLike.has(next.status)) {
-    delete next.status;
-    delete next.gatewayStatus;
-    delete next.logisticsStatus;
+    delete next.paymentId;
+    delete next.transactionId;
   }
   return next;
 }

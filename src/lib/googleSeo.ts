@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
-import {appendStoreLine, readStoreLines, readStoreObject, writeStoreObject} from '@/lib/durableStore';
+import {appendStoreLine, readStoreLines, readStoreObject, withStoreLock, writeStoreObject} from '@/lib/durableStore';
+import {siteUrl as publicSiteUrl} from '@/lib/site';
 
 const STORE_FILE = 'google-seo-snapshot.json';
 const RUN_LOG_FILE = 'google-seo-runs.jsonl';
@@ -10,6 +11,7 @@ const WEBMASTERS_WRITE_SCOPE = 'https://www.googleapis.com/auth/webmasters';
 const DEFAULT_SITE_PROPERTY = 'sc-domain:cheerdmotos.com';
 
 export const GOOGLE_SITEMAP_PATHS = ['/sitemap.xml', '/news-sitemap.xml', '/image-sitemap.xml'] as const;
+export const GOOGLE_INSPECTION_PATHS = ['/', '/products', '/products/xceed-electric-dirt-bike', '/dealer-program', '/blog', '/news'] as const;
 
 export type GoogleSeoMetricRow = {
   key: string;
@@ -27,13 +29,24 @@ export type GoogleSeoSitemap = {
   warnings: number;
   errors: number;
   submitted: number;
-  indexed: number;
+};
+
+export type GoogleUrlInspection = {
+  url: string;
+  inspectedAt: string;
+  verdict: string;
+  coverage: string;
+  crawledAt: string;
+  googleCanonical: string;
+  error: string;
 };
 
 export type GoogleSeoSnapshot = {
   status: 'ok' | 'not_configured' | 'error';
   siteUrl: string;
   syncedAt: string;
+  attemptedAt?: string;
+  sitemapsSyncedAt?: string;
   range: {
     startDate: string;
     endDate: string;
@@ -49,6 +62,7 @@ export type GoogleSeoSnapshot = {
   countries: GoogleSeoMetricRow[];
   devices: GoogleSeoMetricRow[];
   sitemaps: GoogleSeoSitemap[];
+  inspections?: GoogleUrlInspection[];
   error: string;
 };
 
@@ -89,7 +103,7 @@ function emptySnapshot(status: GoogleSeoSnapshot['status'], message = ''): Googl
   return {
     status,
     siteUrl: getConfiguredSiteUrl(),
-    syncedAt: new Date().toISOString(),
+    syncedAt: '',
     range,
     totals: {clicks: 0, impressions: 0, ctr: 0, position: 0},
     pages: [],
@@ -191,7 +205,8 @@ async function getAccessToken(credentials: ServiceAccountCredentials, scope = WE
       grant_type: 'urn:ietf:params:oauth:grant-type:jwt-bearer',
       assertion: jwt
     }),
-    cache: 'no-store'
+    cache: 'no-store',
+    signal: AbortSignal.timeout(15000)
   });
   const payload = await response.json().catch(() => ({})) as {access_token?: string; error_description?: string; error?: string};
   if (!response.ok || !payload.access_token) {
@@ -215,7 +230,8 @@ async function querySearchAnalytics(accessToken: string, siteUrl: string, range:
       rowLimit: dimensions.length ? 50 : 1,
       dataState: 'final'
     }),
-    cache: 'no-store'
+    cache: 'no-store',
+    signal: AbortSignal.timeout(15000)
   });
   const payload = await response.json().catch(() => ({})) as {rows?: SearchAnalyticsRow[]; error?: {message?: string}};
   if (!response.ok) {
@@ -263,7 +279,8 @@ async function querySitemaps(accessToken: string, siteUrl: string): Promise<Goog
   const endpoint = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/sitemaps`;
   const response = await fetch(endpoint, {
     headers: {Authorization: `Bearer ${accessToken}`},
-    cache: 'no-store'
+    cache: 'no-store',
+    signal: AbortSignal.timeout(15000)
   });
   const payload = await response.json().catch(() => ({})) as {
     sitemap?: Array<{
@@ -273,7 +290,7 @@ async function querySitemaps(accessToken: string, siteUrl: string): Promise<Goog
       isPending?: boolean;
       warnings?: string;
       errors?: string;
-      contents?: Array<{submitted?: string; indexed?: string}>;
+      contents?: Array<{submitted?: string}>;
     }>;
     error?: {message?: string};
   };
@@ -287,15 +304,39 @@ async function querySitemaps(accessToken: string, siteUrl: string): Promise<Goog
     pending: Boolean(item.isPending),
     warnings: Number(item.warnings || 0),
     errors: Number(item.errors || 0),
-    submitted: (item.contents || []).reduce((total, content) => total + Number(content.submitted || 0), 0),
-    indexed: (item.contents || []).reduce((total, content) => total + Number(content.indexed || 0), 0)
+    submitted: (item.contents || []).reduce((total, content) => total + Number(content.submitted || 0), 0)
   }));
 }
 
-function nextDueAt(lastSuccessfulAt: string, intervalHours = 72) {
-  const last = new Date(lastSuccessfulAt).getTime();
-  if (!last || Number.isNaN(last)) return new Date().toISOString();
-  return new Date(last + intervalHours * 60 * 60 * 1000).toISOString();
+async function inspectUrl(accessToken: string, siteUrl: string, url: string): Promise<GoogleUrlInspection> {
+  const base = {url, inspectedAt: new Date().toISOString(), verdict: '', coverage: '', crawledAt: '', googleCanonical: ''};
+  try {
+    const response = await fetch('https://searchconsole.googleapis.com/v1/urlInspection/index:inspect', {
+      method: 'POST',
+      headers: {Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json'},
+      body: JSON.stringify({inspectionUrl: url, siteUrl, languageCode: 'en-US'}),
+      cache: 'no-store',
+      signal: AbortSignal.timeout(15000)
+    });
+    const data = await response.json() as {inspectionResult?: {indexStatusResult?: {
+      verdict?: string; coverageState?: string; lastCrawlTime?: string; googleCanonical?: string;
+    }}; error?: {message?: string}};
+    const status = data.inspectionResult?.indexStatusResult;
+    if (!response.ok || !status) throw new Error(data.error?.message || `Google URL Inspection: ${response.status}`);
+    return {...base, verdict: status.verdict || '', coverage: status.coverageState || '', crawledAt: status.lastCrawlTime || '', googleCanonical: status.googleCanonical || '', error: ''};
+  } catch (error) {
+    return {...base, error: errorMessage(error)};
+  }
+}
+
+const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+
+export function googleWeeklySchedule(now = new Date()) {
+  const monday = new Date(now);
+  monday.setUTCHours(1, 0, 0, 0);
+  monday.setUTCDate(monday.getUTCDate() - (monday.getUTCDay() + 6) % 7);
+  if (monday > now) monday.setUTCDate(monday.getUTCDate() - 7);
+  return {current: monday.toISOString(), next: new Date(monday.getTime() + WEEK_MS).toISOString()};
 }
 
 export async function readGoogleSeoRuns(limit = 20) {
@@ -309,36 +350,31 @@ async function submissionState() {
   };
 }
 
-async function submissionIsDue(intervalHours = 72) {
-  const state = await submissionState();
-  const dueAt = nextDueAt(state.lastSuccessfulAt, intervalHours);
-  return {state, due: Date.now() >= new Date(dueAt).getTime(), dueAt};
+export async function submitSitemapsToGoogle(sitemapUrls: readonly string[]) {
+  const urls = [...new Set(sitemapUrls)];
+  const enabled = String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || 'true').toLowerCase() !== 'false';
+  const credentials = readCredentials();
+  const siteUrl = getConfiguredSiteUrl();
+  if (!enabled || !credentials || !isValidSearchConsoleProperty(siteUrl)) {
+    const message = !enabled ? 'Google sitemap submission is disabled.' : 'Search Console property or credentials are missing.';
+    return urls.map((sitemapUrl) => ({sitemapUrl, ok: false, submitted: false, message}));
+  }
+  let token: string;
+  try {
+    token = await getAccessToken(credentials, WEBMASTERS_WRITE_SCOPE);
+  } catch (error) {
+    return urls.map((sitemapUrl) => ({sitemapUrl, ok: false, submitted: false, message: errorMessage(error)}));
+  }
+  return Promise.all(urls.map(async (sitemapUrl) => ({sitemapUrl, ...await sendSitemap(siteUrl, sitemapUrl, token)})));
 }
 
-export async function submitSitemapToGoogle(sitemapUrl: string) {
-  const enabled = String(process.env.GOOGLE_SEARCH_CONSOLE_ENABLED || 'true').toLowerCase() !== 'false';
-  if (!enabled) {
-    return {ok: true, submitted: false, message: 'Google Search Console sitemap submission is disabled.'};
-  }
-
-  const credentials = readCredentials();
-  if (!credentials) {
-    return {ok: false, submitted: false, message: 'Missing Google Search Console service account credentials.'};
-  }
-
-  const siteUrl = getConfiguredSiteUrl();
-  const configuredSitemapUrl = sitemapUrl.trim();
-  if (!isValidSearchConsoleProperty(siteUrl) || !configuredSitemapUrl) {
-    return {ok: false, submitted: false, message: 'Missing Google Search Console site URL or sitemap URL.'};
-  }
-
+async function sendSitemap(siteUrl: string, configuredSitemapUrl: string, token: string) {
   try {
     const sitemapResponse = await fetch(configuredSitemapUrl, {cache: 'no-store', signal: AbortSignal.timeout(12000)});
-    if (!sitemapResponse.ok) {
-      return {ok: false, submitted: false, message: `Sitemap URL is not reachable: ${sitemapResponse.status}`};
+    if (!sitemapResponse.ok || !/xml/i.test(sitemapResponse.headers.get('content-type') || '')) {
+      return {ok: false, submitted: false, message: `Sitemap URL did not return XML: ${sitemapResponse.status}`};
     }
 
-    const token = await getAccessToken(credentials, WEBMASTERS_WRITE_SCOPE);
     const endpoint = `https://searchconsole.googleapis.com/webmasters/v3/sites/${encodeURIComponent(siteUrl)}/sitemaps/${encodeURIComponent(configuredSitemapUrl)}`;
     const response = await fetch(endpoint, {
       method: 'PUT',
@@ -352,46 +388,35 @@ export async function submitSitemapToGoogle(sitemapUrl: string) {
     }
     return {ok: true, submitted: true, message: 'Google Search Console sitemap submit request accepted.'};
   } catch (error) {
-    return {ok: false, submitted: false, message: error instanceof Error ? error.message : 'Unknown Google sitemap submit error'};
+    return {ok: false, submitted: false, message: errorMessage(error)};
   }
 }
 
-export async function submitSitemapsToGoogle(sitemapUrls: readonly string[]) {
-  const results: Array<{sitemapUrl: string; ok: boolean; submitted: boolean; message: string}> = [];
-  for (const sitemapUrl of [...new Set(sitemapUrls)]) {
-    const result = await submitSitemapToGoogle(sitemapUrl);
-    results.push({sitemapUrl, ...result});
-  }
-  return results;
+function errorMessage(error: unknown) {
+  return error instanceof Error ? error.message : 'Unknown Google Search Console error';
 }
 
-export async function runGoogleSeoMaintenance(options: {trigger: string; sitemapUrls: readonly string[]; force?: boolean; intervalHours?: number}) {
+export async function runGoogleSeoMaintenance(options: {trigger: string; sitemapUrls: readonly string[]; force?: boolean}) {
+  return withStoreLock('google-seo-maintenance', () => executeGoogleSeoMaintenance(options), {ttlSeconds: 150});
+}
+
+async function executeGoogleSeoMaintenance(options: Parameters<typeof runGoogleSeoMaintenance>[0]) {
   const startedAt = new Date().toISOString();
-  const intervalHours = options.intervalHours || 72;
-  const {due: automaticallyDue, dueAt} = await submissionIsDue(intervalHours);
-  const due = Boolean(options.force || automaticallyDue);
-  let snapshot = await syncGoogleSeoSnapshot();
-  let results: GoogleSeoRun['results'] = [];
-  let submitted = false;
-  let error = '';
-
-  if (due && snapshot.status === 'ok') {
-    results = await submitSitemapsToGoogle(options.sitemapUrls);
-    submitted = results.length > 0 && results.every((result) => result.ok && result.submitted);
-    if (submitted) {
-      await writeStoreObject(SUBMISSION_STATE_FILE, {
-        lastSuccessfulAt: new Date().toISOString(),
-        sitemapUrls: results.map((result) => result.sitemapUrl)
-      } satisfies GoogleSeoSubmissionState);
-      snapshot = await syncGoogleSeoSnapshot();
-    } else {
-      error = results.map((result) => `${result.sitemapUrl}: ${result.message}`).join('; ');
-    }
-  } else if (snapshot.status !== 'ok') {
-    error = snapshot.error || 'Google Search Console is not configured or could not be queried.';
-  }
-
+  const schedule = googleWeeklySchedule();
   const state = await submissionState();
+  const due = Boolean(options.force || state.lastSuccessfulAt < schedule.current);
+  const results = due ? await submitSitemapsToGoogle(options.sitemapUrls) : [];
+  const submitted = results.length > 0 && results.every((result) => result.ok && result.submitted);
+  if (submitted) {
+    await writeStoreObject(SUBMISSION_STATE_FILE, {
+      lastSuccessfulAt: new Date().toISOString(),
+      sitemapUrls: results.map((result) => result.sitemapUrl)
+    } satisfies GoogleSeoSubmissionState);
+  }
+  const snapshot = await syncGoogleSeoSnapshot();
+  const errors = results.filter((result) => !result.ok).map((result) => `${result.sitemapUrl}: ${result.message}`);
+  if (snapshot.status !== 'ok') errors.push(snapshot.error || 'Google Search Console could not be queried.');
+
   const run: GoogleSeoRun = {
     id: `google-seo-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`,
     trigger: options.trigger,
@@ -399,11 +424,11 @@ export async function runGoogleSeoMaintenance(options: {trigger: string; sitemap
     finishedAt: new Date().toISOString(),
     siteUrl: getConfiguredSiteUrl(),
     due,
-    nextDueAt: nextDueAt(state.lastSuccessfulAt, intervalHours),
+    nextDueAt: schedule.next,
     snapshotStatus: snapshot.status,
     submitted,
     results,
-    error
+    error: errors.join('; ')
   };
   await appendStoreLine(RUN_LOG_FILE, run);
   return {run, snapshot};
@@ -425,39 +450,43 @@ export async function syncGoogleSeoSnapshot() {
 
   const siteUrl = getConfiguredSiteUrl();
   const range = defaultDateRange();
+  const attemptedAt = new Date().toISOString();
+  const previous = await readStoreObject<GoogleSeoSnapshot>(STORE_FILE);
   try {
     const token = await getAccessToken(credentials);
-    const [totalRows, pageRows, queryRows, countryRows, deviceRows, sitemaps] = await Promise.all([
-      querySearchAnalytics(token, siteUrl, range, []),
-      querySearchAnalytics(token, siteUrl, range, ['page']),
-      querySearchAnalytics(token, siteUrl, range, ['query']),
-      querySearchAnalytics(token, siteUrl, range, ['country']),
-      querySearchAnalytics(token, siteUrl, range, ['device']),
-      querySitemaps(token, siteUrl)
+    const [analytics, maps, inspections] = await Promise.all([
+      Promise.all([
+        querySearchAnalytics(token, siteUrl, range, []),
+        querySearchAnalytics(token, siteUrl, range, ['page']),
+        querySearchAnalytics(token, siteUrl, range, ['query']),
+        querySearchAnalytics(token, siteUrl, range, ['country']),
+        querySearchAnalytics(token, siteUrl, range, ['device'])
+      ]).then(([total, pages, queries, countries, devices]) => ({
+        totals: totalsFromRows(total), pages: normalizeRows(pages), queries: normalizeRows(queries),
+        countries: normalizeRows(countries), devices: normalizeRows(devices), range, syncedAt: attemptedAt, error: ''
+      })).catch((error: unknown) => ({
+        ...(previous || emptySnapshot('error')), error: `Search Analytics: ${errorMessage(error)}`
+      })),
+      querySitemaps(token, siteUrl).then((sitemaps) => ({sitemaps, syncedAt: attemptedAt, error: ''})).catch((error: unknown) => ({
+        sitemaps: previous?.sitemaps || [], syncedAt: previous?.sitemapsSyncedAt || '', error: `Sitemaps: ${errorMessage(error)}`
+      })),
+      Promise.all(GOOGLE_INSPECTION_PATHS.map((path) => inspectUrl(token, siteUrl, new URL(path, publicSiteUrl).href)))
     ]);
+    const error = [analytics.error, maps.error].filter(Boolean).join(' · ');
     const snapshot: GoogleSeoSnapshot = {
-      status: 'ok',
-      siteUrl,
-      syncedAt: new Date().toISOString(),
-      range,
-      totals: totalsFromRows(totalRows),
-      pages: normalizeRows(pageRows),
-      queries: normalizeRows(queryRows),
-      countries: normalizeRows(countryRows),
-      devices: normalizeRows(deviceRows),
-      sitemaps,
-      error: ''
+      status: error ? 'error' : 'ok',
+      siteUrl, attemptedAt, syncedAt: analytics.syncedAt, sitemapsSyncedAt: maps.syncedAt,
+      range: analytics.range, totals: analytics.totals, pages: analytics.pages, queries: analytics.queries,
+      countries: analytics.countries, devices: analytics.devices, sitemaps: maps.sitemaps, inspections, error
     };
     await writeStoreObject(STORE_FILE, snapshot);
     return snapshot;
   } catch (error) {
-    const previous = await readStoreObject<GoogleSeoSnapshot>(STORE_FILE);
     const snapshot: GoogleSeoSnapshot = {
       ...(previous || emptySnapshot('error')),
       status: 'error',
       siteUrl,
-      syncedAt: new Date().toISOString(),
-      range,
+      attemptedAt,
       sitemaps: previous?.sitemaps || [],
       error: error instanceof Error ? error.message : 'Unknown Google Search Console sync error'
     };

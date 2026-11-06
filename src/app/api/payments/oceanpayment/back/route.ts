@@ -1,96 +1,35 @@
-import {appendAnalyticsEvent, findStoreOrder, updateStoreOrderPayment} from '@/lib/commerceStore';
-import {sendAdminPaymentNotice} from '@/lib/emailService';
-import {oceanpaymentStatusToOrder, parseGatewayPayload, verifyOceanpaymentReturn} from '@/lib/oceanpayment';
-import {localizedPublicPath} from '@/lib/publicRoutes';
+import {findStoreOrder, updateStoreOrderPayment} from '@/lib/commerceStore';
+import {getCheckoutOrder, issueCheckoutReceipt} from '@/lib/checkoutReceipt';
+import {persistentWritesAvailable} from '@/lib/durableStore';
+import {oceanpaymentStatusToOrder, parseGatewayPayload, validateOceanpaymentNotification, verifyOceanpaymentReturn} from '@/lib/oceanpayment';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 async function handleBack(request: Request) {
   const url = new URL(request.url);
-  const locale = url.searchParams.get('locale') || '';
-  const fields = request.method === 'GET' ? Object.fromEntries(url.searchParams.entries()) : await parseGatewayPayload(request);
+  const fields = request.method === 'GET' ? Object.fromEntries(url.searchParams.entries()) : await parseGatewayPayload(request).catch(() => ({} as Record<string, string>));
   const orderId = fields.order_number || fields.orderNo || fields.order_id || '';
-  const verified = verifyOceanpaymentReturn(fields);
-  const paymentPatch = oceanpaymentStatusToOrder(fields);
-  const paymentId = fields.payment_id || fields.transaction_id || fields.trade_no || '';
-  if (orderId && verified) {
-    const existingOrder = await findStoreOrder(orderId);
-    if (existingOrder?.status !== 'paid') {
-      const updatedOrder = await updateStoreOrderPayment(orderId, {
-        paymentGateway: 'oceanpayment',
-        paymentId,
-        transactionId: paymentId,
-        ...(paymentPatch.status === 'paid'
-          ? {
-              status: 'processing' as const,
-              gatewayStatus: 'processing' as const,
-              logisticsStatus: 'Payment return verified. Waiting for Oceanpayment async notice before marking the order as paid.'
-            }
-          : paymentPatch)
-      });
-      if (updatedOrder) {
-        await sendAdminPaymentNotice(updatedOrder, {
-          source: 'oceanpayment_return',
-          verified,
-          paymentStatus: fields.payment_status || fields.status || paymentPatch.status,
-          paymentId,
-          detail: 'Buyer returned from Oceanpayment payment page.'
-        });
-      }
-    } else if (existingOrder) {
-      await sendAdminPaymentNotice(existingOrder, {
-        source: 'oceanpayment_return',
-        verified,
-        paymentStatus: fields.payment_status || fields.status || paymentPatch.status,
-        paymentId,
-        detail: 'Buyer returned from Oceanpayment payment page. Order was already marked paid or finalized.'
-      });
-    }
-  } else if (orderId) {
-    const existingOrder = await findStoreOrder(orderId);
-    if (existingOrder) {
-      await sendAdminPaymentNotice(existingOrder, {
-        source: 'oceanpayment_return',
-        verified,
-        paymentStatus: fields.payment_status || fields.status || (paymentPatch.status === 'failed' ? 'failed' : 'unverified'),
-        paymentId,
-        detail: 'Buyer returned from Oceanpayment but the payment response was failed or unverified.'
-      });
+  const candidate = persistentWritesAvailable() && verifyOceanpaymentReturn(fields) ? await findStoreOrder(orderId) : null;
+  const verified = candidate && validateOceanpaymentNotification(candidate, fields).ok;
+  const order = verified ? candidate : await getCheckoutOrder(orderId);
+  if (verified) {
+    await issueCheckoutReceipt(orderId);
+    if (oceanpaymentStatusToOrder(fields).status === 'paid') {
+      await updateStoreOrderPayment(orderId, {
+        status: 'processing',
+        gatewayStatus: 'processing',
+        logisticsStatus: 'Payment return verified. Waiting for Oceanpayment confirmation.'
+      }, {browserReturn: true});
     }
   }
-
-  if (orderId) {
-    await appendAnalyticsEvent({
-      id: `${Date.now()}-oceanpayment-back`,
-      type: 'payment_return',
-      visitorId: 'payment-gateway',
-      sessionId: orderId,
-      page: '/api/payments/oceanpayment/back',
-      pageTitle: 'Oceanpayment Return',
-      referrer: 'Oceanpayment',
-      country: '',
-      city: '',
-      device: 'Gateway',
-      browser: 'Gateway',
-      os: 'Gateway',
-      timestamp: new Date().toISOString(),
-      payload: {orderId, verified, paymentStatus: fields.payment_status || fields.status, paymentId}
-    });
-  }
-
-  const destination = localizedPublicPath(locale, !orderId
-    ? '/checkout/failed?payment=unmatched'
-    : !verified || paymentPatch.status === 'failed'
-      ? `/checkout/failed?order=${encodeURIComponent(orderId)}&payment=${verified ? 'failed' : 'unverified'}`
-      : `/checkout/success?order=${encodeURIComponent(orderId)}&payment=${paymentPatch.status === 'paid' ? 'verified' : 'processing'}`);
-  return Response.redirect(new URL(destination, request.url), 303);
+  const result = verified && oceanpaymentStatusToOrder(fields).status !== 'failed' || order?.gatewayStatus === 'success' ? 'success' : 'failed';
+  const destination = new URL(`/checkout/${result}`, request.url);
+  if (order) destination.searchParams.set('order', order.id);
+  return new Response(null, {status: 303, headers: {
+    Location: destination.toString(), 'Cache-Control': 'private, no-store', 'Referrer-Policy': 'no-referrer'
+  }});
 }
 
-export async function GET(request: Request) {
-  return handleBack(request);
-}
-
-export async function POST(request: Request) {
-  return handleBack(request);
-}
+export const GET = handleBack;
+export const POST = handleBack;

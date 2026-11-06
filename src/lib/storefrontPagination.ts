@@ -1,6 +1,8 @@
 export type SearchParams = Record<string, string | string[] | undefined>;
 
 export const STOREFRONT_PAGE_SIZE = 12;
+export const CATALOG_PAGE_SIZE = 6;
+export const ARTICLE_PAGE_SIZE = 9;
 
 function firstValue(value: string | string[] | undefined) {
   return Array.isArray(value) ? value[0] : value;
@@ -8,7 +10,7 @@ function firstValue(value: string | string[] | undefined) {
 
 export function readPage(value: string | string[] | undefined) {
   const parsed = Number(firstValue(value) || 1);
-  return Number.isFinite(parsed) && parsed > 0 ? Math.floor(parsed) : 1;
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : 1;
 }
 
 export function readParam(value: string | string[] | undefined) {
@@ -29,6 +31,16 @@ export function paginateItems<T>(items: readonly T[], requestedPage: number, pag
     totalPages,
     start: total ? start + 1 : 0,
     end: Math.min(start + pageSize, total)
+  };
+}
+
+export function listPageMetadata(url: string, query: SearchParams, total: number, pageSize: number, filtered: boolean) {
+  const requested = readPage(query.page);
+  const last = Math.max(1, Math.ceil(total / pageSize));
+  const cleanPage = !filtered && requested <= last;
+  return {
+    alternates: {canonical: cleanPage && requested > 1 ? `${url}?page=${requested}` : url},
+    ...(!cleanPage ? {robots: {index: false, follow: true}} : {})
   };
 }
 

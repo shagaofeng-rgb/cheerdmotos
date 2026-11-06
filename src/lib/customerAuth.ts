@@ -1,7 +1,7 @@
 import crypto from 'node:crypto';
 import {cookies} from 'next/headers';
-import {readStoreOrders, updateStoreOrderPayment, type StoreOrder} from '@/lib/commerceStore';
-import {appendStoreLine, readStoreLines, writeStoreLines} from '@/lib/durableStore';
+import type {StoreOrder} from '@/lib/commerceStore';
+import {appendStoreLine, readStoreLines, withStoreLock, writeStoreLines} from '@/lib/durableStore';
 
 const USERS_FILE = 'customer-users.jsonl';
 const TOKENS_FILE = 'customer-tokens.jsonl';
@@ -18,6 +18,7 @@ export type CustomerUser = {
   passwordHash: string;
   status: 'pending_setup' | 'active';
   emailVerifiedAt: string;
+  ownershipConfirmedAt?: string;
   createdAt: string;
   updatedAt: string;
 };
@@ -33,7 +34,7 @@ type CustomerToken = {
   createdAt: string;
 };
 
-function authSecret() {
+export function customerAuthSecret() {
   const value = process.env.AUTH_SECRET || process.env.JWT_SECRET || process.env.SESSION_SECRET || process.env.ADMIN_JWT_SECRET || '';
   if (value) return value;
   if (process.env.NODE_ENV === 'production') {
@@ -47,7 +48,7 @@ function sha256(value: string) {
 }
 
 function sign(value: string) {
-  return crypto.createHmac('sha256', authSecret()).update(value).digest('base64url');
+  return crypto.createHmac('sha256', customerAuthSecret()).update(`verified-customer:${value}`).digest('base64url');
 }
 
 function base64Url(value: string) {
@@ -94,7 +95,11 @@ export async function createOrUpdateCustomerUser(input: {
   country?: string;
   password?: string;
   activate?: boolean;
-}) {
+}): Promise<CustomerUser> {
+  return withStoreLock('customer-users', () => writeCustomerUser(input), {attempts: 10});
+}
+
+async function writeCustomerUser(input: Parameters<typeof createOrUpdateCustomerUser>[0]) {
   const normalized = input.email.trim().toLowerCase();
   const users = await readCustomerUsers();
   const now = new Date().toISOString();
@@ -131,23 +136,17 @@ export async function createOrUpdateCustomerUser(input: {
   return user;
 }
 
-export async function bindOrdersToCustomer(email: string, userId: string) {
-  const orders = await readStoreOrders();
-  const normalized = email.trim().toLowerCase();
-  const matching = orders.filter((order) => order.customer.email.trim().toLowerCase() === normalized && order.userId !== userId);
-  for (const order of matching) {
-    await updateStoreOrderPayment(order.id, {userId});
-  }
-  return matching.length;
-}
-
-export function customerOwnsOrder(order: StoreOrder, session: {userId?: string; email?: string}) {
+export function customerOwnsOrder(order: StoreOrder, session: {email?: string}) {
   const sessionEmail = String(session.email || '').trim().toLowerCase();
   const orderEmail = String(order.customer.email || '').trim().toLowerCase();
-  return Boolean((session.userId && order.userId === session.userId) || (sessionEmail && orderEmail === sessionEmail));
+  return Boolean(sessionEmail && orderEmail === sessionEmail);
 }
 
 export async function updateCustomerProfile(userId: string, patch: {name?: string; firstName?: string; lastName?: string; country?: string}): Promise<CustomerUser | null> {
+  return withStoreLock('customer-users', () => writeCustomerProfile(userId, patch), {attempts: 10});
+}
+
+async function writeCustomerProfile(userId: string, patch: Parameters<typeof updateCustomerProfile>[1]): Promise<CustomerUser | null> {
   const users = await readCustomerUsers();
   const now = new Date().toISOString();
   let updated: CustomerUser | null = null;
@@ -172,10 +171,10 @@ export async function updateCustomerProfile(userId: string, patch: {name?: strin
 }
 
 export async function ensureCustomerAccountForOrder(order: StoreOrder) {
+  const existing = await findCustomerUserByEmail(order.customer.email);
+  if (existing) return existing;
   const name = order.customer.name || `${order.checkout.firstName} ${order.checkout.lastName}`.trim() || order.customer.email;
-  const user = await createOrUpdateCustomerUser({email: order.customer.email, name});
-  await bindOrdersToCustomer(order.customer.email, user.id);
-  return user;
+  return createOrUpdateCustomerUser({email: order.customer.email, name});
 }
 
 export async function createCustomerToken(user: CustomerUser, type: CustomerToken['type']) {
@@ -191,11 +190,15 @@ export async function createCustomerToken(user: CustomerUser, type: CustomerToke
     usedAt: '',
     createdAt: now.toISOString()
   };
-  await appendStoreLine(TOKENS_FILE, record);
+  await withStoreLock('customer-users', () => appendStoreLine(TOKENS_FILE, record), {attempts: 10});
   return rawToken;
 }
 
 export async function consumeCustomerToken(rawToken: string, password: string) {
+  return withStoreLock('customer-users', () => redeemCustomerToken(rawToken, password), {attempts: 10});
+}
+
+async function redeemCustomerToken(rawToken: string, password: string) {
   const tokenHash = sha256(rawToken);
   const tokens = await readStoreLines<CustomerToken>(TOKENS_FILE);
   const now = new Date().toISOString();
@@ -204,10 +207,12 @@ export async function consumeCustomerToken(rawToken: string, password: string) {
   const users = await readCustomerUsers();
   const user = users.find((item) => item.id === token.userId);
   if (!user) return null;
-  const updatedUser = {...user, passwordHash: hashCustomerPassword(password), status: 'active' as const, updatedAt: now};
+  const updatedUser = {
+    ...user, passwordHash: hashCustomerPassword(password), status: 'active' as const,
+    emailVerifiedAt: now, ownershipConfirmedAt: now, updatedAt: now
+  };
   await writeStoreLines(USERS_FILE, users.map((item) => item.id === user.id ? updatedUser : item));
   await writeStoreLines(TOKENS_FILE, tokens.map((item) => item.id === token.id ? {...item, usedAt: now} : item));
-  await bindOrdersToCustomer(updatedUser.email, updatedUser.id);
   return updatedUser;
 }
 
@@ -218,6 +223,7 @@ export async function verifyCustomerCredentials(email: string, password: string)
 }
 
 export function createCustomerSession(user: CustomerUser) {
+  if (!user.ownershipConfirmedAt) throw new Error('Customer email ownership is unverified');
   const payload = {
     userId: user.id,
     email: user.email,

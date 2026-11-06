@@ -24,9 +24,10 @@ export default async function AdminProductsPage({searchParams}: {searchParams: P
   return (
     <AdminShell active="products">
       <div className="admin-title">
-        <p className="eyebrow">Product CMS</p>
+        <p className="eyebrow">商品资料</p>
         <h1>产品管理</h1>
-        <p>按商城站逻辑管理产品草稿、发布状态、SKU、库存、价格、媒体图和 SEO 字段。只有已发布产品才建议同步到前台展示。</p>
+        <p>管理商品资料和价格。已发布商品同步到前台，购买开关分别控制购物车和直接下单。</p>
+        {typeof params.error === 'string' && <p role="alert">{params.error === 'duplicate-slug' ? '链接标识已被使用。' : params.error === 'invalid-slug' ? '请输入有效的商品链接标识。' : '找不到要编辑的商品。'}</p>}
       </div>
 
       <section className="admin-panel admin-guidance-panel">
@@ -67,8 +68,8 @@ export default async function AdminProductsPage({searchParams}: {searchParams: P
           </select>
           <input name="sku" placeholder="SKU / model, e.g. CM-XCEED" />
           <input name="stock" type="number" min="0" step="1" placeholder="库存数量" />
-          <input name="price" type="number" min="0" step="1" placeholder="售价 USD" />
-          <input name="compareAtPrice" type="number" min="0" step="1" placeholder="原价 / 划线价 USD" />
+          <input name="price" type="number" min="0" step="0.01" placeholder="售价 USD" />
+          <input name="compareAtPrice" type="number" min="0" step="0.01" placeholder="原价 / 划线价 USD" />
           <input name="moq" type="number" min="1" step="1" placeholder="MOQ，默认 1" />
           <input name="sortOrder" type="number" min="1" step="1" placeholder="排序权重" />
           <input name="coverImage" placeholder="Product image path, e.g. /homepage-assets/cheerdmoto_style_a_rally_terrain/assets/products/xceed_transparent.png" />
@@ -80,7 +81,8 @@ export default async function AdminProductsPage({searchParams}: {searchParams: P
           <input name="seoTitle" placeholder="SEO Title" />
           <textarea name="seoDescription" placeholder="Meta Description" />
           <label className="admin-check"><input type="checkbox" name="showOnHome" /> 首页推荐</label>
-          <label className="admin-check"><input type="checkbox" name="allowCart" defaultChecked /> 允许加入购物/询盘</label>
+          <input type="hidden" name="allowCart" value="off" /><input type="hidden" name="allowDirectOrder" value="off" />
+          <label className="admin-check"><input type="checkbox" name="allowCart" defaultChecked /> 允许加入购物车</label>
           <label className="admin-check"><input type="checkbox" name="allowDirectOrder" defaultChecked /> 允许 Buy Now 下单</label>
           <button type="submit">保存产品</button>
         </form>
@@ -139,9 +141,11 @@ export default async function AdminProductsPage({searchParams}: {searchParams: P
                 <input name="coverImage" defaultValue={product.coverImage} /><textarea name="galleryImages" defaultValue={product.galleryImages.join('\n')} />
                 <textarea name="shortDescription" defaultValue={product.shortDescription} /><textarea name="fullDescription" defaultValue={product.fullDescription} />
                 <input name="seoTitle" defaultValue={product.seoTitle} /><textarea name="seoDescription" defaultValue={product.seoDescription} />
+                <input type="hidden" name="showOnHome" value="off" /><input type="hidden" name="allowCart" value="off" /><input type="hidden" name="allowDirectOrder" value="off" />
                 <label className="admin-check"><input type="checkbox" name="showOnHome" defaultChecked={product.showOnHome} />首页推荐</label>
                 <label className="admin-check"><input type="checkbox" name="allowCart" defaultChecked={product.allowCart} />允许加入购物车</label>
                 <label className="admin-check"><input type="checkbox" name="allowDirectOrder" defaultChecked={product.allowDirectOrder} />允许直接下单</label>
+                <label className="admin-check"><input type="checkbox" name="recountStock" />本次已重新盘点库存</label>
                 <button type="submit">保存商品</button>
               </form>
             </details>

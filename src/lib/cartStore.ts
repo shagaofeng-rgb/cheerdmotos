@@ -1,11 +1,13 @@
 import {cookies} from 'next/headers';
 import {randomUUID} from 'node:crypto';
-import {readStoreObject, writeStoreObject} from '@/lib/durableStore';
-import {checkoutProductSlugs, products, type CheckoutProductSlug} from '@/lib/site';
+import {readStoreObject, withStoreLock, writeStoreObject} from '@/lib/durableStore';
+import {listAdminProducts} from '@/lib/backendStore';
+import {readStoreOrders} from '@/lib/commerceStore';
+import {catalogOffer, isSpecialPayment} from '@/lib/purchaseCatalog';
 
 const CART_COOKIE = 'cheerdmoto_cart_id';
 
-export type CartItem = {productSlug: CheckoutProductSlug; quantity: number; addedAt: string};
+export type CartItem = {productSlug: string; quantity: number; addedAt: string};
 export type CartRecord = {id: string; items: CartItem[]; updatedAt: string};
 
 function cartFile(id: string) {
@@ -16,8 +18,8 @@ function createCartId() {
   return `cart_${randomUUID().replace(/-/g, '')}`;
 }
 
-function validProduct(value: unknown): value is CheckoutProductSlug {
-  return checkoutProductSlugs.includes(value as CheckoutProductSlug) && value !== 'payment-test' && value !== 'one-time-35';
+function validProduct(value: unknown): value is string {
+  return typeof value === 'string' && /^[a-z0-9][a-z0-9-]{0,119}$/.test(value) && !isSpecialPayment(value);
 }
 
 function cleanQuantity(value: unknown) {
@@ -26,7 +28,8 @@ function cleanQuantity(value: unknown) {
 
 async function cartIdFromCookie() {
   const store = await cookies();
-  return store.get(CART_COOKIE)?.value || '';
+  const id = store.get(CART_COOKIE)?.value || '';
+  return /^cart_[a-f0-9]{32}$/.test(id) ? id : '';
 }
 
 async function readCart(id: string): Promise<CartRecord> {
@@ -40,60 +43,69 @@ export async function getCurrentCart() {
 }
 
 export async function addCartItem(productSlug: unknown, quantity: unknown) {
+  return changeCart(productSlug, quantity, 'add');
+}
+
+export async function updateCartItem(productSlug: unknown, quantity: unknown) {
+  return changeCart(productSlug, quantity, 'update');
+}
+
+export async function removeCartItem(productSlug: unknown) {
+  return changeCart(productSlug, 1, 'remove');
+}
+
+async function changeCart(productSlug: unknown, quantity: unknown, action: 'add' | 'update' | 'remove') {
   if (!validProduct(productSlug)) throw new Error('INVALID_PRODUCT');
   const store = await cookies();
-  let id = store.get(CART_COOKIE)?.value || '';
+  let id = await cartIdFromCookie();
+  if (!id && action !== 'add') return presentCart({id: '', items: [], updatedAt: ''});
   if (!id) {
     id = createCartId();
     store.set(CART_COOKIE, id, {httpOnly: true, sameSite: 'lax', secure: process.env.NODE_ENV === 'production', path: '/', maxAge: 60 * 60 * 24 * 30});
   }
-  const cart = await readCart(id);
-  const nextQuantity = cleanQuantity(quantity);
-  const existing = cart.items.find((item) => item.productSlug === productSlug);
-  const now = new Date().toISOString();
-  const items = existing
-    ? cart.items.map((item) => item.productSlug === productSlug ? {...item, quantity: Math.min(99, item.quantity + nextQuantity)} : item)
-    : [...cart.items, {productSlug, quantity: nextQuantity, addedAt: now}];
-  const next = {id, items, updatedAt: now};
-  await writeStoreObject(cartFile(id), next);
+  const next = await withStoreLock(id, async () => {
+    const cart = await readCart(id);
+    const items = [...cart.items];
+    const index = items.findIndex((item) => item.productSlug === productSlug);
+    const now = new Date().toISOString();
+    if (action === 'remove') {
+      if (index !== -1) items.splice(index, 1);
+    } else if (action === 'add' || index !== -1) {
+      const count = (action === 'add' ? items[index]?.quantity || 0 : 0) + cleanQuantity(quantity);
+      const [products, orders] = await Promise.all([listAdminProducts(), readStoreOrders()]);
+      const product = products.find((candidate) => candidate.slug === productSlug && candidate.status === 'published');
+      const offer = product && catalogOffer(product, orders);
+      if (!offer?.canCart) throw new Error('INVALID_PRODUCT');
+      if (count > Math.min(99, offer.available)) throw new Error('INSUFFICIENT_STOCK');
+      const item = {productSlug, quantity: count, addedAt: items[index]?.addedAt || now};
+      if (index === -1) items.push(item);
+      else items[index] = item;
+    }
+    const updated = {id, items, updatedAt: now};
+    await writeStoreObject(cartFile(id), updated);
+    return updated;
+  }, {attempts: 8, ttlSeconds: 30});
   return presentCart(next);
 }
 
-export async function updateCartItem(productSlug: unknown, quantity: unknown) {
-  if (!validProduct(productSlug)) throw new Error('INVALID_PRODUCT');
-  const id = await cartIdFromCookie();
-  if (!id) return presentCart({id: '', items: [], updatedAt: ''});
-  const cart = await readCart(id);
-  const next = {
-    ...cart,
-    items: cart.items.map((item) => item.productSlug === productSlug ? {...item, quantity: cleanQuantity(quantity)} : item),
-    updatedAt: new Date().toISOString()
-  };
-  await writeStoreObject(cartFile(id), next);
-  return presentCart(next);
-}
-
-export async function removeCartItem(productSlug: unknown) {
-  if (!validProduct(productSlug)) throw new Error('INVALID_PRODUCT');
-  const id = await cartIdFromCookie();
-  if (!id) return presentCart({id: '', items: [], updatedAt: ''});
-  const cart = await readCart(id);
-  const next = {...cart, items: cart.items.filter((item) => item.productSlug !== productSlug), updatedAt: new Date().toISOString()};
-  await writeStoreObject(cartFile(id), next);
-  return presentCart(next);
-}
-
-export function presentCart(cart: CartRecord) {
+export async function presentCart(cart: CartRecord) {
+  if (!cart.items.length) return {id: cart.id, items: [], itemCount: 0, subtotal: 0};
+  const [products, orders] = await Promise.all([listAdminProducts(), readStoreOrders()]);
   const items = cart.items.map((item) => {
-    const product = products[item.productSlug];
+    const product = products.find((candidate) => candidate.slug === item.productSlug && candidate.status === 'published');
+    const offer = product && catalogOffer(product, orders);
+    const maxQuantity = offer?.canCart ? Math.min(offer.available, 99) : 0;
+    const priceCents = offer?.priceCents || 0;
     return {
       ...item,
-      name: product.name,
-      image: product.image,
-      price: product.priceAmount,
-      currency: 'USD' as const,
-      subtotal: product.priceAmount * item.quantity
+      name: offer?.name || 'Unavailable product',
+      image: offer?.image || '',
+      price: priceCents / 100,
+      currency: offer?.currency || 'USD',
+      maxQuantity,
+      subtotalCents: item.quantity <= maxQuantity ? priceCents * item.quantity : 0,
+      subtotal: item.quantity <= maxQuantity ? priceCents * item.quantity / 100 : 0
     };
   });
-  return {id: cart.id, items, itemCount: items.reduce((total, item) => total + item.quantity, 0), subtotal: items.reduce((total, item) => total + item.subtotal, 0)};
+  return {id: cart.id, items, itemCount: items.reduce((total, item) => total + item.quantity, 0), subtotal: items.reduce((total, item) => total + item.subtotalCents, 0) / 100};
 }

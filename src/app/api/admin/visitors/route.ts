@@ -1,4 +1,6 @@
 import {requireAdminApiSession} from '@/lib/adminAuth';
+import {appendAuditLog} from '@/lib/adminAudit';
+import {clientIp} from '@/lib/rateLimit';
 import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {getVisitorRecords, visitorRecordsCsv} from '@/lib/visitorRecords';
 
@@ -6,7 +8,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET(request: Request) {
-  const {response} = await requireAdminApiSession();
+  const {session, response} = await requireAdminApiSession();
   if (response) return response;
 
   const url = new URL(request.url);
@@ -26,6 +28,8 @@ export async function GET(request: Request) {
   });
 
   if (format === 'csv') {
+    await appendAuditLog({actor: session.email, action: '导出访客 CSV', module: '访客记录', result: 'success',
+      ip: clientIp(request), userAgent: request.headers.get('user-agent') || '', detail: `导出 ${report.records.length} 条记录`});
     return new Response(`\uFEFF${visitorRecordsCsv(report.records)}`, {
       headers: {
         'Content-Type': 'text/csv; charset=utf-8',

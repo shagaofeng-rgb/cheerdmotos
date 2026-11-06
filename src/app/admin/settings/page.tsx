@@ -17,8 +17,8 @@ export default async function AdminSettingsPage() {
       <section className="admin-panel">
         <form className="admin-form-grid" action="/api/admin/settings" method="post">
           <input name="companyName" defaultValue={settings.companyName} placeholder="公司名称" />
-          <input name="contactEmail" defaultValue={settings.contactEmail} placeholder="联系邮箱" />
-          <input name="adminNotificationEmail" defaultValue={settings.adminNotificationEmail} placeholder="管理员通知邮箱" />
+          <label>联系邮箱<input readOnly value="info@cheerdmotos.com" /></label>
+          <label>表单通知邮箱<input readOnly value="info@cheerdmotos.com" /></label>
           <input name="whatsapp" defaultValue={settings.whatsapp} placeholder="WhatsApp" />
           <textarea name="address" defaultValue={settings.address} placeholder="公司地址" />
           <input name="paymentCurrency" defaultValue={settings.paymentCurrency} placeholder="支付币种" />

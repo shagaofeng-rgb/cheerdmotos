@@ -5,7 +5,7 @@ export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
-  const {response} = await requireAdminApiSession();
+  const {response} = await requireAdminApiSession('orders.read');
   if (response) return response;
   return Response.json({orders: (await readStoreOrders()).slice().reverse()});
 }

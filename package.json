@@ -18,14 +18,17 @@
   },
   "dependencies": {
     "@tailwindcss/postcss": "^4.3.2",
-    "@vercel/blob": "^2.5.0",
-    "next": "^16.2.10",
+    "@vercel/blob": "^2.8.2",
+    "next": "^16.4.5",
     "react": "^19.2.7",
     "react-dom": "^19.2.7",
     "tailwindcss": "^4.3.2"
   },
   "overrides": {
-    "postcss": "^8.5.10"
+    "postcss": "^8.5.10",
+    "@vercel/cli-config": {
+      "zod": "^4.6.7"
+    }
   },
   "devDependencies": {
     "@types/node": "^26.1.0",

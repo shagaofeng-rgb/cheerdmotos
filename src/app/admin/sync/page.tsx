@@ -38,8 +38,8 @@ export default async function AdminSyncPage() {
           <div><dt>持久化存储</dt><dd>{storage.configured ? `${storage.provider} 已启用，订单、表单、后台内容和日志可跨部署保存。` : '未检测到稳定存储配置，上线经营前必须配置 Vercel Blob/KV/数据库。'}</dd></div>
           <div><dt>Google Search Console</dt><dd>{seoConfig.configured ? `站点 ${seoConfig.siteUrl} 已配置，凭据来源：${seoConfig.credentialSource}。` : '缺少 Google Search Console 服务账号凭据或站点配置。'}</dd></div>
           <div><dt>Sitemap 地址</dt><dd>https://www.cheerdmotos.com/sitemap.xml</dd></div>
-          <div><dt>定时任务</dt><dd>News 每日四个发布窗口、网站地图维护、每 3 天一次的 Google SEO 同步与提交、半月表单邮件检测均已写入 vercel.json；Blog 继续使用独立 webhook 或人工发布。</dd></div>
-          <div><dt>最近 SEO 同步</dt><dd>{seoSnapshot?.syncedAt ? seoSnapshot.syncedAt : '暂无同步时间'}</dd></div>
+          <div><dt>定时任务</dt><dd>Google 数据同步与 Sitemap 提交为每周一北京时间 09:00。站点地图每天维护，表单邮件每月两次检测。News 自动抓取和发布已暂停，Blog 由独立发布接口处理。</dd></div>
+          <div><dt>最近成功读取 Google 数据</dt><dd>{seoSnapshot.syncedAt ? new Date(seoSnapshot.syncedAt).toLocaleString('zh-CN', {timeZone: 'Asia/Shanghai'}) : '暂无同步时间'}{seoSnapshot.status === 'error' && ' · 最近尝试失败'}</dd></div>
         </dl>
       </section>
 

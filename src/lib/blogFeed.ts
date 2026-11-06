@@ -69,13 +69,13 @@ function postToBlogArticle(post: ContentPost): NewsArticle {
   };
 }
 
-export async function getAllBlogArticles() {
+export const getAllBlogArticles = cache(async () => {
   const adminPosts = await listAdminPosts('blog');
   return adminPosts
     .filter((post) => isPostPublic(post))
     .map(postToBlogArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
-}
+});
 
 export async function getIndexableBlogArticles() {
   return (await getAllBlogArticles()).filter((article) => article.indexing?.indexable !== false);
@@ -90,3 +90,4 @@ export async function getBlogArticleBySlug(slug: string) {
   const normalizedSlug = slug.startsWith('guide-') ? slug.slice('guide-'.length) : slug;
   return articles.find((article) => article.slug === normalizedSlug);
 }
+import {cache} from 'react';

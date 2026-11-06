@@ -1,5 +1,6 @@
 import {appendAnalyticsEvent} from '@/lib/commerceStore';
-import {sendContactInquiryEmail} from '@/lib/emailService';
+import {deliverContactInquiry, saveContactInquiry} from '@/lib/contactInquiries';
+import {persistentWritesAvailable} from '@/lib/durableStore';
 import {checkRateLimit, clientIp} from '@/lib/rateLimit';
 import {classifyTraffic, compactAttribution} from '@/lib/trafficAttribution';
 
@@ -39,11 +40,15 @@ function detectOs(userAgent = '') {
 }
 
 export async function POST(request: Request) {
-  if (!checkRateLimit(`contact-inquiry:${clientIp(request)}`, 8, 10 * 60_000)) {
+  const secret = process.env.CRON_SECRET;
+  const test = request.headers.get('x-cowin-health-check') === '1' &&
+    Boolean(secret ? request.headers.get('authorization') === `Bearer ${secret}` : process.env.NODE_ENV !== 'production');
+  if (!test && !checkRateLimit(`contact-inquiry:${clientIp(request)}`, 8, 10 * 60_000)) {
     return Response.json({message: 'Too many inquiries. Please try again later.'}, {status: 429});
   }
 
   try {
+    if (!persistentWritesAvailable()) return Response.json({message: 'The form is temporarily unavailable. Please email info@cheerdmotos.com.'}, {status: 503});
     const payload = await request.json().catch(() => ({}));
     if (clean(payload.website, 80)) {
       return Response.json({ok: true, message: 'Thank you. We received your request.'});
@@ -69,8 +74,10 @@ export async function POST(request: Request) {
       return Response.json({message: 'Please complete the required fields.'}, {status: 400});
     }
 
+    const page = clean(payload.page || '/support', 240);
+    const {inquiry: record, created} = await saveContactInquiry(inquiry, {requestId: clean(payload.requestId, 100), page, test});
+    const eventId = record.id;
     const userAgent = request.headers.get('user-agent') || '';
-    const eventId = `contact-${Date.now()}-${Math.random().toString(16).slice(2, 8)}`;
     const attribution = compactAttribution(payload.attribution) || {
       visitorId: clean(payload.visitorId || 'contact-inquiry', 80),
       sessionId: clean(payload.sessionId || eventId, 80),
@@ -78,12 +85,12 @@ export async function POST(request: Request) {
       lastTouch: classifyTraffic({url: clean(payload.page || '/contact', 240), referrer: clean(payload.referrer, 240)}),
       sessionTouch: classifyTraffic({url: clean(payload.page || '/contact', 240), referrer: clean(payload.referrer, 240)})
     };
-    await appendAnalyticsEvent({
+    if (created && !test) await appendAnalyticsEvent({
       id: eventId,
       type: 'contact_inquiry',
       visitorId: clean(payload.visitorId || 'contact-inquiry', 80),
       sessionId: eventId,
-      page: clean(payload.page || '/contact', 240),
+      page,
       pageTitle: 'Contact inquiry',
       referrer: clean(payload.referrer, 240),
       country: inquiry.country || request.headers.get('x-vercel-ip-country') || 'Unknown',
@@ -104,21 +111,16 @@ export async function POST(request: Request) {
         oem: inquiry.oem ? 'yes' : '',
         destinationPort: inquiry.destinationPort ? 'provided' : ''
       }
-    });
+    }).catch(() => console.error('[inquiry] analytics write failed', eventId));
 
-    let emailStatus: 'sent' | 'skipped' | 'failed' = 'sent';
-    try {
-      const result = await sendContactInquiryEmail(inquiry);
-      emailStatus = result.skipped ? 'skipped' : 'sent';
-    } catch {
-      emailStatus = 'failed';
-    }
+    const delivery = await deliverContactInquiry(eventId).catch(() => null);
+    const emailStatus = delivery?.delivery.status || record.delivery.status;
 
     return Response.json({
       ok: true,
       id: eventId,
       emailStatus,
-      message: 'Thank you. We received your request and will reply within 24 business hours.'
+      message: `Thank you. We saved your request. Your reference is ${eventId}.`
     });
   } catch (error) {
     console.error('Contact inquiry failed', error);

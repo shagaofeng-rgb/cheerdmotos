@@ -2,6 +2,7 @@ import Link from 'next/link';
 import ContactInquiryForm from './ContactInquiryForm';
 import {StoreArt, StorefrontV1, StoreHero, StoreIcon, StoreIntro, StoreLink, StoreTiles} from './StorefrontV1';
 import {siteData} from '@/lib/site';
+import {listPublicProducts} from '@/lib/publicCatalog';
 import {productPresentation} from '@/lib/productPresentation';
 import {modelLayout} from '@/lib/storefrontModels';
 import type {ReactNode} from 'react';
@@ -26,13 +27,16 @@ function Steps({items}: {items: ReadonlyArray<readonly [string, string]>}) {
   return <ol className="steps">{items.map(([title, description]) => <li key={title}><div><strong>{title}</strong><p>{description}</p></div></li>)}</ol>;
 }
 
-function FormPage({variant}: {variant: 'support' | 'dealer' | 'registration'}) {
+async function FormPage({variant, requestedProduct}: {variant: 'support' | 'dealer' | 'registration'; requestedProduct: string}) {
   const design = {
     support: {eyebrow: 'COWIN service', title: 'How can we help?', description: 'Find a manual, register a product, review a policy or send a support request.', formTitle: 'Send a support request', submit: 'Send request', action: 'Contact support', id: 'contact', art: <StoreArt icon="headphones" />},
     dealer: {eyebrow: 'Partner with COWIN', title: 'Dealer Program.', description: 'Tell us about your business, territory and product interests so COWIN can route your inquiry.', formTitle: 'Dealer inquiry', submit: 'Send dealer inquiry', action: 'Start a dealer inquiry', id: 'application', art: <StoreArt image="/homepage-precision/precision-testing-bay.webp" photo />},
     registration: {eyebrow: 'Ownership', title: 'Register your product.', description: 'Use the product label to find your model and serial number before you start.', formTitle: 'Product details', submit: 'Submit registration request', action: 'Open registration form', id: 'register', art: <StoreArt icon="clipboard-check" />}
   }[variant];
-  const productOptions = siteData.products.map((item) => modelLayout(item.slug)?.title || item.title);
+  const catalog = variant === 'dealer' ? await listPublicProducts() : siteData.products;
+  const productOptions = catalog.map((item) => modelLayout(item.slug)?.title || item.title);
+  const selection = catalog.find((item) => item.slug === requestedProduct);
+  const preselected = selection ? modelLayout(selection.slug)?.title || selection.title : '';
   return <>
     <StoreHero eyebrow={design.eyebrow} title={design.title} description={design.description} art={design.art} tight><StoreLink href={`#${design.id}`} primary arrow>{design.action}</StoreLink></StoreHero>
     {variant === 'support' && <Section eyebrow="Find help" title="Choose a topic"><StoreTiles items={supportLinks} /></Section>}
@@ -41,10 +45,10 @@ function FormPage({variant}: {variant: 'support' | 'dealer' | 'registration'}) {
         <p className="kicker">{variant === 'registration' ? 'Before you start' : variant === 'dealer' ? 'How it works' : 'Contact'}</p>
         <h2>{variant === 'registration' ? 'Have these details ready' : variant === 'dealer' ? 'Start a conversation' : 'Talk to COWIN'}</h2>
         {variant === 'registration' ? <Steps items={[['Model name', 'Choose the model that matches your product.'], ['Serial number', 'Check the product label or original paperwork.'], ['Purchase details', 'Have the purchase date and order number available.']]} />
-          : variant === 'dealer' ? <Steps items={[['Tell us about your business', 'Share your company name, market and contact details.'], ['Choose product interests', 'Tell us which COWIN products fit your customers.'], ['Review next steps', 'COWIN can follow up to discuss the application.']]} />
+          : variant === 'dealer' ? <Steps items={[['Tell us about your business', 'Include the destination market and estimated order quantity.'], ['Ask for a product and supply quote', 'Confirm model compatibility, minimum order, pricing and lead time.'], ['Confirm delivery and documentation', 'Ask about freight terms, model documentation and after-sales support for your market.']]} />
           : <p className="lead">Include your model and order number if available. For a technical issue, describe what happened and when.</p>}
       </div>
-      <div className="panel"><h3>{design.formTitle}</h3><ContactInquiryForm variant={variant} copy={{
+      <div className="panel"><h3>{design.formTitle}</h3><ContactInquiryForm key={preselected} variant={variant} preselectedProduct={preselected} copy={{
         fields: {name: 'Name', email: variant === 'dealer' ? 'Business email' : 'Email', phone: 'Phone / WhatsApp', company: 'Company', country: 'Country / region', buyerType: 'Topic', product: variant === 'registration' ? 'Model' : 'Product', quantity: 'Quantity', market: 'Target market', message: variant === 'dealer' ? 'Tell us about your business' : 'How can we help?', submit: design.submit},
         buyerTypes: ['Product support', 'Order status', 'Warranty / service', 'Shipping & returns', 'Other'],
         productOptions: variant === 'registration' ? productOptions : [...productOptions, 'General inquiry']
@@ -132,12 +136,12 @@ function BrandPage({slug}: {slug: string}) {
   </>;
 }
 
-export function StorefrontServices({item, section, query, schema}: {item: SiteItem; section: string; query: string; schema?: ReactNode}) {
+export function StorefrontServices({item, section, query, requestedProduct = '', schema}: {item: SiteItem; section: string; query: string; requestedProduct?: string; schema?: ReactNode}) {
   const forms = {'support': 'support', 'dealer-program': 'dealer', 'product-registration': 'registration'} as const;
   const variant = forms[item.slug as keyof typeof forms];
   return <StorefrontV1><main>
     {schema}
-    {variant ? <FormPage variant={variant} /> : item.slug === 'manuals' ? <Manuals query={query} />
+    {variant ? <FormPage variant={variant} requestedProduct={requestedProduct} /> : item.slug === 'manuals' ? <Manuals query={query} />
       : ['warranty', 'shipping-returns'].includes(item.slug) ? <Policy route={item.route} section={section} />
       : <BrandPage slug={item.slug} />}
   </main></StorefrontV1>;

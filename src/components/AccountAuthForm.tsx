@@ -7,7 +7,7 @@ type Mode = 'login' | 'register' | 'forgot' | 'reset';
 export default function AccountAuthForm({mode, token = ''}: {mode: Mode; token?: string}) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
-  const requiresPassword = mode === 'login' || mode === 'register' || mode === 'reset';
+  const requiresPassword = mode === 'login' || mode === 'reset';
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -34,7 +34,7 @@ export default function AccountAuthForm({mode, token = ''}: {mode: Mode; token?:
         setStatus(result.message || 'Request failed. Please try again.');
         return;
       }
-      if (mode === 'forgot') {
+      if (mode === 'forgot' || mode === 'register') {
         setStatus(result.message || 'If the email exists, a reset link has been sent.');
         return;
       }
@@ -52,8 +52,8 @@ export default function AccountAuthForm({mode, token = ''}: {mode: Mode; token?:
       {requiresPassword && <label className="field">{mode === 'login' ? 'Password' : 'New password'}
         <input name="password" type="password" autoComplete={mode === 'login' ? 'current-password' : 'new-password'} minLength={8} required />
       </label>}
-      {(mode === 'register' || mode === 'reset') && <label className="field">Confirm password<input name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></label>}
-      <button className="button primary" disabled={busy} type="submit">{busy ? 'Processing…' : mode === 'login' ? 'Sign in' : mode === 'register' ? 'Create account' : mode === 'forgot' ? 'Send reset link' : 'Set password'}</button>
+      {mode === 'reset' && <label className="field">Confirm password<input name="confirmPassword" type="password" autoComplete="new-password" minLength={8} required /></label>}
+      <button className="button primary" disabled={busy} type="submit">{busy ? 'Processing…' : mode === 'login' ? 'Sign in' : mode === 'register' ? 'Send verification link' : mode === 'forgot' ? 'Send reset link' : 'Set password'}</button>
       {status && <p className="note" role="status">{status}</p>}
     </form>
   );

@@ -1,67 +1,49 @@
-import crypto from 'node:crypto';
+import {createHash} from 'node:crypto';
 import {requireAdminApiSession} from '@/lib/adminAuth';
-import {buildCustomerLeads, getAdminDashboardData} from '@/lib/backendStore';
-import {getCommerceSnapshot, readAnalyticsEvents, readStoreOrders} from '@/lib/commerceStore';
+import {readAdminStore} from '@/lib/backendStore';
+import {readStoreOrders} from '@/lib/commerceStore';
+import {readContactInquiries} from '@/lib/contactInquiries';
 import {durableStoreStatus} from '@/lib/durableStore';
+import {readGoogleSeoSnapshot} from '@/lib/googleSeo';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
 function latest(values: string[]) {
-  return values.filter(Boolean).sort().at(-1) || '';
-}
-
-function hash(value: unknown) {
-  return crypto.createHash('sha256').update(JSON.stringify(value), 'utf8').digest('hex').slice(0, 16);
+  return values.reduce((newest, value) => value > newest ? value : newest, '');
 }
 
 export async function GET() {
-  const {response} = await requireAdminApiSession();
+  const {response, session} = await requireAdminApiSession('signed_in');
   if (response) return response;
-
-  const [orders, events, snapshot, backend] = await Promise.all([
-    readStoreOrders(),
-    readAnalyticsEvents(),
-    getCommerceSnapshot(),
-    getAdminDashboardData()
+  const admin = session.role === 'admin';
+  const support = session.role === 'support';
+  const [store, orders, inquiries, google] = await Promise.all([
+    readAdminStore(),
+    admin || support ? readStoreOrders() : [],
+    admin || support ? readContactInquiries() : [],
+    admin ? readGoogleSeoSnapshot() : null
   ]);
-  const leads = buildCustomerLeads(orders, events);
-  const state = {
-    orders: orders.length,
-    events: events.length,
-    leads: leads.length,
-    products: backend.metrics.products,
-    posts: backend.metrics.posts,
-    latestOrder: latest(orders.map((order) => order.updatedAt || order.createdAt)),
-    latestEvent: latest(events.map((event) => event.timestamp)),
-    latestLead: latest(leads.map((lead) => lead.lastActiveTime))
-  };
+  const forms = inquiries.filter((inquiry) => !inquiry.test);
+  const updates = [
+    {label: '商品', latest: latest(store.products.map((product) => product.updatedAt))},
+    ...(admin || support ? [
+      {label: '订单', latest: latest(orders.map((order) => order.updatedAt || order.createdAt))},
+      {label: '询盘', latest: latest(forms.map((form) => form.createdAt))},
+      {label: '通知', latest: latest(forms.map((form) => form.delivery.attemptedAt)),
+        note: `待处理 ${forms.filter((form) => form.delivery.status !== 'sent').length} 条`}
+    ] : []),
+    ...(admin ? [
+      {label: '内容', latest: latest(store.posts.map((post) => post.updatedAt))},
+      {label: 'Google', latest: google?.status === 'ok' ? google.syncedAt : '',
+        note: google?.status === 'error' ? '同步失败' : google?.status === 'not_configured' ? '待配置' : ''}
+    ] : [])
+  ];
 
-  return Response.json(
-    {
-      ok: true,
-      generatedAt: new Date().toISOString(),
-      version: hash(state),
-      store: durableStoreStatus(),
-      state,
-      metrics: {
-        ...snapshot.metrics,
-        leads: leads.length,
-        products: backend.metrics.products,
-        publishedProducts: backend.metrics.publishedProducts,
-        posts: backend.metrics.posts,
-        conversionRate: backend.metrics.conversionRate
-      },
-      recent: {
-        orders: orders.slice(-5).reverse(),
-        events: events.slice(-5).reverse(),
-        leads: leads.slice(0, 5)
-      }
-    },
-    {
-      headers: {
-        'Cache-Control': 'no-store, no-cache, must-revalidate'
-      }
-    }
-  );
+  return Response.json({
+    generatedAt: new Date().toISOString(),
+    version: createHash('sha256').update(JSON.stringify(updates)).digest('hex').slice(0, 16),
+    persistent: durableStoreStatus().configured,
+    updates
+  }, {headers: {'Cache-Control': 'private, no-store'}});
 }

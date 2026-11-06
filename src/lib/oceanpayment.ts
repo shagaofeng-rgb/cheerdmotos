@@ -58,7 +58,7 @@ function oceanpaymentConfigForTerminal(terminal: string) {
 export function sanitizeOceanpaymentFields(fields: Record<string, string>) {
   const sensitive = /card|cvv|cvc|token|password|secure|secret|key|sign/i;
   return Object.fromEntries(
-    Object.entries(fields).map(([key, value]) => [
+    Object.entries(fields).filter(([key]) => !/cvv|cvc/i.test(key)).map(([key, value]) => [
       key,
       sensitive.test(key) ? maskValue(value) : clean(value, 500)
     ])
@@ -76,6 +76,16 @@ export function paymentMethodToOceanpayment(value: string): OceanpaymentMethod {
   if (value === 'oceanpayment_google_pay') return 'google-pay';
   if (value === 'oceanpayment_apple_pay') return 'apple-pay';
   return 'credit-card';
+}
+
+export function onlinePaymentAvailable(productSlug: string, method: OceanpaymentMethod) {
+  const config = oceanpaymentConfig(method);
+  if (!config.configured) return false;
+  if (process.env.VERCEL_ENV !== 'production') return true;
+  const endpoint = URL.parse(config.endpoint);
+  if (endpoint?.protocol !== 'https:') return false;
+  const testEndpoint = /test/i.test(endpoint.pathname);
+  return productSlug === 'payment-test' ? testEndpoint : /^prod(uction)?$/i.test(config.environment) && !testEndpoint;
 }
 
 export function oceanpaymentToStoreMethod(value: OceanpaymentMethod): PaymentMethod {
@@ -579,10 +589,12 @@ export function buildOceanpaymentPayload({
 }
 
 export function verifyOceanpaymentReturn(fields: Record<string, string>) {
-  const config = oceanpaymentConfigForTerminal(fields.terminal || '');
+  const account = gatewayField(fields.account, 80);
+  const terminal = gatewayField(fields.terminal, 80);
+  if (!/^[a-f0-9]{64}$/i.test(fields.signValue || '') || !fields.order_number || !fields.order_currency || !fields.order_amount) return false;
   const signFields = [
-    gatewayField(fields.account, 80),
-    gatewayField(fields.terminal, 80),
+    account,
+    terminal,
     gatewayField(fields.order_number, 120),
     gatewayField(fields.order_currency, 8).toUpperCase(),
     gatewayField(fields.order_amount, 40),
@@ -592,13 +604,13 @@ export function verifyOceanpaymentReturn(fields: Record<string, string>) {
     gatewayField(fields.payment_authType, 80),
     gatewayField(fields.payment_status, 80),
     gatewayField(fields.payment_details, 240),
-    gatewayField(fields.payment_risk, 80),
-    config.secureCode
+    gatewayField(fields.payment_risk, 80)
   ];
-  const expected = sha256(
-    signFields.join('')
-  );
-  return Boolean(fields.signValue && expected.toLowerCase() === fields.signValue.toLowerCase());
+  const signature = Buffer.from(fields.signValue, 'hex');
+  return [oceanpaymentConfig('credit-card'), oceanpaymentConfig('google-pay')].some((config) => (
+    Boolean(config.secureCode && config.account && config.terminal && config.account === account && config.terminal === terminal) &&
+    crypto.timingSafeEqual(signature, Buffer.from(sha256(signFields.join('') + config.secureCode), 'hex'))
+  ));
 }
 
 export function validateOceanpaymentNotification(order: StoreOrder, fields: Record<string, string>) {
@@ -609,7 +621,8 @@ export function validateOceanpaymentNotification(order: StoreOrder, fields: Reco
   const callbackAmount = Number(gatewayField(fields.order_amount || fields.amount, 40));
 
   if (callbackOrderNumber !== order.id) errors.push('order_number_mismatch');
-  if (callbackCurrency && callbackCurrency !== order.currency) errors.push('currency_mismatch');
+  if (callbackCurrency !== order.currency) errors.push('currency_mismatch');
+  if (order.paymentGateway !== 'oceanpayment') errors.push('gateway_mismatch');
   if (!Number.isFinite(callbackAmount) || amount(callbackAmount) !== amount(order.total)) errors.push('amount_mismatch');
   if (fields.account && gatewayField(fields.account, 80) !== config.account) errors.push('account_mismatch');
   if (fields.terminal && config.terminal && gatewayField(fields.terminal, 80) !== config.terminal) errors.push('terminal_mismatch');

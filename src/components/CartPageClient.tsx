@@ -6,7 +6,7 @@ import {useEffect, useState} from 'react';
 import {StorefrontV1, StoreIcon, StoreIntro, StoreLink} from './StorefrontV1';
 import {modelLayout} from '@/lib/storefrontModels';
 
-type CartItem = {productSlug: string; quantity: number; name: string; image: string; price: number; currency: string; subtotal: number};
+type CartItem = {productSlug: string; quantity: number; name: string; image: string; price: number; currency: string; subtotal: number; maxQuantity: number};
 type Cart = {items: CartItem[]; itemCount: number; subtotal: number};
 
 function money(value: number, currency: string) {
@@ -37,17 +37,17 @@ export default function CartPageClient() {
     try {
       const response = await fetch('/api/cart', {method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify({action, productSlug, quantity})});
       const data = await response.json();
-      if (!response.ok || !data.ok) throw new Error('Unable to update cart');
+      if (!response.ok || !data.ok) throw new Error(data.message || 'We could not update your cart. Please try again.');
       setCart(data.cart);
-    } catch {
-      setError('We could not update your cart. Please try again.');
+    } catch (error) {
+      setError(error instanceof Error ? error.message : 'We could not update your cart. Please try again.');
     } finally {
       setBusy('');
     }
   }
 
   const only = cart?.items.length === 1 ? cart.items[0] : undefined;
-  const checkoutHref = (item: CartItem) => `/checkout?product=${encodeURIComponent(item.productSlug)}&qty=${item.quantity}`;
+  const checkoutHref = (item: CartItem) => `/checkout?product=${encodeURIComponent(item.productSlug)}&qty=${item.quantity}&source=cart`;
 
   return <StorefrontV1><main>
     <StoreIntro eyebrow="COWIN / Shopping bag" title="Your cart">Review the items in your cart before checking out.</StoreIntro>
@@ -58,13 +58,14 @@ export default function CartPageClient() {
         : <div className="cart-grid">
           <section className="panel"><h2>Items in your cart</h2>{cart.items.map((item) => <article className="cart-row" key={item.productSlug}>
             {item.image ? <Image src={item.image} alt={item.name} width={140} height={104} sizes="140px" /> : <StoreIcon name={modelLayout(item.productSlug)?.illustration || 'box'} />}
-            <div><h3><Link href={`/products/${item.productSlug}`}>{modelLayout(item.productSlug)?.title || item.name}</Link></h3><p className="small">{money(item.price, item.currency)} each</p>
-              <div className="qty"><button type="button" onClick={() => update(item.productSlug, 'update', item.quantity - 1)} disabled={Boolean(busy) || item.quantity <= 1} aria-label="Decrease quantity">−</button><span>{item.quantity}</span><button type="button" onClick={() => update(item.productSlug, 'update', item.quantity + 1)} disabled={Boolean(busy) || item.quantity >= 99} aria-label="Increase quantity">+</button></div>
+            <div><h3>{item.maxQuantity > 0 ? <Link href={`/products/${item.productSlug}`}>{modelLayout(item.productSlug)?.title || item.name}</Link> : modelLayout(item.productSlug)?.title || item.name}</h3>
+              <p className="small">{item.maxQuantity > 0 ? `${money(item.price, item.currency)} each` : 'Currently unavailable'}</p>
+              <div className="qty"><button type="button" onClick={() => update(item.productSlug, 'update', Math.min(item.maxQuantity, item.quantity - 1))} disabled={Boolean(busy) || item.quantity <= 1 || !item.maxQuantity} aria-label="Decrease quantity">−</button><span>{item.quantity}</span><button type="button" onClick={() => update(item.productSlug, 'update', item.quantity + 1)} disabled={Boolean(busy) || item.quantity >= item.maxQuantity} aria-label="Increase quantity">+</button></div>
               <button className="inline small sf-text-button" type="button" onClick={() => update(item.productSlug, 'remove')} disabled={Boolean(busy)}>Remove</button>
-            </div><div><strong>{money(item.subtotal, item.currency)}</strong>{!only && <div className="actions"><StoreLink href={checkoutHref(item)} primary>Checkout item</StoreLink></div>}</div>
+            </div><div>{item.quantity <= item.maxQuantity ? <><strong>{money(item.subtotal, item.currency)}</strong>{!only && <div className="actions"><StoreLink href={checkoutHref(item)} primary>Checkout item</StoreLink></div>}</> : <span className="small">{item.maxQuantity ? 'Reduce quantity to continue' : 'Unavailable'}</span>}</div>
           </article>)}</section>
           <aside className="panel summary-panel"><h2>Order summary</h2><dl className="speclist"><div><dt>Subtotal</dt><dd>{money(cart.subtotal, 'USD')}</dd></div><div><dt>Delivery</dt><dd>Calculated at checkout</dd></div></dl>
-            {only ? <StoreLink href={checkoutHref(only)} primary arrow>Proceed to checkout</StoreLink> : <p className="small sf-spaced">Choose a product to check out that item.</p>}
+            {only && only.quantity <= only.maxQuantity ? <StoreLink href={checkoutHref(only)} primary arrow>Proceed to checkout</StoreLink> : <p className="small sf-spaced">{only ? 'Review item availability before checkout.' : 'Choose an available product to check out that item.'}</p>}
             <Link className="inline sf-spaced" href="/products">Continue shopping <StoreIcon name="arrow-right" /></Link>
           </aside>
         </div>}

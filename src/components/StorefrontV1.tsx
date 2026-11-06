@@ -1,6 +1,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import type {ReactNode} from 'react';
+import DetailsMenu from './DetailsMenu';
 import '@/app/storefront-v1.css';
 
 const navigation = [
@@ -25,6 +26,7 @@ export function StoreLink({href, children, primary = false, arrow = false}: {
 export function StorefrontV1({children, className = ''}: {children: ReactNode; className?: string}) {
   return (
     <div className={`storefront-v1 ${className}`} data-storefront-design="precision-gallery">
+      <a className="sf-skip" href="#storefront-content">Skip to content</a>
       <header className="header">
         <Link href="/" className="sf-brand" aria-label="COWIN home">COWIN</Link>
         <nav className="nav" aria-label="Main navigation">{navigation.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</nav>
@@ -32,13 +34,12 @@ export function StorefrontV1({children, className = ''}: {children: ReactNode; c
           <Link href="/search" aria-label="Search"><StoreIcon name="search" /></Link>
           <Link href="/account" aria-label="Account"><StoreIcon name="user-round" /></Link>
           <Link href="/cart" aria-label="Cart"><StoreIcon name="shopping-bag" /></Link>
-          <details className="sf-mobile-menu">
-            <summary aria-label="Menu"><StoreIcon name="menu" /></summary>
+          <DetailsMenu className="sf-mobile-menu" label="Menu" trigger={<StoreIcon name="menu" />}>
             <nav aria-label="Mobile navigation">{navigation.map(([label, href]) => <Link key={href} href={href}>{label}</Link>)}</nav>
-          </details>
+          </DetailsMenu>
         </div>
       </header>
-      {children}
+      <div id="storefront-content" tabIndex={-1}>{children}</div>
       <footer className="footer">
         <div className="shell footer-inner">
           <div><Link href="/" className="sf-brand">COWIN</Link><p>Electric mobility, engineered for everyday use.</p><a href="mailto:info@cheerdmotos.com">info@cheerdmotos.com</a></div>

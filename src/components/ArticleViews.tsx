@@ -6,7 +6,7 @@ import {listPublicProducts} from '@/lib/publicCatalog';
 import StorefrontPagination from './StorefrontPagination';
 import {StoreArt, StorefrontV1, StoreIcon, StoreIntro, StoreLink} from './StorefrontV1';
 import {StoreProductCard} from './StorefrontCatalog';
-import {paginateItems, storefrontHref, type SearchParams} from '@/lib/storefrontPagination';
+import {ARTICLE_PAGE_SIZE, paginateItems, storefrontHref, type SearchParams} from '@/lib/storefrontPagination';
 
 type ArticlePath = '/news' | '/blog';
 
@@ -19,7 +19,7 @@ function sourceName(article: NewsArticle) {
 }
 
 export function StoreArticleCard({article, basePath}: {article: NewsArticle; basePath: ArticlePath}) {
-  return <Link className="card story-tile" href={`${basePath}/${article.slug}`}>
+  return <Link className="card story-tile" href={`${basePath}/${article.slug}`} prefetch={false}>
     <div className="card-media">{article.hero && <Image src={article.hero} alt={article.heroAlt || ''} width={480} height={320} sizes="(max-width: 700px) 100vw, 33vw" />}</div>
     <div className="card-body"><p className="kicker">{article.category}</p><h3>{article.title}</h3><p>{article.excerpt}</p><div className="card-meta"><span>{article.date} · {sourceName(article)}</span><StoreIcon name="arrow-right" /></div></div>
   </Link>;
@@ -31,7 +31,7 @@ export function ArticleListView({title, eyebrow, description, articles, basePath
   const categories = [...new Set(articles.map((article) => article.category).filter(Boolean))].map((name) => ({name, id: categoryId(name)}));
   const activeCategory = categories.some(({id}) => id === category) ? category : '';
   const filtered = activeCategory ? articles.filter((article) => categoryId(article.category) === activeCategory) : articles;
-  const pagination = paginateItems(filtered, page, 9);
+  const pagination = paginateItems(filtered, page, ARTICLE_PAGE_SIZE);
   const featured = !activeCategory && pagination.page === 1 ? pagination.items[0] : undefined;
   const categoryHref = (next: string) => `${storefrontHref(basePath, query, {category: next || undefined})}#stories`;
   return <StorefrontV1><main>

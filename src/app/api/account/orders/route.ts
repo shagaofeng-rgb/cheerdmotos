@@ -1,6 +1,5 @@
-import {readStoreOrders} from '@/lib/commerceStore';
+import {orderImage, readStoreOrders} from '@/lib/commerceStore';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
-import {products} from '@/lib/site';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -12,11 +11,12 @@ function serializeOrder(order: Awaited<ReturnType<typeof readStoreOrders>>[numbe
     createdAt: order.createdAt,
     productSlug: order.productSlug,
     productName: order.productName,
-    productImage: products[order.productSlug]?.image || '',
+    productImage: orderImage(order),
     quantity: order.quantity,
     unitPrice: order.unitPrice,
     subtotal: order.subtotal,
     shippingEstimate: order.shippingEstimate,
+    discount: order.discount || 0,
     total: order.total,
     currency: order.currency,
     orderStatus: order.status,

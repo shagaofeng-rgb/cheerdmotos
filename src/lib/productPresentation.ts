@@ -204,12 +204,13 @@ export function productPresentation(item: SiteItem): ProductPresentation {
   const image = usableProductImage(item.image || '') ? item.image : '';
   const gallery = [...new Set([...(override.gallery || []), image].filter(usableProductImage))];
   const description = cleanText(override.description || item.description || 'Product details will be confirmed by the COWIN support team.');
-  const sku = skuBySlug[item.slug] || `CM-${item.slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 48)}`;
+  const sku = item.sku || skuBySlug[item.slug] || `CM-${item.slug.toUpperCase().replace(/[^A-Z0-9]+/g, '-').slice(0, 48)}`;
   const availability = item.availability || '';
   const inStock = !/outofstock|out of stock|sold out/i.test(availability);
   const model = override.model || item.title.split('|')[0]?.trim() || item.slug;
   const quickSpecs = override.quickSpecs || [{label: 'Category', value: override.category || fallbackCategory.category}, {label: 'Currency', value: item.currency || 'USD'}];
-  const specifications = override.specifications || [{label: 'Model', value: model}, {label: 'SKU', value: sku}, {label: 'Category', value: override.category || fallbackCategory.category}];
+  const specifications = item.specifications?.length ? item.specifications : override.specifications ||
+    [{label: 'Model', value: model}, {label: 'SKU', value: sku}, {label: 'Category', value: override.category || fallbackCategory.category}];
   return {
     displayName: override.displayName || cleanText(item.title),
     category: override.category || fallbackCategory.category,

@@ -36,6 +36,11 @@ for (const [source, destination] of historicalRedirects) {
 
   const page = await text(destination);
   assert(page.includes(`<link rel="canonical" href="${baseUrl}${destination}"`), `${destination} is missing its canonical URL`);
+  if (baseUrl === 'https://www.cheerdmotos.com') {
+    const apex = await fetch(`https://cheerdmotos.com${source}`, {redirect: 'manual', signal: AbortSignal.timeout(20000)});
+    assert.equal(apex.status, 308, `apex ${source} must use a permanent redirect`);
+    assert.equal(apex.headers.get('location'), `${baseUrl}${destination}`, `apex ${source} must redirect directly to its canonical replacement`);
+  }
 }
 
 console.log(`SEO indexing regression ok: ${legacyPaths.length} noindex legacy pages and ${historicalRedirects.length} historical redirects checked.`);

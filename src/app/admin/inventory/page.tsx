@@ -2,28 +2,31 @@ import AdminShell from '@/components/AdminShell';
 import {listAdminProducts} from '@/lib/backendStore';
 import AdminPagination from '@/components/AdminPagination';
 import {paginate, parseAdminPagination} from '@/lib/adminPagination';
+import {readStoreOrders} from '@/lib/commerceStore';
+import {stockBreakdown} from '@/lib/inventory';
 
 export const dynamic = 'force-dynamic';
 
 export default async function AdminInventoryPage({searchParams}: {searchParams: Promise<Record<string, string | string[] | undefined>>}) {
-  const [products, params] = await Promise.all([listAdminProducts(), searchParams]);
+  const [catalog, orders, params] = await Promise.all([listAdminProducts(), readStoreOrders(), searchParams]);
+  const products = catalog.map((product) => ({...product, ...stockBreakdown(product, orders)}));
   const {page, perPage} = parseAdminPagination(params);
   const pagedProducts = paginate(products, page, perPage);
-  const totalStock = products.reduce((sum, product) => sum + product.stock, 0);
-  const lowStock = products.filter((product) => product.stock > 0 && product.stock <= 5);
-  const outOfStock = products.filter((product) => product.stock <= 0);
-  const sellable = products.filter((product) => product.status === 'published' && product.allowCart && product.stock > 0);
+  const totalStock = products.reduce((sum, product) => sum + product.available, 0);
+  const lowStock = products.filter((product) => product.available > 0 && product.available <= 5);
+  const outOfStock = products.filter((product) => product.available === 0);
+  const sellable = products.filter((product) => product.status === 'published' && (product.allowCart || product.allowDirectOrder) && product.available > 0);
 
   return (
     <AdminShell active="inventory">
       <div className="admin-title">
         <p className="eyebrow">库存管理</p>
         <h1>库存管理</h1>
-        <p>根据后台商品库实时汇总库存、可售状态、低库存和缺货商品。后续接入仓库系统后，这里会显示库存流水、锁定库存和出入库记录。</p>
+        <p>可售库存等于盘点库存扣除未过期预留和盘点后已付款件数。盘点时录入当前实物可售量，先扣除已付款待发货商品。</p>
       </div>
 
       <div className="admin-metrics">
-        <article><span>总库存</span><strong>{totalStock}</strong><small>所有商品库存合计</small></article>
+        <article><span>可售库存</span><strong>{totalStock}</strong><small>所有商品可售件数合计</small></article>
         <article><span>可售商品</span><strong>{sellable.length}</strong><small>已发布、可下单且有库存</small></article>
         <article><span>低库存</span><strong>{lowStock.length}</strong><small>库存 1-5 件</small></article>
         <article><span>缺货商品</span><strong>{outOfStock.length}</strong><small>库存为 0 或负数</small></article>
@@ -37,7 +40,7 @@ export default async function AdminInventoryPage({searchParams}: {searchParams: 
         <div className="admin-table-wrap">
           <table>
             <thead>
-              <tr><th>SKU</th><th>商品</th><th>分类</th><th>库存</th><th>MOQ</th><th>可购物车</th><th>可直接下单</th><th>更新时间</th></tr>
+              <tr><th>SKU</th><th>商品</th><th>分类</th><th>可售库存</th><th>MOQ</th><th>可购物车</th><th>可直接下单</th><th>更新时间</th></tr>
             </thead>
             <tbody>
               {pagedProducts.items.length ? pagedProducts.items.map((product) => (
@@ -45,7 +48,7 @@ export default async function AdminInventoryPage({searchParams}: {searchParams: 
                   <td>{product.sku || product.slug}</td>
                   <td><strong>{product.name}</strong><br /><small>{product.slug}</small></td>
                   <td>{product.categoryName}</td>
-                  <td>{product.stock <= 5 ? <strong className="admin-danger-text">{product.stock}</strong> : product.stock}</td>
+                  <td><strong className={product.available <= 5 ? 'admin-danger-text' : undefined}>{product.available}</strong><br /><small>盘点 {product.stock} · 预留 {product.reserved} · 已付款 {product.sold}</small></td>
                   <td>{product.moq}</td>
                   <td>{product.allowCart ? '是' : '否'}</td>
                   <td>{product.allowDirectOrder ? '是' : '否'}</td>

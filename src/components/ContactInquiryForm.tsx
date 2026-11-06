@@ -1,10 +1,11 @@
 'use client';
 
-import {useState} from 'react';
+import {useRef, useState} from 'react';
 import {classifyTraffic, isMeaningfulMarketingTouch, type TrafficTouch} from '@/lib/trafficAttribution';
 
 type ContactInquiryFormProps = {
   variant: 'support' | 'dealer' | 'registration';
+  preselectedProduct?: string;
   copy: {
     fields: {
       name: string;
@@ -62,9 +63,10 @@ function attributionSnapshot(visitorId: string, sessionId: string) {
   };
 }
 
-export default function ContactInquiryForm({copy, variant}: ContactInquiryFormProps) {
+export default function ContactInquiryForm({copy, variant, preselectedProduct = ''}: ContactInquiryFormProps) {
   const [status, setStatus] = useState('');
   const [busy, setBusy] = useState(false);
+  const attempt = useRef<{body: string; id: string} | null>(null);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -85,11 +87,14 @@ export default function ContactInquiryForm({copy, variant}: ContactInquiryFormPr
     }
 
     try {
+      const bodyKey = JSON.stringify(body);
+      if (attempt.current?.body !== bodyKey) attempt.current = {body: bodyKey, id: window.crypto.randomUUID()};
       const response = await fetch('/api/contact/inquiry', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
         body: JSON.stringify({
           ...body,
+          requestId: attempt.current.id,
           visitorId: getId(window.localStorage, 'cheerdmoto_visitor_id', 'v'),
           sessionId: getId(window.sessionStorage, 'cheerdmoto_session_id', 's'),
           page: window.location.pathname,
@@ -106,6 +111,7 @@ export default function ContactInquiryForm({copy, variant}: ContactInquiryFormPr
         return;
       }
       form.reset();
+      attempt.current = null;
       setStatus(result.message || 'Thank you. We received your request.');
     } catch {
       setStatus('Network error. Please try again or email info@cheerdmotos.com.');
@@ -133,7 +139,7 @@ export default function ContactInquiryForm({copy, variant}: ContactInquiryFormPr
       </label>
       <label>
         <span>{copy.fields.country}</span>
-        <input name="country" required placeholder="UAE, United States, Spain..." autoComplete="country-name" />
+        <input name="country" required placeholder="United States, Germany, Spain…" autoComplete="country-name" />
       </label>
       {variant === 'dealer' || variant === 'registration' ? <input type="hidden" name="buyerType" value={variant === 'dealer' ? 'Dealer / distributor' : 'Product registration'} /> : (
         <label>
@@ -147,7 +153,7 @@ export default function ContactInquiryForm({copy, variant}: ContactInquiryFormPr
       {variant === 'dealer' && <label><span>{copy.fields.company}</span><input name="company" required autoComplete="organization" /></label>}
       <label>
         <span>{copy.fields.product}</span>
-        <select name="product" required defaultValue="">
+        <select name="product" required defaultValue={preselectedProduct}>
           <option value="" disabled>Select product</option>
           {copy.productOptions.map((item) => <option value={item} key={item}>{item}</option>)}
         </select>
@@ -161,7 +167,7 @@ export default function ContactInquiryForm({copy, variant}: ContactInquiryFormPr
       {variant !== 'registration' && <>
       <label className="full">
         <span>{copy.fields.message}</span>
-        <textarea name="message" required rows={5} placeholder={variant === 'support' ? 'How can we help?' : 'Products, sales channels or requirements'} />
+        <textarea name="message" required rows={5} maxLength={1200} placeholder={variant === 'support' ? 'How can we help?' : 'What do you need to confirm for your market?'} />
       </label>
       <details className="form-more full">
         <summary>More project details (optional)</summary>

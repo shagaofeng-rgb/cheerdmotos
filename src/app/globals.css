@@ -8299,3 +8299,53 @@ summary:focus-visible {
   .admin-panel-heading { align-items: flex-start; flex-direction: column; }
   .admin-governance-grid { grid-template-columns: 1fr; }
 }
+
+/* The workspace stays at the top on smaller screens. */
+.admin-mobile-menu { display: none; }
+.admin-skip {
+  position: absolute; z-index: 30; top: 8px; left: 12px;
+  transform: translateY(-150%); background: #fff; color: #101820; padding: 10px 14px;
+}
+.admin-skip:focus { transform: translateY(0); }
+.admin-quick-links { display: flex; flex-wrap: wrap; gap: 6px 10px; margin-bottom: 12px; }
+.admin-quick-links a {
+  display: inline-flex; align-items: center; min-height: 38px; padding: 4px 10px;
+  color: #213147; border: 1px solid #cfd8e2; border-radius: 6px; font-size: 13px; font-weight: 700;
+}
+.admin-quick-links a[aria-current] { background: #182330; color: #fff; border-color: #182330; }
+.admin-inquiry-details { display: grid; gap: 7px; padding: 14px; overflow-wrap: anywhere; }
+.admin-inquiry-details p { margin: 0; }
+.admin-inquiry-details form { margin-top: 8px; }
+.admin-dashboard :focus-visible { outline: 2px solid #2063a7; outline-offset: 3px; }
+.admin-realtime-sync button { align-self: center; margin-left: auto; }
+.admin-content-item summary > span { min-width: 0; overflow-wrap: anywhere; }
+
+@media (max-width: 820px) {
+  .admin-sidebar {
+    position: relative; z-index: 6; display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    min-height: 58px; padding: 8px 14px;
+  }
+  .admin-sidebar .admin-logo { margin: 0; }
+  .admin-sidebar .admin-desktop-navigation { display: none; }
+  .admin-mobile-menu { display: block; }
+  .admin-mobile-menu summary {
+    display: flex; align-items: center; min-height: 44px; padding: 0 12px; border: 1px solid #cfd8e2; border-radius: 6px;
+    cursor: pointer; color: #182330; font-size: 14px; font-weight: 750;
+  }
+  .admin-mobile-menu nav {
+    position: absolute; z-index: 10; top: 100%; inset-inline: 8px; display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr)); max-height: min(68dvh, 460px);
+    overflow: auto; overscroll-behavior: contain; padding: 10px 12px 44px;
+    border: 1px solid #cfd8e2; background: #fff; box-shadow: 0 16px 32px #16213324;
+  }
+  .admin-mobile-menu nav a { min-height: 36px; display: flex; align-items: center; }
+  .admin-mobile-menu form { position: absolute; z-index: 11; top: calc(100% + 4px); right: 16px; }
+  .admin-mobile-menu form button { padding: 4px 7px; background: #edf1f5; border: 1px solid #cfd8e2; color: #182330; }
+  .admin-main { min-width: 0; padding-top: 14px; }
+  .admin-quick-links a { min-height: 38px; }
+}
+
+@media (max-width: 400px) {
+  .admin-quick-links { gap: 4px; }
+  .admin-quick-links a { padding-inline: 6px; font-size: 12px; }
+}

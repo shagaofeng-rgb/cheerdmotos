@@ -1,5 +1,5 @@
 import {cookies} from 'next/headers';
-import {bindOrdersToCustomer, createCustomerSession, customerCookieOptions, findCustomerUserByEmail, verifyCustomerCredentials} from '@/lib/customerAuth';
+import {createCustomerSession, customerCookieOptions, verifyCustomerCredentials} from '@/lib/customerAuth';
 import {checkRateLimit, clientIp} from '@/lib/rateLimit';
 
 export const runtime = 'nodejs';
@@ -18,13 +18,11 @@ export async function POST(request: Request) {
   if (!password) {
     return Response.json({message: 'Please enter your password.'}, {status: 400});
   }
-  const existingUser = await findCustomerUserByEmail(email);
-  if (existingUser && !existingUser.passwordHash) {
-    return Response.json({message: 'This email has checkout orders but no password yet. Please create an account password first.'}, {status: 401});
-  }
   const user = await verifyCustomerCredentials(email, password);
   if (!user) return Response.json({message: 'Invalid email or password.'}, {status: 401});
-  await bindOrdersToCustomer(email, user.id);
+  if (!user.ownershipConfirmedAt) {
+    return Response.json({message: 'Verify your email once to access your account. Use the Forgot password link to complete verification.'}, {status: 403});
+  }
   const cookieStore = await cookies();
   cookieStore.set('cheerdmoto_customer_session', createCustomerSession(user), customerCookieOptions());
   return Response.json({ok: true, isNewUser: false, user: {id: user.id, email: user.email, name: user.name}});

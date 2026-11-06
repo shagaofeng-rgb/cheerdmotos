@@ -3,7 +3,7 @@ import Link from 'next/link';
 import {listPublicProducts} from '@/lib/publicCatalog';
 import {productPresentation} from '@/lib/productPresentation';
 import {modelLayout} from '@/lib/storefrontModels';
-import {paginateItems, readPage, readParam, storefrontHref, type SearchParams} from '@/lib/storefrontPagination';
+import {CATALOG_PAGE_SIZE, paginateItems, readPage, readParam, storefrontHref, type SearchParams} from '@/lib/storefrontPagination';
 import type {SiteItem} from '@/types';
 import StorefrontPagination from './StorefrontPagination';
 import {StoreArt, StorefrontV1, StoreHero, StoreIcon, StoreLink} from './StorefrontV1';
@@ -27,7 +27,7 @@ export function StoreProductCard({item}: {item: SiteItem}) {
   const layout = modelLayout(item.slug);
   const price = numericPrice(item.price);
   const photo = product.gallery[0];
-  return <Link className="card product-tile" href={item.route}>
+  return <Link className="card product-tile" href={item.route} prefetch={false}>
     <div className="card-media">{photo
       ? <Image src={photo} alt={product.displayName} width={480} height={320} sizes="(max-width: 700px) 50vw, 33vw" />
       : <div className="diagram"><div className="figure"><StoreIcon name={layout?.illustration || 'box'} /><small>Illustration</small></div></div>}</div>
@@ -35,24 +35,29 @@ export function StoreProductCard({item}: {item: SiteItem}) {
   </Link>;
 }
 
+export async function collectionProducts(route: string) {
+  const catalog = await listPublicProducts();
+  return catalog.filter((product) => {
+    if (route === '/products') return true;
+    if (route === '/clearance') return /clearance|refurbished/.test(product.categorySlug || '');
+    return productPresentation(product).categoryRoute === route;
+  });
+}
+
 export async function StorefrontCatalog({item, query}: {item: SiteItem; query: SearchParams}) {
   const design = collections.find(({path}) => path === item.route) || collections[0];
-  const catalog = await listPublicProducts();
-  const products = catalog.filter((product) => {
-    if (item.route === '/products') return true;
-    if (item.route === '/clearance') return /clearance|refurbished/.test(product.categorySlug || '');
-    return productPresentation(product).categoryRoute === item.route;
-  });
+  const products = await collectionProducts(item.route);
   const sort = readParam(query.sort);
   if (sort === 'price-asc' || sort === 'price-desc') {
     const direction = sort === 'price-asc' ? 1 : -1;
     products.sort((a, b) => (numericPrice(a.price) - numericPrice(b.price)) * direction);
   }
-  const page = paginateItems(products, readPage(query.page), 6);
+  const page = paginateItems(products, readPage(query.page), CATALOG_PAGE_SIZE);
   const sorts = [['Featured', ''], ['Price: low to high', 'price-asc'], ['Price: high to low', 'price-desc']];
   return <StorefrontV1><main>
     <StoreHero eyebrow="COWIN / Shop" title={design.title} description={design.description} art={<StoreArt image={design.image} icon={design.icon} photo={design.photo} />} tight>
       {products.length > 0 && <StoreLink primary arrow href="#catalog">Browse {item.route === '/products' ? 'products' : 'models'}</StoreLink>}
+      <StoreLink href="/dealer-program">Dealer &amp; bulk orders</StoreLink>
     </StoreHero>
     <section className="shell section" id="catalog">
       <header className="section-head"><div><p className="kicker">{products.length} {products.length === 1 ? 'product' : 'products'}</p><h2>{design.label}</h2></div></header>

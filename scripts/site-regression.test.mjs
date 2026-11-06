@@ -7,6 +7,10 @@ import {localizedPublicPath, normalizePublicLocale} from '../src/lib/publicRoute
 import {newsDeliveryBaseUrl} from '../src/lib/newsDeliveryOrigin.ts';
 import {resolveNewsDisplayImage} from '../src/lib/newsImage.ts';
 import {currentBrand, normalizeBrandValue} from '../src/lib/brand.ts';
+import {checkoutQuote} from '../src/lib/checkoutQuote.ts';
+import {stockBreakdown} from '../src/lib/inventory.ts';
+import {shippingEstimateFor} from '../src/lib/shipping.ts';
+import {listPageMetadata} from '../src/lib/storefrontPagination.ts';
 
 test('public routes stay on the root English storefront', () => {
   assert.equal(normalizePublicLocale('en'), '');
@@ -63,4 +67,42 @@ test('legacy display copy is presented under the COWIN brand without changing te
     normalizeBrandValue({title: 'About CHEERDMOTO', url: 'https://www.cheerdmotos.com/about'}),
     {title: 'About COWIN', url: 'https://www.cheerdmotos.com/about'}
   );
+});
+
+test('checkout applies contiguous US shipping and coupons at cent precision', () => {
+  const slug = 'xceed-electric-dirt-bike';
+  assert.equal(shippingEstimateFor(slug, 'United States', 'California'), 0);
+  assert.equal(shippingEstimateFor(slug, 'United States', 'CA'), 0);
+  assert.ok(shippingEstimateFor(slug, 'United States', 'HI') > 0);
+  assert.ok(shippingEstimateFor(slug, 'Spain', 'CA') > 0);
+  assert.deepEqual(checkoutQuote(12025, 1, 0, 'cowin', false), {
+    subtotalCents: 12025, shippingCents: 0, discountCents: 361, totalCents: 11664
+  });
+  assert.equal(checkoutQuote(3500, 1, 0, 'COWIN', true).totalCents, 3500);
+});
+
+test('available inventory counts live holds and sales since the last stock count', () => {
+  const now = Date.parse('2026-11-06T10:00:00Z');
+  const product = {id: 'qa-product', stock: 5, stockCountedAt: '2026-11-06T09:00:00Z'};
+  const order = (quantity, status, inventory, gatewayStatus = 'pending') => ({quantity, status, inventory, gatewayStatus});
+  const hold = {productId: product.id, reservedUntil: '2026-11-06T10:30:00Z'};
+  const orders = [
+    order(1, 'pending_payment', hold),
+    order(2, 'paid', {...hold, committedAt: '2026-11-06T09:15:00Z'}, 'success'),
+    order(2, 'paid', {...hold, committedAt: '2026-11-06T08:59:00Z'}, 'success'),
+    order(3, 'pending_payment', {...hold, reservedUntil: '2026-11-06T09:30:00Z'}),
+    order(4, 'failed', hold, 'failed'),
+    order(10, 'paid', undefined, 'success')
+  ];
+  assert.deepEqual(stockBreakdown(product, orders, now), {reserved: 1, sold: 2, available: 2});
+  assert.equal(stockBreakdown(product, orders, Date.parse('2026-11-06T11:00:00Z')).available, 3);
+});
+
+test('real pagination URLs use self canonicals while filtered and out-of-range pages use noindex', () => {
+  const url = 'https://www.cheerdmotos.com/products';
+  assert.deepEqual(listPageMetadata(url, {page: '2'}, 12, 6, false), {alternates: {canonical: `${url}?page=2`}});
+  assert.deepEqual(listPageMetadata(url, {page: '3'}, 12, 6, false), {
+    alternates: {canonical: url}, robots: {index: false, follow: true}
+  });
+  assert.equal(listPageMetadata(url, {sort: 'price-asc'}, 12, 6, true).robots.index, false);
 });

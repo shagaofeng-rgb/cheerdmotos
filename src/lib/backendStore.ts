@@ -43,6 +43,7 @@ export type AdminProduct = {
   currency: 'USD';
   sku: string;
   stock: number;
+  stockCountedAt?: string;
   moq: number;
   weightDimension: string;
   shippingInfo: string;
@@ -197,18 +198,7 @@ function normalizeStoredCatalogImages(store: AdminStore) {
 
 export async function readAdminStore() {
   const stored = await readStoreObject<AdminStore>(STORE_FILE);
-  if (stored) {
-    const normalized = normalizeStoredCatalogImages(stored);
-    if (JSON.stringify(normalized) !== JSON.stringify(stored)) {
-      await writeStoreObject(STORE_FILE, normalized).catch((error) => {
-        console.error('[backend-store] catalog image migration could not be persisted', error instanceof Error ? error.message : String(error));
-      });
-    }
-    return normalizeBrandValue(normalized);
-  }
-  const seeded = createSeedStore();
-  await writeStoreObject(STORE_FILE, seeded);
-  return seeded;
+  return stored ? normalizeBrandValue(normalizeStoredCatalogImages(stored)) : createSeedStore();
 }
 
 export async function writeAdminStore(updater: (store: AdminStore) => AdminStore) {

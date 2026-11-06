@@ -108,13 +108,13 @@ function diversifyArticleImages(articles: NewsArticle[]) {
   });
 }
 
-export async function getAllNewsArticles() {
+export const getAllNewsArticles = cache(async () => {
   const adminPosts = await listAdminPosts('news');
   return adminPosts
     .filter((post) => isPostPublic(post))
     .map(postToArticle)
     .sort((a, b) => b.date.localeCompare(a.date) || b.updatedAt.localeCompare(a.updatedAt));
-}
+});
 
 export async function getIndexableNewsArticles() {
   return (await getAllNewsArticles()).filter((article) => article.indexing?.indexable !== false);
@@ -159,3 +159,4 @@ export async function getNewsTag(slug: string) {
   if (!name) return null;
   return {slug, name, articles: articles.filter((article) => article.tags.some((tag) => slugify(tag) === slug))};
 }
+import {cache} from 'react';

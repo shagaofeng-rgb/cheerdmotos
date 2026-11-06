@@ -2,9 +2,8 @@ import {StoreAccountContent} from '@/components/StorefrontAccount';
 import Link from 'next/link';
 import Image from 'next/image';
 import {notFound, redirect} from 'next/navigation';
-import {findStoreOrder, readShipmentRecords} from '@/lib/commerceStore';
+import {findStoreOrder, orderImage, readShipmentRecords} from '@/lib/commerceStore';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
-import {products} from '@/lib/site';
 
 export const dynamic = 'force-dynamic';
 
@@ -37,7 +36,7 @@ export default async function AccountOrderDetailPage({params}: {params: Promise<
       <section className="account-detail-grid">
         <article className="account-order-card">
           <h2>Product</h2>
-          <Image className="account-detail-image" src={products[order.productSlug]?.image || '/assets/cowin-placeholder.svg'} alt={order.productName} width={720} height={540} sizes="(max-width: 820px) 100vw, 640px" />
+          <Image className="account-detail-image" src={orderImage(order) || '/assets/cowin-placeholder.svg'} alt={order.productName} width={720} height={540} sizes="(max-width: 820px) 100vw, 640px" />
           <dl>
             <div><dt>Name</dt><dd>{order.productName}</dd></div>
             <div><dt>SKU / model</dt><dd>{order.productSlug}</dd></div>
@@ -45,6 +44,7 @@ export default async function AccountOrderDetailPage({params}: {params: Promise<
             <div><dt>Unit price</dt><dd>{money(order.unitPrice, order.currency)}</dd></div>
             <div><dt>Subtotal</dt><dd>{money(order.subtotal, order.currency)}</dd></div>
             <div><dt>Shipping</dt><dd>{money(order.shippingEstimate, order.currency)}</dd></div>
+            {Boolean(order.discount) && <div><dt>Discount</dt><dd>−{money(order.discount || 0, order.currency)}</dd></div>}
             <div><dt>Total</dt><dd>{money(order.total, order.currency)}</dd></div>
           </dl>
         </article>

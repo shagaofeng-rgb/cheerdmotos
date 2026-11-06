@@ -82,6 +82,7 @@ async function sendSmtpMail(message: MailPayload) {
   }
 
   const socket = tls.connect({host: config.host, port: config.port, servername: config.host});
+  socket.setTimeout(15000, () => socket.destroy(new Error('SMTP connection timed out')));
   let buffer = '';
 
   function readLine() {
@@ -116,24 +117,12 @@ async function sendSmtpMail(message: MailPayload) {
   }
 
   async function command(value: string, expected = /^[23]/) {
+    const pending = readLine();
     socket.write(`${value}\r\n`);
-    const response = await readLine();
+    const response = await pending;
     if (!expected.test(response)) throw new Error(response.trim());
     return response;
   }
-
-  await new Promise<void>((resolve, reject) => {
-    socket.once('secureConnect', resolve);
-    socket.once('error', reject);
-  });
-  await readLine();
-  await command(`EHLO ${config.host}`);
-  await command('AUTH LOGIN', /^334/);
-  await command(b64(config.user), /^334/);
-  await command(b64(config.pass), /^235/);
-  await command(`MAIL FROM:<${config.from}>`);
-  await command(`RCPT TO:<${message.to}>`);
-  await command('DATA', /^354/);
 
   const boundary = `cheerdmoto-${Date.now()}`;
   const raw = [
@@ -155,15 +144,25 @@ async function sendSmtpMail(message: MailPayload) {
     '',
     message.html,
     '',
-    `--${boundary}--`,
-    '.'
+    `--${boundary}--`
   ].join('\r\n');
 
-  socket.write(`${raw}\r\n`);
-  const dataResponse = await readLine();
-  await command('QUIT', /^[23]/).catch(() => undefined);
-  socket.end();
-  return {ok: true, skipped: false, message: dataResponse.trim()};
+  try {
+    const greeting = await readLine();
+    if (!/^220/.test(greeting)) throw new Error(greeting.trim());
+    await command(`EHLO ${config.host}`);
+    await command('AUTH LOGIN', /^334/);
+    await command(b64(config.user), /^334/);
+    await command(b64(config.pass), /^235/);
+    await command(`MAIL FROM:<${config.from}>`);
+    await command(`RCPT TO:<${message.to}>`);
+    await command('DATA', /^354/);
+    const dataResponse = await command(`${raw.replace(/^\./gm, '..')}\r\n.`, /^250/);
+    await command('QUIT', /^221/).catch(() => undefined);
+    return {ok: true, skipped: false, message: dataResponse.trim()};
+  } finally {
+    socket.destroy();
+  }
 }
 
 export async function sendOrderSuccessEmailOnce(order: StoreOrder) {
@@ -345,10 +344,10 @@ export async function sendAccountActivationEmail(order: StoreOrder, setupUrl: st
   }
 }
 
-export async function sendPasswordResetEmail(email: string, resetUrl: string) {
-  const subject = 'Reset your COWIN account password';
+export async function sendPasswordResetEmail(email: string, resetUrl: string, verify = false) {
+  const subject = verify ? 'Verify your email for your COWIN account' : 'Reset your COWIN account password';
   const text = [
-    'COWIN account password reset',
+    subject,
     '',
     `Use this link within 60 minutes: ${resetUrl}`,
     '',
@@ -357,7 +356,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
   ].join('\n');
   const html = `
     <p>Hello,</p>
-    <p>We received a request to reset your COWIN customer account password.</p>
+    <p>${verify ? 'Verify your email address and set a password for your COWIN account.' : 'We received a request to reset your COWIN customer account password.'}</p>
     <p><a href="${escapeHtml(resetUrl)}">Set a new password</a></p>
     <p>This link is valid for 60 minutes. If you did not request this, you can ignore this email.</p>
     <p>Support: ${DEFAULT_SENDER_EMAIL}</p>
@@ -373,6 +372,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
       errorMessage: '',
       sentAt: result.skipped ? '' : new Date().toISOString()
     });
+    return !result.skipped;
   } catch (error) {
     await appendEmailLog({
       orderId: 'account',
@@ -383,6 +383,7 @@ export async function sendPasswordResetEmail(email: string, resetUrl: string) {
       errorMessage: error instanceof Error ? error.message.slice(0, 500) : 'Unknown SMTP error',
       sentAt: ''
     });
+    return false;
   }
 }
 
@@ -448,10 +449,10 @@ export async function sendContactInquiryEmail(input: {
   oem: string;
   destinationPort: string;
   message: string;
-}) {
-  const adminEmail = adminNotificationEmail();
-  const subject = `New COWIN inquiry from ${input.email}`;
+}, inquiryId: string) {
+  const subject = `New COWIN inquiry ${inquiryId}`;
   const rows = [
+    ['Inquiry reference', inquiryId],
     ['Name', input.name],
     ['Email', input.email],
     ['Phone / WhatsApp', input.phone],
@@ -477,22 +478,22 @@ export async function sendContactInquiryEmail(input: {
   `;
 
   try {
-    const result = await sendSmtpMail({to: adminEmail, subject, text, html});
+    const result = await sendSmtpMail({to: DEFAULT_ADMIN_NOTIFICATION_EMAIL, subject, text, html});
     await appendEmailLog({
-      orderId: 'contact',
+      orderId: inquiryId,
       customerEmail: input.email,
       templateType: 'contact_inquiry',
       status: result.skipped ? 'skipped' : 'sent',
       providerMessageId: result.message,
       errorMessage: '',
       sentAt: result.skipped ? '' : new Date().toISOString()
-    });
+    }).catch(() => console.error('[inquiry] unable to record SMTP acceptance', inquiryId));
     return result;
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message.slice(0, 500) : 'Unknown SMTP error';
     console.error('Contact inquiry email delivery failed', {errorMessage});
     await appendEmailLog({
-      orderId: 'contact',
+      orderId: inquiryId,
       customerEmail: input.email,
       templateType: 'contact_inquiry',
       status: 'failed',

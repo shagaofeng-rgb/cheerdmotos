@@ -1,6 +1,5 @@
-import {findStoreOrder} from '@/lib/commerceStore';
+import {findStoreOrder, orderImage} from '@/lib/commerceStore';
 import {customerOwnsOrder, getCustomerSession} from '@/lib/customerAuth';
-import {products} from '@/lib/site';
 
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
@@ -18,7 +17,7 @@ export async function GET(_request: Request, {params}: {params: Promise<{orderNo
       ok: true,
       order: {
         ...order,
-        productImage: products[order.productSlug]?.image || '',
+        productImage: orderImage(order),
         paymentStatus: order.gatewayStatus,
         orderStatus: order.status,
         paymentAmount: order.total,

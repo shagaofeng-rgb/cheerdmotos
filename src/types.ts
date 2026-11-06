@@ -12,6 +12,16 @@ export type SiteItem = {
   currency: string;
   availability: string;
   categorySlug?: string;
+  sku?: string;
+  seoTitle?: string;
+  seoDescription?: string;
+  specifications?: {label: string; value: string}[];
+  offer?: {
+    priceCents: number;
+    available: number;
+    canCart: boolean;
+    canDirectOrder: boolean;
+  };
   publishedAt: string;
   html: string;
 };

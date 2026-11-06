@@ -1,9 +1,10 @@
-import {requireAdminSession} from '@/lib/adminAuth';
+import {canAccessAdminPage, requireAdminPageSession} from '@/lib/adminAuth';
 import AdminRealtimeSync from '@/components/AdminRealtimeSync';
+import DetailsMenu from '@/components/DetailsMenu';
 
 const navGroups = [
   {
-    title: '经营看板',
+    title: '概览与订单',
     items: [
       {key: 'dashboard', label: '数据概览', href: '/admin'},
       {key: 'sales', label: '销售分析', href: '/admin/sales'},
@@ -15,22 +16,18 @@ const navGroups = [
     ]
   },
   {
-    title: '商品内容',
+    title: '商品与库存',
     items: [
       {key: 'products', label: '商品管理', href: '/admin/products'},
       {key: 'categories', label: '商品分类', href: '/admin/categories'},
       {key: 'product-attributes', label: '商品属性与规格', href: '/admin/product-attributes'},
       {key: 'inventory', label: '库存管理', href: '/admin/inventory'},
       {key: 'promotions', label: '优惠与促销', href: '/admin/promotions'},
-      {key: 'reviews', label: '评价管理', href: '/admin/reviews'},
-      {key: 'media', label: '媒体库', href: '/admin/media'},
-      {key: 'blog', label: '博客内容', href: '/admin/blog'},
-      {key: 'news', label: '新闻内容', href: '/admin/news'},
-      {key: 'news-automation', label: 'News 自动化', href: '/admin/news-automation'}
+      {key: 'reviews', label: '评价管理', href: '/admin/reviews'}
     ]
   },
   {
-    title: '客户增长',
+    title: '客户与增长',
     items: [
       {key: 'customers', label: '客户管理', href: '/admin/customers'},
       {key: 'customer-groups', label: '客户分组', href: '/admin/customer-groups'},
@@ -40,7 +37,16 @@ const navGroups = [
       {key: 'visitors', label: '访客记录', href: '/admin/visitors'},
       {key: 'acquisition', label: '来源归因', href: '/admin/analytics/acquisition'},
       {key: 'traffic-quality', label: '流量质量', href: '/admin/analytics/quality'},
-      {key: 'funnel', label: '转化漏斗', href: '/admin/funnel'},
+      {key: 'funnel', label: '转化漏斗', href: '/admin/funnel'}
+    ]
+  },
+  {
+    title: '内容与搜索',
+    items: [
+      {key: 'media', label: '媒体库', href: '/admin/media'},
+      {key: 'blog', label: '博客内容', href: '/admin/blog'},
+      {key: 'news', label: '新闻内容', href: '/admin/news'},
+      {key: 'news-automation', label: 'News 自动化', href: '/admin/news-automation'},
       {key: 'seo', label: 'SEO 数据', href: '/admin/seo'}
     ]
   },
@@ -56,40 +62,39 @@ const navGroups = [
 ] as const;
 
 export default async function AdminShell({active, children}: {active: string; children: React.ReactNode}) {
-  const session = await requireAdminSession();
+  const entries = navGroups.flatMap<{key: string; label: string; href: string}>((group) => group.items);
+  const current = entries.find((item) => item.key === active || item.label === active || item.href === active);
+  const session = await requireAdminPageSession(current?.key || active);
+  const groups = navGroups.map((group) => ({
+    ...group, items: group.items.filter((item) => canAccessAdminPage(session.role, item.key))
+  })).filter((group) => group.items.length);
+  const quickLinks = entries.filter((item) => ['orders', 'products', 'inventory', 'forms', 'sync'].includes(item.key) &&
+    canAccessAdminPage(session.role, item.key));
+  const navigation = (className?: string) => <nav aria-label="后台导航" className={className}>
+    {groups.map((group) => <div className="admin-nav-group" key={group.title}>
+      <p>{group.title}</p>
+      {group.items.map((item) => <a key={item.key} className={current?.key === item.key ? 'active' : undefined}
+        aria-current={current?.key === item.key ? 'page' : undefined} href={item.href}>{item.label}</a>)}
+    </div>)}
+  </nav>;
+  const logout = <form action="/api/admin/logout" method="post"><button type="submit">退出登录</button></form>;
 
   return (
-    <main className="admin-dashboard">
+    <main className="admin-dashboard" lang="zh-CN">
+      <a className="admin-skip" href="#admin-workspace">跳到当前模块</a>
       <aside className="admin-sidebar">
-        <a className="admin-logo" href="/admin">
-          <span>CM</span>
-          <strong>COWIN 后台</strong>
-        </a>
-        <nav aria-label="后台导航">
-          {navGroups.map((group) => (
-            <div className="admin-nav-group" key={group.title}>
-              <p>{group.title}</p>
-              {group.items.map((item) => (
-                <a
-                  className={active === item.key || active === item.label || active === item.href ? 'is-active' : ''}
-                  href={item.href}
-                  key={item.href}
-                >
-                  {item.label}
-                </a>
-              ))}
-            </div>
-          ))}
-        </nav>
-        <div className="admin-sidebar-foot">
-          <small>当前账号</small>
-          <span>{session.email}</span>
-          <form action="/api/admin/logout" method="post">
-            <button type="submit">退出登录</button>
-          </form>
-        </div>
+        <a className="admin-logo" href="/admin"><span>CM</span><strong>COWIN 后台</strong></a>
+        {navigation('admin-desktop-navigation')}
+        <DetailsMenu className="admin-mobile-menu" label="后台菜单" trigger={<span>菜单 <span aria-hidden="true">☰</span></span>}>
+          {navigation()}
+          {logout}
+        </DetailsMenu>
+        <div className="admin-sidebar-foot"><small>当前账号</small><span>{session.email}</span>{logout}</div>
       </aside>
-      <section className="admin-main">
+      <section className="admin-main" id="admin-workspace" tabIndex={-1}>
+        <nav className="admin-quick-links" aria-label="常用任务">
+          {quickLinks.map((item) => <a key={item.key} href={item.href} aria-current={current?.key === item.key ? 'page' : undefined}>{item.label}</a>)}
+        </nav>
         <AdminRealtimeSync />
         {children}
       </section>

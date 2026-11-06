@@ -1,21 +1,24 @@
 'use client';
 
-import {useEffect, useMemo, useState} from 'react';
+import {useEffect, useRef, useState} from 'react';
 import Script from 'next/script';
 import Image from 'next/image';
 import {localizedPublicPath} from '@/lib/publicRoutes';
 import {shippingEstimateFor} from '@/lib/shipping';
-import type {CheckoutProductSlug} from '@/lib/site';
+import {checkoutQuote} from '@/lib/checkoutQuote';
+import type {PurchaseSource} from '@/lib/purchaseCatalog';
 import {classifyTraffic, isMeaningfulMarketingTouch, type TrafficTouch} from '@/lib/trafficAttribution';
 
 type CheckoutFormProps = {
   locale: string;
-  productSlug: CheckoutProductSlug;
+  productSlug: string;
   productName: string;
   productImage: string;
-  unitPrice: number;
+  unitPriceCents: number;
   quantity: number;
   shippingEstimate: number;
+  purchaseSource: PurchaseSource;
+  onlineMethods: readonly OceanpaymentTab[];
 };
 
 type OceanpaymentTab = 'oceanpayment_card' | 'oceanpayment_google_pay' | 'oceanpayment_apple_pay';
@@ -84,48 +87,31 @@ function attributionSnapshot() {
   };
 }
 
-export default function CheckoutForm({locale, productSlug, productName, productImage, unitPrice, quantity, shippingEstimate}: CheckoutFormProps) {
+export default function CheckoutForm({locale, productSlug, productName, productImage, unitPriceCents, quantity, shippingEstimate, purchaseSource, onlineMethods}: CheckoutFormProps) {
   const isOneTimePayment = productSlug === 'one-time-35';
   const [status, setStatus] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [clientRequestId, setClientRequestId] = useState('');
+  const orderAttempt = useRef<{body: string; key: string} | null>(null);
   const [coupon, setCoupon] = useState('');
   const [country, setCountry] = useState('');
+  const [deliveryState, setDeliveryState] = useState('');
+  const [quoteChanged, setQuoteChanged] = useState(false);
   const [billingMode, setBillingMode] = useState('same');
-  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>('oceanpayment_card');
+  const [paymentMethod, setPaymentMethod] = useState<CheckoutPaymentMethod>(onlineMethods[0] || 'bank_transfer');
   const [paymentScene, setPaymentScene] = useState<OceanpaymentScene>('3d');
   const [opScriptReady, setOpScriptReady] = useState(false);
   const [cardSdkReady, setCardSdkReady] = useState(false);
-  const [forceSandboxPayment, setForceSandboxPayment] = useState(productSlug === 'payment-test');
+  const forceSandboxPayment = productSlug === 'payment-test';
+  const cardAvailable = onlineMethods.includes('oceanpayment_card');
+  const walletAvailable = onlineMethods.includes('oceanpayment_google_pay') || onlineMethods.includes('oceanpayment_apple_pay');
   const cardScriptReady = opScriptReady && cardSdkReady;
-  const activeShippingEstimate = country ? shippingEstimateFor(productSlug, country) : shippingEstimate;
-  const total = unitPrice * quantity + activeShippingEstimate;
-  const discount = useMemo(() => (!isOneTimePayment && ['COWIN', 'CHEERDMOTO'].includes(coupon.trim().toUpperCase()) ? Math.round(total * 0.03) : 0), [coupon, isOneTimePayment, total]);
-  const finalTotal = total - discount;
-  const showDeliveryEstimate = Boolean(country) || isOneTimePayment;
-  const displayedTotal = showDeliveryEstimate ? finalTotal : unitPrice * quantity;
-
-  useEffect(() => {
-    const storageKey = `cheerdmoto-checkout-idem-${productSlug}-${quantity}`;
-    const existing = window.sessionStorage.getItem(storageKey);
-    if (existing) {
-      setClientRequestId(existing);
-      return;
-    }
-    const next = `idem-${Date.now()}-${Math.random().toString(16).slice(2, 10)}`;
-    window.sessionStorage.setItem(storageKey, next);
-    setClientRequestId(next);
-  }, [productSlug, quantity]);
-
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    setForceSandboxPayment(
-      productSlug === 'payment-test' ||
-      params.get('gateway') === 'sandbox' ||
-      params.get('opEnv') === 'test' ||
-      params.get('sandbox') === '1'
-    );
-  }, [productSlug]);
+  const activeShippingEstimate = country ? shippingEstimateFor(productSlug, country, deliveryState) : shippingEstimate;
+  const quote = checkoutQuote(unitPriceCents, quantity, activeShippingEstimate, coupon, isOneTimePayment || productSlug === 'payment-test');
+  const subtotal = quote.subtotalCents / 100;
+  const discount = quote.discountCents / 100;
+  const finalTotal = quote.totalCents / 100;
+  const showDeliveryEstimate = isOneTimePayment || Boolean(country && (country !== 'United States' || deliveryState.trim()));
+  const displayedTotal = showDeliveryEstimate ? finalTotal : subtotal;
 
   useEffect(() => {
     if (!cardScriptReady || paymentMethod !== 'oceanpayment_card') return;
@@ -256,7 +242,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
     const poll = async () => {
       attempts += 1;
       try {
-        const response = await fetch(`/api/account/orders/${encodeURIComponent(orderId)}`, {
+        const response = await fetch(`/api/checkout/status?order=${encodeURIComponent(orderId)}`, {
           headers: {'Accept': 'application/json'},
           cache: 'no-store'
         });
@@ -305,7 +291,9 @@ export default function CheckoutForm({locale, productSlug, productName, productI
       productSlug,
       quantity,
       paymentMethod,
-      idempotencyKey: clientRequestId,
+      purchaseSource,
+      expectedPriceCents: unitPriceCents,
+      expectedShippingCents: Math.round(shippingEstimateFor(productSlug, country, state) * 100),
       customer: {
         name: `${firstName} ${lastName}`.trim(),
         email: formData.get('contact'),
@@ -331,87 +319,87 @@ export default function CheckoutForm({locale, productSlug, productName, productI
         cardBrand: '',
         cardLast4: '',
         cardholderName: ''
-      },
-      attribution: attributionSnapshot()
+      }
     };
-
-    const response = await fetch('/api/checkout/create-order', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(body)
-    });
-    const result = await response.json();
-    if (!response.ok) {
-      setStatus(result.message || 'Order submission failed. Please check required fields.');
-      setIsSubmitting(false);
-      return;
-    }
-    if (String(paymentMethod).startsWith('oceanpayment')) {
-      setStatus(`Order ${result.order.id} created. Preparing secure payment or sales follow-up...`);
-      const paymentResponse = await fetch('/api/payments/oceanpayment/create', {
+    const bodyKey = JSON.stringify(body);
+    if (orderAttempt.current?.body !== bodyKey) orderAttempt.current = {body: bodyKey, key: window.crypto.randomUUID()};
+    try {
+      const response = await fetch('/api/checkout/create-order', {
         method: 'POST',
         headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({orderId: result.order.id, paymentMethod, scene: paymentScene, locale, checkoutUrl: window.location.href})
+        body: JSON.stringify({...body, idempotencyKey: orderAttempt.current.key, attribution: attributionSnapshot()})
       });
-      const paymentResult = await paymentResponse.json();
-      if (!paymentResponse.ok) {
-        setStatus(paymentResult.message || 'Oceanpayment request failed. Please contact COWIN sales.');
+      const result = await response.json();
+      if (!response.ok) {
+        if (result.code === 'QUOTE_CHANGED') setQuoteChanged(true);
+        setStatus(result.message || 'Order submission failed. Please check required fields.');
         setIsSubmitting(false);
         return;
       }
-      if (paymentResult.status === 'waiting_for_credentials' || paymentResult.status === 'manual_follow_up') {
-        setStatus(paymentResult.message || `Order ${result.order.id} received. COWIN sales will send payment instructions by email.`);
-        window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}&payment=manual_followup`);
-        return;
-      }
-      setStatus('Opening Oceanpayment secure payment window...');
-      const embeddedPaymentOpened = submitOceanpayment(paymentMethod as OceanpaymentTab, paymentResult.oceanpayment);
-      if (!embeddedPaymentOpened) {
-        if (paymentMethod === 'oceanpayment_card') {
-          submitHostedOceanpayment(paymentResult.oceanpayment);
+      if (String(paymentMethod).startsWith('oceanpayment')) {
+        setStatus(`Order ${result.order.id} created. Preparing secure payment or sales follow-up...`);
+        const paymentResponse = await fetch('/api/payments/oceanpayment/create', {
+          method: 'POST',
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify({orderId: result.order.id, paymentMethod, scene: paymentScene, locale, checkoutUrl: window.location.href})
+        });
+        const paymentResult = await paymentResponse.json();
+        if (!paymentResponse.ok) {
+          setStatus(paymentResult.message || 'Oceanpayment request failed. Please contact COWIN sales.');
+          setIsSubmitting(false);
           return;
         }
-        setIsSubmitting(false);
+        if (paymentResult.status === 'waiting_for_credentials' || paymentResult.status === 'manual_follow_up') {
+          setStatus(paymentResult.message || `Order ${result.order.id} received. COWIN sales will send payment instructions by email.`);
+          window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}&payment=manual_followup`);
+          return;
+        }
+        setStatus('Opening Oceanpayment secure payment window...');
+        const embeddedPaymentOpened = submitOceanpayment(paymentMethod as OceanpaymentTab, paymentResult.oceanpayment);
+        if (!embeddedPaymentOpened) {
+          if (paymentMethod === 'oceanpayment_card') {
+            submitHostedOceanpayment(paymentResult.oceanpayment);
+            return;
+          }
+          setIsSubmitting(false);
+          return;
+        }
+        watchOrderPayment(result.order.id);
+        window.setTimeout(() => {
+          setStatus('If no Oceanpayment window opened, please allow pop-ups/third-party payment frames and click Pay now again.');
+          setIsSubmitting(false);
+        }, isOneTimePayment ? 18000 : 15000);
         return;
       }
-      watchOrderPayment(result.order.id);
-      if (isOneTimePayment && paymentMethod === 'oceanpayment_card') {
-        window.setTimeout(() => {
-          setStatus('Opening Oceanpayment hosted payment page...');
-          submitHostedOceanpayment(paymentResult.oceanpayment);
-        }, 6000);
-      }
-      window.setTimeout(() => {
-        setStatus('If no Oceanpayment window opened, please allow pop-ups/third-party payment frames and click Pay now again.');
-        setIsSubmitting(false);
-      }, isOneTimePayment ? 18000 : 15000);
-      return;
+      setStatus(`Project order received: ${result.order.id}. COWIN sales will confirm quotation, logistics and payment next.`);
+      window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}`);
+    } catch {
+      setStatus('We could not complete checkout. Try again to resume this order.');
+      setIsSubmitting(false);
     }
-    setStatus(`Project order received: ${result.order.id}. COWIN sales will confirm quotation, logistics and payment next.`);
-    window.location.href = localizedPublicPath(locale, `/checkout/success?order=${encodeURIComponent(result.order.id)}`);
   }
 
   return (
     <form className="checkout-form" onSubmit={handleSubmit} aria-label="Project order form">
-      <Script
+      {onlineMethods.length > 0 && <Script
         id="oceanpayment-core-sdk"
         src="https://secure.oceanpayment.com/pub/js/op.js"
         strategy="afterInteractive"
         onLoad={() => setOpScriptReady(true)}
-      />
-      <Script src="https://secure.oceanpayment.com/pub/js/jquery/jq.js" strategy="afterInteractive" />
+      />}
+      {cardAvailable && <><Script src="https://secure.oceanpayment.com/pub/js/jquery/jq.js" strategy="afterInteractive" />
       <Script
         id="oceanpayment-card-sdk"
         src="https://secure.oceanpayment.com/pages/js/oceanpayment.js"
         strategy="afterInteractive"
         onLoad={() => setCardSdkReady(true)}
-      />
-      <Script src="https://secure.oceanpayment.com/gateway/js/googlepay_ec.js" strategy="afterInteractive" />
-      <Script src="https://secure.oceanpayment.com/gateway/js/applepay_ec.js" strategy="afterInteractive" />
+      /></>}
+      {onlineMethods.includes('oceanpayment_google_pay') && <Script src="https://secure.oceanpayment.com/gateway/js/googlepay_ec.js" strategy="afterInteractive" />}
+      {onlineMethods.includes('oceanpayment_apple_pay') && <Script src="https://secure.oceanpayment.com/gateway/js/applepay_ec.js" strategy="afterInteractive" />}
       <details className="checkout-mobile-summary panel">
         <summary><span>Order summary</span><strong>USD {displayedTotal.toLocaleString()}</strong></summary>
         <div className="order-product"><Image src={productImage} alt="" width={80} height={62} sizes="80px" /><div><strong>{productName}</strong><p className="small">Quantity {quantity}</p></div></div>
-        <dl className="speclist"><div><dt>Subtotal</dt><dd>USD {(unitPrice * quantity).toLocaleString()}</dd></div><div><dt>Estimated shipping</dt><dd>{showDeliveryEstimate ? `USD ${activeShippingEstimate.toLocaleString()}` : 'Confirm delivery address'}</dd></div></dl>
+        <dl className="speclist"><div><dt>Subtotal</dt><dd>USD {subtotal.toLocaleString()}</dd></div><div><dt>Estimated shipping</dt><dd>{showDeliveryEstimate ? `USD ${activeShippingEstimate.toLocaleString()}` : 'Confirm delivery address'}</dd></div></dl>
       </details>
       <div className="checkout-left">
         <section className="checkout-block">
@@ -424,7 +412,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             <input name="contact" type="email" autoComplete="email" required placeholder="you@example.com" />
           </label>
           <label className="checkout-checkbox">
-            <input name="marketingOptIn" type="checkbox" defaultChecked />
+            <input name="marketingOptIn" type="checkbox" />
             Receive product updates and quotation follow-up
           </label>
         </section>
@@ -472,7 +460,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             </label>
             <label className="field-shell">
               <span>State / province</span>
-              <input name="state" autoComplete="address-level1" />
+              <input name="state" autoComplete="address-level1" value={deliveryState} onChange={(event) => setDeliveryState(event.target.value)} required={country === 'United States'} />
             </label>
             <label className="field-shell">
               <span>ZIP / postal code</span>
@@ -507,11 +495,11 @@ export default function CheckoutForm({locale, productSlug, productName, productI
 
         <section className="checkout-block payment-block">
           <h2>Payment</h2>
-          <p className="checkout-help">All transactions are secure and encrypted.</p>
+          <p className="checkout-help">{onlineMethods.length ? 'Choose a payment method for your order.' : 'Submit your order to receive an invoice and payment instructions from COWIN.'}</p>
           <input name="paymentMethod" type="hidden" value={paymentMethod} />
           <input name="paymentScene" type="hidden" value={paymentScene} />
-          <div className="checkout-payment-box" role="group" aria-label="Oceanpayment secure payment">
-            <button
+          {onlineMethods.length > 0 && <div className="checkout-payment-box" role="group" aria-label="Oceanpayment secure payment">
+            {cardAvailable && <button
               type="button"
               className={`checkout-payment-row checkout-payment-card ${paymentMethod === 'oceanpayment_card' ? 'active' : ''}`}
               onClick={() => setPaymentMethod('oceanpayment_card')}
@@ -524,17 +512,17 @@ export default function CheckoutForm({locale, productSlug, productName, productI
               <span className="card-brand-row" role="group" aria-label="Supported card brands">
                 {cardBadges.map((badge) => <b key={badge}>{badge}</b>)}
               </span>
-            </button>
+            </button>}
             {paymentMethod === 'oceanpayment_card' ? (
               <div className="checkout-card-fields">
                 <div id="oceanpayment-element" className="oceanpayment-card-element" role="group" aria-label="Oceanpayment secure card form" />
                 <p className="payment-safe-note">Enter card details in the Oceanpayment secure card form. COWIN does not store full card numbers or CVV.</p>
               </div>
             ) : null}
-            <button
+            {walletAvailable && <button
               type="button"
               className={`checkout-payment-row ${paymentMethod === 'oceanpayment_google_pay' || paymentMethod === 'oceanpayment_apple_pay' ? 'active' : ''}`}
-              onClick={() => setPaymentMethod('oceanpayment_google_pay')}
+              onClick={() => setPaymentMethod(onlineMethods.includes('oceanpayment_google_pay') ? 'oceanpayment_google_pay' : 'oceanpayment_apple_pay')}
               aria-pressed={paymentMethod === 'oceanpayment_google_pay' || paymentMethod === 'oceanpayment_apple_pay'}
             >
               <span className="payment-row-left">
@@ -544,15 +532,15 @@ export default function CheckoutForm({locale, productSlug, productName, productI
               <span className="payment-icon-strip" role="group" aria-label="Wallet and alternative payment methods">
                 {multiplePaymentBadges.map((badge) => <b key={badge}>{badge}</b>)}
               </span>
-            </button>
-          </div>
+            </button>}
+          </div>}
           {paymentMethod === 'oceanpayment_google_pay' || paymentMethod === 'oceanpayment_apple_pay' ? (
             <div className="oceanpayment-panel wallet-panel">
               <strong>Oceanpayment wallet checkout</strong>
               <p>Click Pay now to open the Oceanpayment wallet or local payment page. Available methods depend on buyer country and device support.</p>
               <div className="wallet-choice-row">
-                <button type="button" className={paymentMethod === 'oceanpayment_google_pay' ? 'active' : ''} onClick={() => setPaymentMethod('oceanpayment_google_pay')}>Google Pay</button>
-                <button type="button" className={paymentMethod === 'oceanpayment_apple_pay' ? 'active' : ''} onClick={() => setPaymentMethod('oceanpayment_apple_pay')}>Apple Pay</button>
+                {onlineMethods.includes('oceanpayment_google_pay') && <button type="button" className={paymentMethod === 'oceanpayment_google_pay' ? 'active' : ''} onClick={() => setPaymentMethod('oceanpayment_google_pay')}>Google Pay</button>}
+                {onlineMethods.includes('oceanpayment_apple_pay') && <button type="button" className={paymentMethod === 'oceanpayment_apple_pay' ? 'active' : ''} onClick={() => setPaymentMethod('oceanpayment_apple_pay')}>Apple Pay</button>}
               </div>
             </div>
           ) : null}
@@ -599,7 +587,7 @@ export default function CheckoutForm({locale, productSlug, productName, productI
             <h3>{productName}</h3>
             <p>COWIN electric mobility order</p>
           </div>
-          <strong>USD {(unitPrice * quantity).toLocaleString()}</strong>
+          <strong>USD {subtotal.toLocaleString()}</strong>
         </div>
         {!isOneTimePayment ? (
           <div className="coupon-row">
@@ -608,15 +596,16 @@ export default function CheckoutForm({locale, productSlug, productName, productI
           </div>
         ) : null}
         <dl className="summary-totals">
-          <div><dt>Subtotal</dt><dd>USD {(unitPrice * quantity).toLocaleString()}</dd></div>
+          <div><dt>Subtotal</dt><dd>USD {subtotal.toLocaleString()}</dd></div>
           <div><dt>Shipping</dt><dd>{showDeliveryEstimate ? `USD ${activeShippingEstimate.toLocaleString()}` : 'Confirm delivery address'}</dd></div>
           {discount ? <div><dt>Discount</dt><dd>- USD {discount.toLocaleString()}</dd></div> : null}
           <div className="summary-total"><dt>Estimated total</dt><dd>{showDeliveryEstimate ? <><small>USD</small> {finalTotal.toLocaleString()}</> : <small>After delivery is confirmed</small>}</dd></div>
         </dl>
-        <button className="button primary checkout-pay-button" type="submit" disabled={isSubmitting}>
-          {isSubmitting ? 'Processing...' : 'Pay now'}
+        <button className="button primary checkout-pay-button" type="submit" disabled={isSubmitting || quoteChanged}>
+          {isSubmitting ? 'Processing...' : paymentMethod === 'bank_transfer' ? 'Submit order' : 'Pay now'}
         </button>
-        <p className="form-note">{status || 'After submission, COWIN sales will confirm final quotation, logistics and payment method before any charge.'}</p>
+        <p className="form-note" role="status">{status || 'After submission, COWIN sales will confirm final quotation, logistics and payment method before any charge.'}</p>
+        {quoteChanged && <button className="button secondary" type="button" onClick={() => window.location.reload()}>Reload current price</button>}
       </aside>
     </form>
   );

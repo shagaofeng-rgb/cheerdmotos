@@ -1,7 +1,9 @@
 import Image from 'next/image';
 import Link from 'next/link';
+import {Suspense} from 'react';
 import {getAllNewsArticles} from '@/lib/newsFeed';
-import {listPublicProducts} from '@/lib/publicCatalog';
+import {listPublishedCatalog} from '@/lib/publicCatalog';
+import {catalogPriceCents} from '@/lib/purchaseCatalog';
 import {PrecisionStorefrontFooter, PrecisionStorefrontHeader} from './PrecisionStorefrontChrome';
 import styles from './PrecisionHomepage.module.css';
 
@@ -58,13 +60,17 @@ const cityModels = [
   }
 ];
 
-function priceFor(catalog: Awaited<ReturnType<typeof listPublicProducts>>, slug: string) {
-  return catalog.find((product) => product.slug === slug)?.price || 'View current price';
+type HomepageCatalog = ReturnType<typeof listPublishedCatalog>;
+
+async function ModelPrice({catalog, slug}: {catalog: HomepageCatalog; slug: string}) {
+  const product = (await catalog).find((item) => item.slug === slug);
+  const cents = product ? catalogPriceCents(product) : 0;
+  return <strong>{cents ? `USD ${(cents / 100).toLocaleString('en-US', {maximumFractionDigits: 2})}` : 'View current price'}</strong>;
 }
 
-export default async function PrecisionHomepage() {
-  const [catalog, articles] = await Promise.all([listPublicProducts(), getAllNewsArticles()]);
-  const latestNews = articles.slice(0, 3);
+export default function PrecisionHomepage() {
+  const catalog = listPublishedCatalog().catch(() => []);
+  const news = getAllNewsArticles().catch(() => []);
 
   return (
     <main className={styles.page}>
@@ -74,10 +80,11 @@ export default async function PrecisionHomepage() {
         <Image
           className={styles.heroBackground}
           src="/homepage-precision/precision-studio-hero.webp"
-          alt="Silver automotive studio"
+          alt=""
           fill
-          priority
-          sizes="100vw"
+          unoptimized
+          fetchPriority="high"
+          loading="eager"
         />
         <div className={styles.heroCopy}>
           <p className={styles.eyebrow}>XTREME 96V</p>
@@ -124,7 +131,7 @@ export default async function PrecisionHomepage() {
               </div>
               <div className={styles.modelMeta}>
                 <div><h3>{model.name}</h3><p>{model.note}</p></div>
-                <strong>{priceFor(catalog, model.slug)}</strong>
+                <Suspense fallback={<strong>View current price</strong>}><ModelPrice catalog={catalog} slug={model.slug} /></Suspense>
               </div>
               <ul>{model.specs.map((spec) => <li key={spec}>{spec}</li>)}</ul>
               <span className={styles.cardAction}>View model <b aria-hidden="true">→</b></span>
@@ -163,7 +170,7 @@ export default async function PrecisionHomepage() {
               <div className={styles.cityProduct}>
                 <Image src={model.image} alt={`${model.name} electric bike`} fill sizes="(max-width: 760px) 90vw, 32vw" />
               </div>
-              <div><h3>{model.name}</h3><p>{model.note}</p><strong>{priceFor(catalog, model.slug)}</strong></div>
+              <div><h3>{model.name}</h3><p>{model.note}</p><Suspense fallback={<strong>View current price</strong>}><ModelPrice catalog={catalog} slug={model.slug} /></Suspense></div>
             </Link>
           ))}
         </div>
@@ -191,6 +198,24 @@ export default async function PrecisionHomepage() {
           <h2>News and rider guides</h2>
           <Link className={styles.textLink} href="/news">View all news <span aria-hidden="true">→</span></Link>
         </div>
+        <Suspense fallback={<div className={styles.newsEmpty}><p>Loading news and rider guides…</p></div>}>
+          <HomepageNews news={news} />
+        </Suspense>
+      </section>
+
+      <section className={styles.finalCta}>
+        <div><h2>Built to move<br />on your terms.</h2><p>Compare every COWIN dirt bike, E-bike and mobility product in one catalog.</p></div>
+        <Link className={styles.primaryButton} href="/products">Explore all models</Link>
+      </section>
+
+      <PrecisionStorefrontFooter />
+    </main>
+  );
+}
+
+async function HomepageNews({news}: {news: ReturnType<typeof getAllNewsArticles>}) {
+  const latestNews = (await news).slice(0, 3);
+  return (<>
         {latestNews.length ? (
           <div className={styles.newsGrid}>
             {latestNews.map((article, index) => (
@@ -212,14 +237,5 @@ export default async function PrecisionHomepage() {
             <Link href="/blog">Browse the blog</Link>
           </div>
         )}
-      </section>
-
-      <section className={styles.finalCta}>
-        <div><h2>Built to move<br />on your terms.</h2><p>Compare every COWIN dirt bike, E-bike and mobility product in one catalog.</p></div>
-        <Link className={styles.primaryButton} href="/products">Explore all models</Link>
-      </section>
-
-      <PrecisionStorefrontFooter />
-    </main>
-  );
+  </>);
 }

@@ -8,6 +8,7 @@ import {getCommerceSnapshot, readStoreOrders} from '@/lib/commerceStore';
 import {parseAdminTimeFilter} from '@/lib/adminTimeFilter';
 import {durableStoreConfigured} from '@/lib/durableStore';
 import {getAnalyticsOperationsReport} from '@/lib/analyticsOperations';
+import {requireAdminPageSession} from '@/lib/adminAuth';
 
 export const dynamic = 'force-dynamic';
 
@@ -20,6 +21,10 @@ export default async function AdminDashboardPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
+  const session = await requireAdminPageSession('dashboard');
+  if (session.role !== 'admin') return <AdminShell active="dashboard">
+    <div className="admin-title"><h1>工作台</h1><p>通过常用任务打开当前账号可访问的模块。</p></div>
+  </AdminShell>;
   const params = await searchParams;
   const timeFilter = parseAdminTimeFilter(params);
   const {page, perPage} = parseAdminPagination(params);

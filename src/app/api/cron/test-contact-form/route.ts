@@ -1,3 +1,5 @@
+import {clearTestInquiry} from '@/lib/contactInquiries';
+
 export const runtime = 'nodejs';
 export const dynamic = 'force-dynamic';
 
@@ -15,7 +17,7 @@ export async function GET(request: Request) {
 
   const origin = new URL(request.url).origin;
   const checkedAt = new Date().toISOString();
-  const notificationEmail = process.env.ADMIN_NOTIFICATION_EMAIL || process.env.SMTP_FROM || 'info@cheerdmotos.com';
+  const notificationEmail = 'info@cheerdmotos.com';
   const payload = {
     name: 'COWIN Semi-Monthly Contact Form Health Check',
     email: 'semi-monthly-form-check@cheerdmotos.com',
@@ -34,7 +36,8 @@ export async function GET(request: Request) {
     referrer: 'vercel-cron',
     visitorId: 'semi-monthly-contact-form-health-check',
     sessionId: `semi-monthly-contact-form-health-check-${checkedAt.slice(0, 10)}`,
-    website: ''
+    website: '',
+    requestId: `scheduled-health-check-${checkedAt.slice(0, 10)}`
   };
 
   try {
@@ -42,6 +45,8 @@ export async function GET(request: Request) {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
+        'x-cowin-health-check': '1',
+        ...(process.env.CRON_SECRET ? {authorization: `Bearer ${process.env.CRON_SECRET}`} : {}),
         'User-Agent': 'COWIN-Monthly-Contact-Form-Health-Check/1.0'
       },
       body: JSON.stringify(payload),
@@ -50,6 +55,8 @@ export async function GET(request: Request) {
     const result = await response.json().catch(() => ({}));
     const emailStatus = typeof result.emailStatus === 'string' ? result.emailStatus : 'unknown';
     const ok = response.ok && emailStatus === 'sent';
+    if (typeof result.id === 'string' && result.id.startsWith('contact-test-')) await clearTestInquiry(result.id);
+    console.info('[contact-form-health-check]', {ok, emailStatus, checkedAt});
 
     return Response.json(
       {
