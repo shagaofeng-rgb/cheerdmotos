@@ -9,6 +9,7 @@ type MailPayload = {
 };
 
 const DEFAULT_SMTP_HOST = 'smtp.exmail.qq.com';
+const OVERSEAS_SMTP_HOST = 'hwsmtp.exmail.qq.com';
 const DEFAULT_SENDER_EMAIL = 'info@cheerdmotos.com';
 const DEFAULT_ADMIN_NOTIFICATION_EMAIL = 'info@cheerdmotos.com';
 
@@ -75,8 +76,7 @@ function rowsHtml(rows: string[][]) {
     .join('');
 }
 
-async function sendSmtpMail(message: MailPayload) {
-  const config = smtpConfig();
+async function sendSmtpMail(message: MailPayload, config = smtpConfig()): Promise<{ok: boolean; skipped: boolean; message: string}> {
   if (!config.host || !config.user || !config.pass) {
     return {ok: false, skipped: true, message: 'SMTP is not configured'};
   }
@@ -153,7 +153,17 @@ async function sendSmtpMail(message: MailPayload) {
     await command(`EHLO ${config.host}`);
     await command('AUTH LOGIN', /^334/);
     await command(b64(config.user), /^334/);
-    await command(b64(config.pass), /^235/);
+    try {
+      await command(b64(config.pass), /^235/);
+    } catch (error) {
+      if (config.host.toLowerCase() !== DEFAULT_SMTP_HOST ||
+          !(error instanceof Error) || !/^535\b.*\bsystem busy\b/i.test(error.message)) {
+        throw error;
+      }
+      // Tencent provides a separate overseas endpoint. Retry before any message data has been sent.
+      console.warn('[smtp] Tencent authentication endpoint busy, retrying the overseas endpoint');
+      return sendSmtpMail(message, {...config, host: OVERSEAS_SMTP_HOST});
+    }
     await command(`MAIL FROM:<${config.from}>`);
     await command(`RCPT TO:<${message.to}>`);
     await command('DATA', /^354/);

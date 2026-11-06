@@ -41,7 +41,7 @@ const skuBySlug: Record<string, string> = {
 const commonFaq: ProductFaq[] = [
   {question: 'How do I choose the right option?', answer: 'Compare the published specifications with your intended use, then contact our support team if you need help confirming compatibility.'},
   {question: 'Is this item in stock?', answer: 'The product page shows the current availability status. Availability can change before an order is submitted.'},
-  {question: 'What payment methods are available?', answer: 'Secure card checkout is handled through the available Oceanpayment checkout options after you submit your order details.'},
+  {question: 'What payment methods are available?', answer: 'Check the payment options at checkout. If online payment is unavailable, submit your order and our team will follow up with payment instructions.'},
   {question: 'How can I contact support?', answer: 'Use the support page for product, order, warranty, and delivery questions before or after purchase.'}
 ];
 

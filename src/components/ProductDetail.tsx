@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import {useEffect, useRef, useState} from 'react';
+import {preload} from 'react-dom';
 import {StoreIcon} from './StorefrontV1';
 import {modelLayout} from '@/lib/storefrontModels';
 import {useRouter} from 'next/navigation';
@@ -80,6 +81,9 @@ export default function ProductDetail({item, product, activeSection: requestedSe
   const price = money(item.currency, item.price);
   const gallery = product.gallery;
   const currentImage = gallery[activeImage] || '';
+  if (gallery[0]?.endsWith('_transparent.png')) {
+    preload('/homepage-precision/precision-studio-hero.webp', {as: 'image', fetchPriority: 'high'});
+  }
   const quantityLimit = Math.max(1, Math.min(item.offer?.available ?? 99, 99));
   const canBuy = product.inStock && item.offer?.canDirectOrder !== false;
   const canCart = product.inStock && item.offer?.canCart !== false;
