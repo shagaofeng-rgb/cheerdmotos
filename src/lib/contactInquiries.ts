@@ -75,10 +75,10 @@ export async function deliverContactInquiry(id: string) {
   }, OPTIONS);
 }
 
-export function clearTestInquiry(id: string) {
+export function clearTestInquiries() {
   return withStoreLock(LOCK, async () => {
     const records = await readContactInquiries();
-    const retained = records.filter((record) => !(record.id === id && record.test));
+    const retained = records.filter((record) => !record.test || !record.id.startsWith('contact-test-'));
     if (retained.length !== records.length) await writeStoreLines(FILE, retained);
   }, OPTIONS);
 }

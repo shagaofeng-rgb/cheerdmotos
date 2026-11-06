@@ -2,7 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs/promises';
 import path from 'node:path';
-import {appendStoreLine, readStoreLines, readStoreObject, writeStoreObject} from '../src/lib/durableStore.ts';
+import {appendStoreLine, readStoreLines, readStoreObject, writeStoreLines, writeStoreObject} from '../src/lib/durableStore.ts';
 import {localizedPublicPath, normalizePublicLocale} from '../src/lib/publicRoutes.ts';
 import {newsDeliveryBaseUrl} from '../src/lib/newsDeliveryOrigin.ts';
 import {resolveNewsDisplayImage} from '../src/lib/newsImage.ts';
@@ -31,6 +31,8 @@ test('local durable store creates nested parent directories', async () => {
     await appendStoreLine(linesName, {marker, sequence: 1});
     assert.deepEqual(await readStoreObject(objectName), {marker, ok: true});
     assert.deepEqual(await readStoreLines(linesName), [{marker, sequence: 1}]);
+    await writeStoreLines(linesName, []);
+    assert.deepEqual(await readStoreLines(linesName), []);
   } finally {
     await fs.unlink(objectPath).catch(() => undefined);
     await fs.unlink(linesPath).catch(() => undefined);

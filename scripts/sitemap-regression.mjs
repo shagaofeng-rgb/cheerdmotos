@@ -56,6 +56,7 @@ const sitemapXml = Object.fromEntries(await Promise.all(sitemapPaths.map(async (
 
 const contentSitemaps = sitemapPaths.filter((path) => path !== '/image-sitemap.xml');
 const contentPageUrls = new Set(contentSitemaps.flatMap((path) => normalLocs(sitemapXml[path])));
+assertTrue(contentPageUrls.has(`${baseUrl}/products`), 'The public product catalogue must be discoverable in the sitemap.');
 const imagePageUrls = normalLocs(sitemapXml['/image-sitemap.xml']);
 const imageUrls = [...new Set(imageLocs(sitemapXml['/image-sitemap.xml']))];
 

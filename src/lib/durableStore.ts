@@ -175,7 +175,8 @@ export async function writeStoreLines(fileName: string, values: unknown[]) {
       await kvPipeline([['EVAL', script, '1', key, ...lines]]);
       return;
     }
-    await writeBlobText(fileName, content);
+    // Blob rejects an empty string body. A blank JSONL line represents an empty list.
+    await writeBlobText(fileName, content || '\n');
     return;
   }
   await replaceLocalFile(fileName, content);

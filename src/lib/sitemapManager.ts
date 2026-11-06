@@ -109,6 +109,7 @@ export async function getSitemapGroups() {
       loc: absolute('/'),
       lastmod: dateOnly(siteData.home?.publishedAt || siteData.generatedAt)
     },
+    {loc: absolute('/products'), lastmod: maxLastmod(productEntries)},
     ...siteData.pages.map((item) => ({
       loc: absolute(item.route),
       lastmod: dateOnly(item.publishedAt || siteData.generatedAt)

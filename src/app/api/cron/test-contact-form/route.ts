@@ -1,4 +1,4 @@
-import {clearTestInquiry} from '@/lib/contactInquiries';
+import {clearTestInquiries} from '@/lib/contactInquiries';
 import {siteUrl} from '@/lib/site';
 
 export const runtime = 'nodejs';
@@ -56,8 +56,10 @@ export async function GET(request: Request) {
     const result = await response.json().catch(() => ({}));
     const emailStatus = typeof result.emailStatus === 'string' ? result.emailStatus : 'unknown';
     const ok = response.ok && emailStatus === 'sent';
-    if (typeof result.id === 'string' && result.id.startsWith('contact-test-')) await clearTestInquiry(result.id);
-    console.info('[contact-form-health-check]', {ok, endpointStatus: response.status, emailStatus, checkedAt});
+    const cleanup = typeof result.id === 'string' && result.id.startsWith('contact-test-')
+      ? await clearTestInquiries().then(() => true).catch(() => false)
+      : false;
+    console.info('[contact-form-health-check]', {ok, endpointStatus: response.status, emailStatus, cleanup, checkedAt});
 
     return Response.json(
       {
@@ -65,6 +67,7 @@ export async function GET(request: Request) {
         checkedAt,
         endpointStatus: response.status,
         emailStatus,
+        cleanup,
         inquiryId: result.id || '',
         message: ok ? 'Semi-monthly contact form email test sent.' : 'Semi-monthly contact form email test did not complete successfully.',
         result
